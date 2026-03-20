@@ -1,0 +1,65 @@
+# -------------------
+# Unity 核心生成文件夹 (必须忽略)
+# -------------------
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Mm]emoryCaptures/
+
+# -------------------
+# IDE / 编辑器生成文件
+# -------------------
+# Visual Studio 缓存目录 (你提到的那个)
+.vs/
+
+# Visual Studio / MonoDevelop 解决方案文件 (Unity 会自动生成它们)
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.opendb
+*.VC.db
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# JetBrains Rider
+.idea/
+
+# -------------------
+# 操作系统生成文件
+# -------------------
+.DS_Store
+Thumbs.db
+
+# -------------------
+# 其他 Unity 杂项
+# -------------------
+# 崩溃报告
+sysinfo.txt
+
+# 用户特定的设置 (比如窗口布局，不需要同步给队友)
+/[Uu]ser[Ss]ettings/
+
+# Asset store 临时文件
+*.unitypackage
+.consulo/
+
+# -------------------
+# 警告：不要忽略 .meta 文件！
+# -------------------
+# !*.meta
