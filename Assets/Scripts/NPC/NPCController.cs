@@ -41,6 +41,8 @@ namespace PBV.NPC
         {
             if (DialogueManager.Instance == null) return;
             if (DialogueManager.Instance.IsDialogueActive) return; // 对话中防止重复触发
+            // 结束冷却：E 键同帧结束对话又重新触发会被拦下，给玩家一个退出窗口
+            if (Time.time - DialogueManager.Instance.LastEndTime < 0.25f) return;
 
             DialogueManager.Instance.StartDialogue(npcName, dialogueLines);
         }

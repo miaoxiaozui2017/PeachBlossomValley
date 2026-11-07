@@ -16,6 +16,9 @@ namespace PBV.Dialogue
 
         public bool IsDialogueActive { get; private set; }
 
+        /// <summary>上次对话结束的时间（NPC 据此判断冷却，避免同帧 E 键结束又重新触发）</summary>
+        public float LastEndTime { get; private set; } = -10f;
+
         [Header("Typewriter Settings")]
         [SerializeField] private float _charDelay = 0.04f;
 
@@ -138,6 +141,7 @@ namespace PBV.Dialogue
             Hide();
             _currentLines = null;
             IsDialogueActive = false;
+            LastEndTime = Time.time; // 结束冷却起点
         }
 
         private void Hide()

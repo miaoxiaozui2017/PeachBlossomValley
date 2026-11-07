@@ -22,6 +22,7 @@ namespace PBV.Farming
         [SerializeField] private Color _plantableColor = new Color(0.4f, 0.9f, 1f, 0.55f);   // 青：可播种
         [SerializeField] private Color _waterableColor = new Color(0.35f, 0.6f, 1f, 0.55f);  // 蓝：可浇水
         [SerializeField] private Color _harvestColor = new Color(0.5f, 1f, 0.4f, 0.6f);      // 绿：可收获
+        [SerializeField] private Color _invalidColor = new Color(0.7f, 0.25f, 0.25f, 0.35f); // 暗红：不可耕种（绿地外）
 
         private SpriteRenderer _sr;
         private Vector3Int _lastGridPos = new Vector3Int(int.MinValue, 0, 0);
@@ -59,6 +60,10 @@ namespace PBV.Farming
         private Color GetActionColor(Vector3Int gridPos)
         {
             if (_farmGrid == null) return _idleColor;
+
+            // 绿地外：不可耕种
+            if (!_farmGrid.IsTillable(gridPos)) return _invalidColor;
+
             var plot = _farmGrid.GetPlot(gridPos);
 
             if (plot != null && plot.plantedCrop != null && plot.growthDays >= plot.plantedCrop.daysToMature)

@@ -85,6 +85,9 @@ namespace PBV.Farming
         {
             Vector3Int targetPos = InputHandler.Instance.SelectedGridPosition;
 
+            // 区域限制：只能在已铺设的地面（草地）上耕种，绿地外不响应
+            if (!IsTillable(targetPos)) return;
+
             // 上下文敏感的智能工具逻辑 (Smart Tool Logic for MVP)
             // 优先级：成熟收获 > 空地锄地 > 无作物播种/浇水 > 有作物浇水
             PlotData plot = GetOrCreatePlot(targetPos);
@@ -203,6 +206,9 @@ namespace PBV.Farming
             _plots.TryGetValue(pos, out var plot);
             return plot;
         }
+
+        /// <summary>该位置是否可耕种（地面 Tilemap 有 tile 才允许）</summary>
+        public bool IsTillable(Vector3Int pos) => _groundTilemap != null && _groundTilemap.HasTile(pos);
 
         private void UpdateTileVisual(Vector3Int pos, TileBase tile)
         {

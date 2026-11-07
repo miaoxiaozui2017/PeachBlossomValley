@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using PBV.Inventory;
 using PBV.Core;
+using PBV.Systems;
 
 namespace PBV.UI
 {
@@ -9,8 +10,8 @@ namespace PBV.UI
     /// 背包 UI（v0.1.0 灰盒版）：
     /// - 底部常驻快捷栏（槽位 0-9，数字键 1-0 选择）
     /// - Tab 键开关 24 格完整面板，点击格子选中
-    /// - 订阅 OnInventoryChanged 自动刷新
-    /// - UI 在 Awake 自动构建，后续可替换为正式美术 UI
+    /// - 面板显示当前金钱、选中物品名称与描述
+    /// - 订阅 OnInventoryChanged / OnMoneyChanged 自动刷新
     /// </summary>
     public class InventoryUI : MonoBehaviour
     {
@@ -27,7 +28,16 @@ namespace PBV.UI
         private readonly Text[] _slotCounts = new Text[24];
         private readonly Image[] _slotBorders = new Image[24];
 
+        private Text _moneyText;
+        private Text _infoText;
+
         private static Font _font;
+
+        // 面板尺寸（6列 x 4行）
+        private const float PanelW = 6f * 76f + 24f;   // 480
+        private const float PanelH = 40f + 4f * 76f + 50f + 16f; // 标题40 + 格子304 + 信息50 + padding16 = 410
+        private const float SlotSize = 66f;
+        private const float SlotPitch = 76f;
 
         private void Awake()
         {
@@ -41,11 +51,24 @@ namespace PBV.UI
             }
         }
 
+        private void Start()
+        {
+            if (PlayerWallet.Instance != null)
+            {
+                PlayerWallet.Instance.OnMoneyChanged += RefreshMoney;
+                RefreshMoney(PlayerWallet.Instance.Money);
+            }
+        }
+
         private void OnDestroy()
         {
             if (InventorySystem.Instance != null)
             {
                 InventorySystem.Instance.OnInventoryChanged -= RefreshAll;
+            }
+            if (PlayerWallet.Instance != null)
+            {
+                PlayerWallet.Instance.OnMoneyChanged -= RefreshMoney;
             }
         }
 
@@ -83,6 +106,7 @@ namespace PBV.UI
         {
             SelectedIndex = index;
             UpdateSelectionHighlight();
+            UpdateInfoBar();
         }
 
         private void UpdateSelectionHighlight()
@@ -94,6 +118,33 @@ namespace PBV.UI
                     _slotBorders[i].color = (i == SelectedIndex) ? new Color(1f, 0.85f, 0.3f) : new Color(0, 0, 0, 0.4f);
                 }
             }
+        }
+
+        /// <summary>选中物品信息栏：显示名称、描述、数量；未选或空槽则提示</summary>
+        private void UpdateInfoBar()
+        {
+            if (_infoText == null) return;
+
+            var inventory = InventorySystem.Instance;
+            if (inventory == null || SelectedIndex < 0 || SelectedIndex >= inventory.Capacity)
+            {
+                _infoText.text = "点击格子选中物品";
+                return;
+            }
+
+            var slot = inventory.GetSlot(SelectedIndex);
+            if (slot == null || slot.IsEmpty)
+            {
+                _infoText.text = "空槽位";
+                return;
+            }
+
+            _infoText.text = $"{slot.item.itemName}  x{slot.count}\n{slot.item.description}";
+        }
+
+        private void RefreshMoney(int money)
+        {
+            if (_moneyText != null) _moneyText.text = $"¥ {money}";
         }
 
         private void RefreshAll()
@@ -112,6 +163,8 @@ namespace PBV.UI
             {
                 ApplySlotVisual(inventory.GetSlot(i), _slotIcons[i], _slotCounts[i]);
             }
+
+            UpdateInfoBar();
         }
 
         private static void ApplySlotVisual(InventorySlot slot, Image icon, Text countText)
@@ -164,9 +217,9 @@ namespace PBV.UI
 
             for (int i = 0; i < _hotbarCount; i++)
             {
-                CreateSlot(hotbarGo.transform, i, 58f, out _slotIcons[i], out _slotCounts[i], out _);
+                CreateSlot(hotbarGo.transform, i, 58f, out _hotbarIcons[i], out _hotbarCounts[i], out _);
 
-                var slotRect = _slotIcons[i].GetComponentInParent<RectTransform>();
+                var slotRect = _hotbarIcons[i].GetComponentInParent<RectTransform>();
                 slotRect.anchoredPosition = new Vector2(-_hotbarCount * 62f / 2f + 31f + i * 62f, 0);
             }
         }
@@ -179,36 +232,63 @@ namespace PBV.UI
             panelRect.anchorMin = new Vector2(1f, 1f);
             panelRect.anchorMax = new Vector2(1f, 1f);
             panelRect.pivot = new Vector2(1f, 1f);
-            panelRect.sizeDelta = new Vector2(6 * 76f + 24f, 4 * 76f + 60f);
+            panelRect.sizeDelta = new Vector2(PanelW, PanelH);
             panelRect.anchoredPosition = new Vector2(-16f, -16f);
 
             var panelImage = _panel.AddComponent<Image>();
             panelImage.color = new Color(0.22f, 0.18f, 0.14f, 0.94f);
 
-            // 标题栏背景（与面板区分）
+            // 标题栏背景
             var titleBgGo = new GameObject("TitleBg");
             titleBgGo.transform.SetParent(_panel.transform, false);
             var titleBgRect = titleBgGo.AddComponent<RectTransform>();
-            titleBgRect.anchorMin = new Vector2(0f, 0.88f);
+            titleBgRect.anchorMin = new Vector2(0f, 0.91f);
             titleBgRect.anchorMax = new Vector2(1f, 1f);
             titleBgRect.offsetMin = Vector2.zero;
             titleBgRect.offsetMax = Vector2.zero;
             var titleBg = titleBgGo.AddComponent<Image>();
             titleBg.color = new Color(0.35f, 0.28f, 0.18f, 0.95f);
 
-            CreateText("Title", _panel.transform, new Vector2(0f, 0.88f), new Vector2(1f, 1f), 22, FontStyle.Bold, new Color(1f, 0.93f, 0.75f), "背包 (Tab 开关)");
+            // 标题（左）与金钱（右）
+            CreateText("Title", _panel.transform, new Vector2(0.03f, 0.91f), new Vector2(0.55f, 1f), 22, FontStyle.Bold, new Color(1f, 0.93f, 0.75f), "背包 (Tab 开关)");
+            _moneyText = CreateText("Money", _panel.transform, new Vector2(0.6f, 0.91f), new Vector2(0.97f, 1f), 22, FontStyle.Bold, new Color(1f, 0.85f, 0.4f), "¥ 0");
+            var moneyText = _moneyText;
+            moneyText.alignment = TextAnchor.MiddleRight;
 
-            // 6 x 4 = 24 格
+            // 信息栏背景（底部，显示选中物品名+描述）
+            var infoBgGo = new GameObject("InfoBg");
+            infoBgGo.transform.SetParent(_panel.transform, false);
+            var infoBgRect = infoBgGo.AddComponent<RectTransform>();
+            infoBgRect.anchorMin = new Vector2(0f, 0f);
+            infoBgRect.anchorMax = new Vector2(1f, 0.13f);
+            infoBgRect.offsetMin = Vector2.zero;
+            infoBgRect.offsetMax = Vector2.zero;
+            var infoBg = infoBgGo.AddComponent<Image>();
+            infoBg.color = new Color(0.12f, 0.1f, 0.08f, 0.9f);
+
+            _infoText = CreateText("Info", _panel.transform, new Vector2(0.04f, 0.01f), new Vector2(0.96f, 0.12f), 16, FontStyle.Normal, new Color(0.92f, 0.9f, 0.85f), "点击格子选中物品");
+            var infoText = _infoText;
+            infoText.alignment = TextAnchor.MiddleLeft;
+
+            // 6 x 4 = 24 格，相对面板左下角定位（anchor 0,0）
+            // 水平居中：6 格占 5*76+66=446，左留白 (480-446)/2=17，首格中心 17+33=50
+            // 垂直：信息栏上方(50) + 居中(格子区高=PanelH-40-50=320，4格占294，余26，下留13) -> 首格中心 50+13+33=96
+            float x0 = (PanelW - (5f * SlotPitch + SlotSize)) / 2f + SlotSize / 2f; // 50
+            float gridBottom = PanelH * 0.13f; // 信息栏顶部约 53
+            float gridTop = PanelH - 40f; // 标题区下方
+            float gridH = gridTop - gridBottom; // 格子区高
+            float y0 = gridBottom + (gridH - (3f * SlotPitch + SlotSize)) / 2f + SlotSize / 2f;
+
             int index = 0;
             for (int row = 0; row < 4; row++)
             {
                 for (int col = 0; col < 6; col++)
                 {
                     int slotIndex = index;
-                    CreateSlot(_panel.transform, slotIndex, 66f, out _slotIcons[slotIndex], out _slotCounts[slotIndex], out _slotBorders[slotIndex]);
+                    CreateSlot(_panel.transform, slotIndex, SlotSize, out _slotIcons[slotIndex], out _slotCounts[slotIndex], out _slotBorders[slotIndex]);
 
                     var slotRect = _slotIcons[slotIndex].GetComponentInParent<RectTransform>();
-                    slotRect.anchoredPosition = new Vector2(-6f * 76f / 2f + 12f + 38f + col * 76f, -30f - row * 76f);
+                    slotRect.anchoredPosition = new Vector2(x0 + col * SlotPitch, y0 + row * SlotPitch);
 
                     // 点击选中
                     var button = slotRect.gameObject.AddComponent<Button>();

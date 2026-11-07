@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using PBV.Inventory;
 using PBV.Save;
-using PBV.Economy;
+using PBV.Systems;
 
 namespace PBV.Core
 {

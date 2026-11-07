@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using PBV.Core;
 using PBV.Inventory;
@@ -20,10 +21,14 @@ namespace PBV.Economy
         /// <summary>已投入未结算的总价值</summary>
         public int PendingValue { get; private set; }
 
+        /// <summary>待结算金额变化事件（参数为最新 PendingValue），HUD 订阅显示</summary>
+        public event Action<int> OnPendingChanged;
+
         /// <summary>存档恢复专用</summary>
         public void SetPendingValue(int value)
         {
             PendingValue = Mathf.Max(0, value);
+            OnPendingChanged?.Invoke(PendingValue);
         }
 
         private InventorySystem _inventory;
@@ -90,7 +95,8 @@ namespace PBV.Economy
             }
 
             PendingValue += totalValue;
-            Debug.Log($"[ShippingBin] 投入 {totalItems} 件物品，价值 {totalValue}（待结算总额 {PendingValue}）");
+            OnPendingChanged?.Invoke(PendingValue);
+            Debug.Log($"[ShippingBin] 投入 {totalItems} 件物品，价值 {totalValue}（待结算总额 {PendingValue}，次日06:00入账）");
         }
 
         private bool IsSellable(ItemData item)
@@ -108,12 +114,14 @@ namespace PBV.Economy
         {
             if (PendingValue <= 0) return;
 
+            int settled = PendingValue;
             if (PlayerWallet.Instance != null)
             {
                 PlayerWallet.Instance.AddMoney(PendingValue);
                 Debug.Log($"[ShippingBin] 昨日出货结算：+{PendingValue} 金钱");
             }
             PendingValue = 0;
+            OnPendingChanged?.Invoke(PendingValue);
         }
     }
 }

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using PBV.Systems;
+using PBV.Economy;
 
 namespace PBV.UI
 {
@@ -11,6 +12,8 @@ namespace PBV.UI
     {
         private Text _timeText;
         private Text _moneyText;
+        private Text _pendingText; // 出货箱待结算金额
+        private ShippingBinSystem _shippingBin;
         private static Font _font;
 
         private void Awake()
@@ -33,6 +36,13 @@ namespace PBV.UI
                 PlayerWallet.Instance.OnMoneyChanged += OnMoneyChanged;
                 OnMoneyChanged(PlayerWallet.Instance.Money);
             }
+
+            _shippingBin = FindObjectOfType<ShippingBinSystem>();
+            if (_shippingBin != null)
+            {
+                _shippingBin.OnPendingChanged += OnPendingChanged;
+                OnPendingChanged(_shippingBin.PendingValue);
+            }
         }
 
         private void OnDestroy()
@@ -45,6 +55,10 @@ namespace PBV.UI
             if (PlayerWallet.Instance != null)
             {
                 PlayerWallet.Instance.OnMoneyChanged -= OnMoneyChanged;
+            }
+            if (_shippingBin != null)
+            {
+                _shippingBin.OnPendingChanged -= OnPendingChanged;
             }
         }
 
@@ -66,6 +80,14 @@ namespace PBV.UI
             if (_moneyText != null) _moneyText.text = $"¥ {money}";
         }
 
+        private void OnPendingChanged(int pending)
+        {
+            if (_pendingText != null)
+            {
+                _pendingText.text = pending > 0 ? $"出货待结算 ¥ {pending}（次日06:00入账）" : string.Empty;
+            }
+        }
+
         private void RefreshTimeText(string time, int day)
         {
             if (_timeText != null) _timeText.text = $"第 {day} 天   {time}";
@@ -85,6 +107,9 @@ namespace PBV.UI
                 new Vector2(24f, -20f), new Vector2(420f, 36f), 24, FontStyle.Bold, new Color(1f, 0.96f, 0.86f));
             _moneyText = CreateText(canvasGo.transform, "MoneyText", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(24f, -62f), new Vector2(420f, 36f), 24, FontStyle.Bold, new Color(1f, 0.85f, 0.4f));
+
+            _pendingText = CreateText(canvasGo.transform, "PendingText", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
+                new Vector2(24f, -100f), new Vector2(460f, 28f), 16, FontStyle.Normal, new Color(0.95f, 0.7f, 0.35f, 0.95f));
 
             var hint = CreateText(canvasGo.transform, "HintText", new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f),
                 new Vector2(0f, 80f), new Vector2(-40f, 30f), 15, FontStyle.Normal, new Color(1f, 1f, 1f, 0.65f));
