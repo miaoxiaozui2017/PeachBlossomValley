@@ -12,6 +12,7 @@ namespace PBV.UI
     /// - Tab 键开关 24 格完整面板，点击格子选中
     /// - 面板显示当前金钱、选中物品名称与描述
     /// - 订阅 OnInventoryChanged / OnMoneyChanged 自动刷新
+    /// - 使用 LayoutGroup 自动布局，保证任意分辨率下都对齐
     /// </summary>
     public class InventoryUI : MonoBehaviour
     {
@@ -27,17 +28,12 @@ namespace PBV.UI
         private readonly Image[] _slotIcons = new Image[24];
         private readonly Text[] _slotCounts = new Text[24];
         private readonly Image[] _slotBorders = new Image[24];
+        private readonly Button[] _slotButtons = new Button[24];
 
         private Text _moneyText;
         private Text _infoText;
 
         private static Font _font;
-
-        // 面板尺寸（6列 x 4行）
-        private const float PanelW = 6f * 76f + 24f;   // 480
-        private const float PanelH = 40f + 4f * 76f + 50f + 16f; // 标题40 + 格子304 + 信息50 + padding16 = 410
-        private const float SlotSize = 66f;
-        private const float SlotPitch = 76f;
 
         private void Awake()
         {
@@ -185,7 +181,7 @@ namespace PBV.UI
             }
         }
 
-        // ---------------- 灰盒 UI 构建 ----------------
+        // ---------------- 灰盒 UI 构建（LayoutGroup 自动布局） ----------------
 
         private void BuildUI()
         {
@@ -194,7 +190,9 @@ namespace PBV.UI
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 50;
-            canvasGo.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            var scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
             canvasGo.AddComponent<GraphicRaycaster>();
 
             BuildHotbar(canvasGo.transform);
@@ -209,18 +207,25 @@ namespace PBV.UI
             hotbarRect.anchorMin = new Vector2(0.5f, 0.0f);
             hotbarRect.anchorMax = new Vector2(0.5f, 0.0f);
             hotbarRect.pivot = new Vector2(0.5f, 0f);
-            hotbarRect.sizeDelta = new Vector2(_hotbarCount * 62f, 62f);
+            hotbarRect.sizeDelta = new Vector2(_hotbarCount * 62f, 60f);
             hotbarRect.anchoredPosition = new Vector2(0, 12f);
 
             var bg = hotbarGo.AddComponent<Image>();
-            bg.color = new Color(0, 0, 0, 0.25f);
+            bg.color = new Color(0, 0, 0, 0.35f);
+
+            // HorizontalLayoutGroup 让快捷栏内格子自动横向排列
+            var hgroup = hotbarGo.AddComponent<HorizontalLayoutGroup>();
+            hgroup.padding = new RectOffset(0, 0, 0, 0);
+            hgroup.spacing = 4f;
+            hgroup.childAlignment = TextAnchor.MiddleCenter;
+            hgroup.childControlWidth = false;
+            hgroup.childControlHeight = false;
+            hgroup.childForceExpandWidth = false;
+            hgroup.childForceExpandHeight = false;
 
             for (int i = 0; i < _hotbarCount; i++)
             {
-                CreateSlot(hotbarGo.transform, i, 58f, out _hotbarIcons[i], out _hotbarCounts[i], out _);
-
-                var slotRect = _hotbarIcons[i].GetComponentInParent<RectTransform>();
-                slotRect.anchoredPosition = new Vector2(-_hotbarCount * 62f / 2f + 31f + i * 62f, 0);
+                CreateSlot(hotbarGo.transform, i, 56f, out _hotbarIcons[i], out _hotbarCounts[i], out _);
             }
         }
 
@@ -229,74 +234,93 @@ namespace PBV.UI
             _panel = new GameObject("InventoryPanel");
             _panel.transform.SetParent(canvasTransform, false);
             var panelRect = _panel.AddComponent<RectTransform>();
-            panelRect.anchorMin = new Vector2(1f, 1f);
-            panelRect.anchorMax = new Vector2(1f, 1f);
-            panelRect.pivot = new Vector2(1f, 1f);
-            panelRect.sizeDelta = new Vector2(PanelW, PanelH);
-            panelRect.anchoredPosition = new Vector2(-16f, -16f);
+            panelRect.anchorMin = new Vector2(0.5f, 0.5f);
+            panelRect.anchorMax = new Vector2(0.5f, 0.5f);
+            panelRect.pivot = new Vector2(0.5f, 0.5f);
+            panelRect.sizeDelta = new Vector2(488f, 420f);
+            panelRect.anchoredPosition = new Vector2(200f, 0f);
 
             var panelImage = _panel.AddComponent<Image>();
             panelImage.color = new Color(0.22f, 0.18f, 0.14f, 0.94f);
 
-            // 标题栏背景
-            var titleBgGo = new GameObject("TitleBg");
-            titleBgGo.transform.SetParent(_panel.transform, false);
-            var titleBgRect = titleBgGo.AddComponent<RectTransform>();
-            titleBgRect.anchorMin = new Vector2(0f, 0.91f);
-            titleBgRect.anchorMax = new Vector2(1f, 1f);
-            titleBgRect.offsetMin = Vector2.zero;
-            titleBgRect.offsetMax = Vector2.zero;
-            var titleBg = titleBgGo.AddComponent<Image>();
+            // 顶层 VerticalLayoutGroup：标题栏 → 格子网格 → 信息栏 三段
+            var vgroup = _panel.AddComponent<VerticalLayoutGroup>();
+            vgroup.padding = new RectOffset(10, 10, 8, 8);
+            vgroup.spacing = 8;
+            vgroup.childAlignment = TextAnchor.UpperCenter;
+            vgroup.childControlWidth = false;
+            vgroup.childControlHeight = false;
+            vgroup.childForceExpandWidth = true;
+            vgroup.childForceExpandHeight = false;
+
+            // ① 标题栏（水平布局：标题在左，金钱在右）
+            var titleBar = new GameObject("TitleBar");
+            titleBar.transform.SetParent(_panel.transform, false);
+            var titleBg = titleBar.AddComponent<Image>();
             titleBg.color = new Color(0.35f, 0.28f, 0.18f, 0.95f);
+            var titleHgroup = titleBar.AddComponent<HorizontalLayoutGroup>();
+            titleHgroup.padding = new RectOffset(10, 10, 8, 8);
+            titleHgroup.spacing = 8;
+            titleHgroup.childForceExpandWidth = true;
+            titleHgroup.childForceExpandHeight = false;
+            titleHgroup.childControlWidth = true;
 
-            // 标题（左）与金钱（右）
-            CreateText("Title", _panel.transform, new Vector2(0.03f, 0.91f), new Vector2(0.55f, 1f), 22, FontStyle.Bold, new Color(1f, 0.93f, 0.75f), "背包 (Tab 开关)");
-            _moneyText = CreateText("Money", _panel.transform, new Vector2(0.6f, 0.91f), new Vector2(0.97f, 1f), 22, FontStyle.Bold, new Color(1f, 0.85f, 0.4f), "¥ 0");
-            var moneyText = _moneyText;
-            moneyText.alignment = TextAnchor.MiddleRight;
+            var titleText = CreateTextObj("Title", titleBar.transform, "背包 (Tab 开关)", 22, FontStyle.Bold, new Color(1f, 0.93f, 0.75f));
+            titleText.alignment = TextAnchor.MiddleLeft;
 
-            // 信息栏背景（底部，显示选中物品名+描述）
-            var infoBgGo = new GameObject("InfoBg");
-            infoBgGo.transform.SetParent(_panel.transform, false);
-            var infoBgRect = infoBgGo.AddComponent<RectTransform>();
-            infoBgRect.anchorMin = new Vector2(0f, 0f);
-            infoBgRect.anchorMax = new Vector2(1f, 0.13f);
-            infoBgRect.offsetMin = Vector2.zero;
-            infoBgRect.offsetMax = Vector2.zero;
-            var infoBg = infoBgGo.AddComponent<Image>();
-            infoBg.color = new Color(0.12f, 0.1f, 0.08f, 0.9f);
+            _moneyText = CreateTextObj("Money", titleBar.transform, "¥ 0", 22, FontStyle.Bold, new Color(1f, 0.85f, 0.4f));
+            _moneyText.alignment = TextAnchor.MiddleRight;
 
-            _infoText = CreateText("Info", _panel.transform, new Vector2(0.04f, 0.01f), new Vector2(0.96f, 0.12f), 16, FontStyle.Normal, new Color(0.92f, 0.9f, 0.85f), "点击格子选中物品");
-            var infoText = _infoText;
-            infoText.alignment = TextAnchor.MiddleLeft;
+            // ② 格子网格（GridLayoutGroup 自动排列 6 列 x 4 行）
+            var gridGo = new GameObject("Grid");
+            gridGo.transform.SetParent(_panel.transform, false);
+            var gridRect = gridGo.AddComponent<RectTransform>();
+            gridRect.sizeDelta = new Vector2(0, 280f);
 
-            // 6 x 4 = 24 格，相对面板左下角定位（anchor 0,0）
-            // 水平居中：6 格占 5*76+66=446，左留白 (480-446)/2=17，首格中心 17+33=50
-            // 垂直：信息栏上方(50) + 居中(格子区高=PanelH-40-50=320，4格占294，余26，下留13) -> 首格中心 50+13+33=96
-            float x0 = (PanelW - (5f * SlotPitch + SlotSize)) / 2f + SlotSize / 2f; // 50
-            float gridBottom = PanelH * 0.13f; // 信息栏顶部约 53
-            float gridTop = PanelH - 40f; // 标题区下方
-            float gridH = gridTop - gridBottom; // 格子区高
-            float y0 = gridBottom + (gridH - (3f * SlotPitch + SlotSize)) / 2f + SlotSize / 2f;
+            var grid = gridGo.AddComponent<GridLayoutGroup>();
+            grid.cellSize = new Vector2(64f, 64f);
+            grid.spacing = new Vector2(8f, 6f);
+            grid.padding = new RectOffset(4, 4, 4, 4);
+            grid.startCorner = GridLayoutGroup.Corner.UpperLeft;
+            grid.startAxis = GridLayoutGroup.Axis.Horizontal;
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = 6;
+            grid.childAlignment = TextAnchor.UpperCenter;
+            grid.childControlWidth = false;
+            grid.childControlHeight = false;
 
-            int index = 0;
-            for (int row = 0; row < 4; row++)
+            // 创建 24 格，GridLayoutGroup 自动定位
+            for (int i = 0; i < 24; i++)
             {
-                for (int col = 0; col < 6; col++)
-                {
-                    int slotIndex = index;
-                    CreateSlot(_panel.transform, slotIndex, SlotSize, out _slotIcons[slotIndex], out _slotCounts[slotIndex], out _slotBorders[slotIndex]);
+                int slotIndex = i;
+                CreateSlot(gridGo.transform, slotIndex, 64f, out _slotIcons[slotIndex], out _slotCounts[slotIndex], out _slotBorders[slotIndex]);
 
-                    var slotRect = _slotIcons[slotIndex].GetComponentInParent<RectTransform>();
-                    slotRect.anchoredPosition = new Vector2(x0 + col * SlotPitch, y0 + row * SlotPitch);
-
-                    // 点击选中
-                    var button = slotRect.gameObject.AddComponent<Button>();
-                    button.transition = UnityEngine.UI.Selectable.Transition.None;
-                    button.onClick.AddListener(() => SelectSlot(slotIndex));
-                    index++;
-                }
+                // Button 挂在 slot 主 Image(border) 所在 GameObject 上，拦截点击
+                var button = _slotBorders[slotIndex].gameObject.AddComponent<Button>();
+                button.transition = UnityEngine.UI.Selectable.Transition.None;
+                button.onClick.AddListener(() => SelectSlot(slotIndex));
+                _slotButtons[slotIndex] = button;
             }
+
+            // ② 格子容器尺寸自适应内容（让格子区域填满，不被 force expand 压扁）
+            var gridFitter = gridGo.AddComponent<ContentSizeFitter>();
+            gridFitter.horizontalFit = ContentSizeFitter.FitMode.MinSize;
+            gridFitter.verticalFit = ContentSizeFitter.FitMode.MinSize;
+
+            // ③ 信息栏
+            var infoGo = new GameObject("InfoBar");
+            infoGo.transform.SetParent(_panel.transform, false);
+            var infoBg = infoGo.AddComponent<Image>();
+            infoBg.color = new Color(0.12f, 0.1f, 0.08f, 0.92f);
+            var infoLayout = infoGo.AddComponent<HorizontalLayoutGroup>();
+            infoLayout.padding = new RectOffset(10, 10, 6, 6);
+            infoLayout.childForceExpandWidth = true;
+            infoLayout.childControlWidth = true;
+
+            _infoText = CreateTextObj("Info", infoGo.transform, "点击格子选中物品", 16, FontStyle.Normal, new Color(0.92f, 0.9f, 0.85f));
+            _infoText.alignment = TextAnchor.MiddleLeft;
+            _infoText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _infoText.verticalOverflow = VerticalWrapMode.Overflow;
 
             _panel.SetActive(false);
         }
@@ -320,30 +344,36 @@ namespace PBV.UI
             iconRect.offsetMax = Vector2.zero;
             icon = iconGo.AddComponent<Image>();
             icon.preserveAspect = true;
+            icon.raycastTarget = false;
 
-            count = CreateText("Count", slotGo.transform, new Vector2(0.35f, 0f), new Vector2(0.95f, 0.3f), 16, FontStyle.Bold, Color.white, string.Empty);
+            count = CreateTextObj("Count", slotGo.transform, string.Empty, 16, FontStyle.Bold, Color.white);
+            var countRect = count.GetComponent<RectTransform>();
+            countRect.anchorMin = new Vector2(0.35f, 0f);
+            countRect.anchorMax = new Vector2(0.95f, 0.3f);
+            countRect.offsetMin = Vector2.zero;
+            countRect.offsetMax = Vector2.zero;
             count.alignment = TextAnchor.LowerRight;
+            count.raycastTarget = false;
         }
 
-        private static Text CreateText(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, int size, FontStyle style, Color color, string content)
+        private static Text CreateTextObj(string name, Transform parent, string content, int fontSize, FontStyle style, Color color)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
             var rect = go.AddComponent<RectTransform>();
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMax;
             rect.offsetMin = Vector2.zero;
             rect.offsetMax = Vector2.zero;
 
             var text = go.AddComponent<Text>();
             text.font = _font;
-            text.fontSize = size;
+            text.fontSize = fontSize;
             text.fontStyle = style;
             text.color = color;
             text.text = content;
             text.alignment = TextAnchor.MiddleLeft;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.raycastTarget = false;
             return text;
         }
     }
