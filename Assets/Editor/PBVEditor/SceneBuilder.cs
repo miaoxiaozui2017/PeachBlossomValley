@@ -190,6 +190,7 @@ namespace PBVEditor
             systemsGo.AddComponent<CookingUI>();
             systemsGo.AddComponent<MineUI>();
             systemsGo.AddComponent<ToolUpgradeUI>();
+            systemsGo.AddComponent<SkillPanelUI>();
             systemsGo.AddComponent<StarterKit>();
 
             // 玩家
