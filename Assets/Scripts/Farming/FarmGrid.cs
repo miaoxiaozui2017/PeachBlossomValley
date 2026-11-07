@@ -84,14 +84,14 @@ namespace PBV.Farming
         private void OnUseTool()
         {
             Vector3Int targetPos = InputHandler.Instance.SelectedGridPosition;
-            
+
             // 上下文敏感的智能工具逻辑 (Smart Tool Logic for MVP)
             PlotData plot = GetOrCreatePlot(targetPos);
 
-            // 1. 如果有成熟作物 -> 收获
+            // 1. 如果有成熟作物 -> 镰刀收获
             if (plot.plantedCrop != null && plot.growthDays >= plot.plantedCrop.daysToMature)
             {
-                if (_cropManager != null) _cropManager.TryHarvestCrop(targetPos);
+                HandleToolAction(targetPos, "Sickle");
                 return;
             }
 
@@ -102,32 +102,40 @@ namespace PBV.Farming
                 return;
             }
 
-            // 3. 如果已耕地 -> 尝试种植 (如果有种子) 或 浇水
-            if (plot.status == TileStatus.Tilled)
+            // 3. 已耕地/已浇水 且无作物 -> 优先播种（消耗背包种子）
+            if ((plot.status == TileStatus.Tilled || plot.status == TileStatus.Watered) && plot.plantedCrop == null)
             {
-                // 简单的逻辑：没作物就种，有作物就浇水
-                // 这里为了测试，如果有 Debug Crop 且该格没作物，优先种植
-                if (plot.plantedCrop == null && _debugCrop != null)
+                if (TryPlantFromInventory(targetPos)) return;
+                if (_debugCrop != null && _cropManager != null && _cropManager.TryPlantCrop(targetPos, _debugCrop))
                 {
-                    if (_cropManager != null && _cropManager.TryPlantCrop(targetPos, _debugCrop))
-                    {
-                        return; // 种植成功
-                    }
+                    return; // 无种子时回退到调试种子
                 }
-                
-                // 否则浇水
+                // 没种子则浇水
                 HandleToolAction(targetPos, "WateringCan");
                 return;
             }
-            
-            // 4. 如果已浇水但没作物 -> 尝试种植
-             if (plot.status == TileStatus.Watered && plot.plantedCrop == null && _debugCrop != null)
-             {
-                 if (_cropManager != null && _cropManager.TryPlantCrop(targetPos, _debugCrop))
-                 {
-                     return;
-                 }
-             }
+
+            // 4. 已浇水且有未成熟作物 -> 无事可做
+        }
+
+        /// <summary>
+        /// 从背包取种子播种，成功则消耗 1 颗种子
+        /// </summary>
+        private bool TryPlantFromInventory(Vector3Int gridPos)
+        {
+            var inventory = PBV.Inventory.InventorySystem.Instance;
+            if (inventory == null || _cropManager == null) return false;
+
+            var seedSlot = inventory.FindSeedSlot();
+            if (seedSlot == null) return false;
+
+            CropData crop = seedSlot.item.cropToPlant;
+            if (_cropManager.TryPlantCrop(gridPos, crop))
+            {
+                inventory.RemoveItem(seedSlot.item, 1);
+                return true;
+            }
+            return false;
         }
 
         public void HandleToolAction(Vector3Int gridPos, string toolType)
@@ -153,7 +161,23 @@ namespace PBV.Farming
                         Debug.Log($"Watered ground at {gridPos}");
                     }
                     break;
-                // TODO: 种子、镰刀逻辑
+                case "Seed": // 种子包：直接指定作物播种
+                    if ((plot.status == TileStatus.Tilled || plot.status == TileStatus.Watered) && plot.plantedCrop == null)
+                    {
+                        var inventory = PBV.Inventory.InventorySystem.Instance;
+                        var seedSlot = inventory?.FindSeedSlot();
+                        if (seedSlot != null && _cropManager != null && _cropManager.TryPlantCrop(gridPos, seedSlot.item.cropToPlant))
+                        {
+                            inventory.RemoveItem(seedSlot.item, 1);
+                        }
+                    }
+                    break;
+                case "Sickle": // 镰刀：收获成熟作物
+                    if (plot.plantedCrop != null && plot.growthDays >= plot.plantedCrop.daysToMature)
+                    {
+                        if (_cropManager != null) _cropManager.TryHarvestCrop(gridPos);
+                    }
+                    break;
             }
         }
 

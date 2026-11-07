@@ -18,24 +18,25 @@
 
 ## 3. 种植系统 (Farming - Core)
 
-*   [ ] [AI-Generated] **FarmGrid**：
+*   [x] [AI-Generated] **FarmGrid**：
     *   基于 Tilemap 的网格管理。
     *   坐标转换 (World <-> Grid)。
     *   **数据结构扩展**：使用 `Dictionary` 或 `ScriptableObject` 存储地块数据，预留未来扩展属性。
-*   [ ] [AI-Generated] **CropManager**：
+*   [x] [AI-Generated] **CropManager**：
     *   作物数据结构 (ScriptableObject)。
     *   生长计时逻辑 (Day Update)。
 *   [ ] **Tools Interaction**：
-    *   [ ] 锄头：`TileType.Dirt` -> `TileType.Tilled`。
-    *   [ ] 水壶：`TileType.Tilled` -> `TileType.Watered`。
-    *   [ ] 种子包：`TileType.Tilled` -> `HasCrop`。
-    *   [ ] 镰刀：`Crop.Mature` -> `DropItem`。
+    *   [x] 锄头：`TileType.Dirt` -> `TileType.Tilled`。
+    *   [x] 水壶：`TileType.Tilled` -> `TileType.Watered`。
+    *   [x] 种子包：`TileType.Tilled` -> `HasCrop`（消耗背包种子，ItemData.cropToPlant 关联作物）。
+    *   [x] 镰刀：`Crop.Mature` -> `DropItem`（收获进背包）。
 
 ## 4. 物品与经济 (Inventory & Economy - MVP)
 
-*   [ ] [AI-Generated] **InventorySystem**：
+*   [x] [AI-Generated] **InventorySystem**：
     *   24格数据结构。
     *   添加/移除/堆叠逻辑。
+    *   种子查找（FindSeedSlot）与数量统计（CountItem）。
 *   [ ] [AI-Generated] **ShippingBinSystem (新增)**：
     *   交互逻辑：打开界面/直接投入物品。
     *   结算逻辑：每日 06:00 计算总价值并增加玩家金钱。

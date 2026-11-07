@@ -1,4 +1,5 @@
 using UnityEngine;
+using PBV.Farming;
 
 namespace PBV.Inventory
 {
@@ -21,7 +22,8 @@ namespace PBV.Inventory
         public int maxStack = 99;
         public int sellPrice = 0;
 
-        // If it's a seed, reference the crop data
-        // public CropData cropToPlant; 
+        [Header("Seed Settings")]
+        [Tooltip("仅当 type == Seed 时有效：播种后生成的作物")]
+        public CropData cropToPlant;
     }
 }

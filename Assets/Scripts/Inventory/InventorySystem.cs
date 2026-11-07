@@ -106,7 +106,71 @@ namespace PBV.Inventory
             if (index < 0 || index >= _capacity) return null;
             return _slots[index];
         }
-        
+
+        /// <summary>
+        /// 从背包移除指定物品（消耗种子/收获使用）
+        /// </summary>
+        public bool RemoveItem(ItemData item, int amount = 1)
+        {
+            if (item == null || amount <= 0) return false;
+
+            int remaining = amount;
+            for (int i = 0; i < _capacity && remaining > 0; i++)
+            {
+                if (!_slots[i].IsEmpty && _slots[i].item == item)
+                {
+                    int take = Mathf.Min(_slots[i].count, remaining);
+                    _slots[i].count -= take;
+                    remaining -= take;
+
+                    if (_slots[i].count <= 0) _slots[i].Clear();
+                }
+            }
+
+            if (remaining > 0)
+            {
+                Debug.LogWarning($"[Inventory] 物品不足：需要 {amount} x {item.itemName}，缺少 {remaining}");
+                return false;
+            }
+
+            OnInventoryChanged?.Invoke();
+            return true;
+        }
+
+        /// <summary>
+        /// 统计背包中指定物品数量
+        /// </summary>
+        public int CountItem(ItemData item)
+        {
+            if (item == null) return 0;
+            int total = 0;
+            for (int i = 0; i < _capacity; i++)
+            {
+                if (!_slots[i].IsEmpty && _slots[i].item == item)
+                {
+                    total += _slots[i].count;
+                }
+            }
+            return total;
+        }
+
+        /// <summary>
+        /// 查找背包中第一个种子类物品的槽位（用于播种）
+        /// </summary>
+        public InventorySlot FindSeedSlot()
+        {
+            for (int i = 0; i < _capacity; i++)
+            {
+                if (!_slots[i].IsEmpty && _slots[i].item.type == ItemType.Seed && _slots[i].item.cropToPlant != null)
+                {
+                    return _slots[i];
+                }
+            }
+            return null;
+        }
+
+        public int Capacity => _capacity;
+
         // For Debug
         public void AddTestItem(ItemData item)
         {

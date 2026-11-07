@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using PBV.Core;
 
 namespace PBV.Player
 {
@@ -98,11 +99,12 @@ namespace PBV.Player
             
             foreach (var hit in hits)
             {
-                // 优先处理最近的或者特定组件
-                // TODO: 接入实际的交互接口，例如 IInteractable
-                Debug.Log($"[Player] Interacted with {hit.name}");
-                hit.GetComponent<IInteractable>()?.OnInteract();
-                break; // 只交互一个
+                var interactable = hit.GetComponent<PBV.Core.IInteractable>();
+                if (interactable != null)
+                {
+                    interactable.OnInteract();
+                    break; // 只交互一个
+                }
             }
         }
 
@@ -142,11 +144,5 @@ namespace PBV.Player
             Gizmos.color = Color.cyan;
             Gizmos.DrawWireCube(gridPos, Vector3.one * 0.9f);
         }
-    }
-    
-    // 临时接口，确保编译通过，实际应在 Core 或 Interaction 命名空间定义
-    public interface IInteractable
-    {
-        void OnInteract();
     }
 }
