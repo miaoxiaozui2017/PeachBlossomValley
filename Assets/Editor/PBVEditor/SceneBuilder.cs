@@ -188,6 +188,7 @@ namespace PBVEditor
             systemsGo.AddComponent<CraftingUI>();
             systemsGo.AddComponent<CookingUI>();
             systemsGo.AddComponent<MineUI>();
+            systemsGo.AddComponent<ToolUpgradeUI>();
             systemsGo.AddComponent<StarterKit>();
 
             // 玩家
@@ -303,6 +304,17 @@ namespace PBVEditor
             mineCol.size = new Vector2(1.5f, 2f); mineCol.offset = new Vector2(0, 0.8f);
             mineGo.layer = LayerMask.NameToLayer(InteractableLayerName);
             mineGo.AddComponent<MineEntrance>();
+
+            // 铁匠铺（工具升级）
+            var smithGo = new GameObject("ToolUpgradeStation");
+            smithGo.transform.position = new Vector3(-10f, 5f, 0);
+            var smithSr = smithGo.AddComponent<SpriteRenderer>();
+            smithSr.sprite = data.BinSprite; smithSr.sortingOrder = 9;
+            smithSr.color = new Color(0.4f, 0.35f, 0.3f);
+            var smithCol = smithGo.AddComponent<BoxCollider2D>();
+            smithCol.size = new Vector2(1.5f, 2f); smithCol.offset = new Vector2(0, 0.8f);
+            smithGo.layer = LayerMask.NameToLayer(InteractableLayerName);
+            smithGo.AddComponent<PBV.Player.ToolUpgradeStation>();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log("[SceneBuilder] 场景已保存");
