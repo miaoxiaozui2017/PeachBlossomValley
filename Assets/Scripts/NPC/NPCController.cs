@@ -52,7 +52,31 @@ namespace PBV.NPC
             if (DialogueManager.Instance == null) return;
             if (DialogueManager.Instance.IsDialogueActive) return;
             if (Time.time - DialogueManager.Instance.LastEndTime < 0.25f) return;
-            DialogueManager.Instance.StartDialogue(npcName, dialogueLines);
+            DialogueManager.Instance.StartDialogue(npcName, GetDialogueForCurrentAffection());
+        }
+
+        /// <summary>根据好感等级生成对话（友好+在原对话前加好感评价）</summary>
+        private string[] GetDialogueForCurrentAffection()
+        {
+            var relSys = RelationshipSystem.Instance;
+            if (relSys == null) return dialogueLines;
+
+            var level = relSys.GetLevel(npcName);
+            string prefix;
+            switch (level)
+            {
+                case AffectionLevel.Stranger: return dialogueLines;
+                case AffectionLevel.Acquainted: prefix = "（点头）最近身子可好？"; break;
+                case AffectionLevel.Friendly: prefix = "（微笑）见到你总是高兴的。"; break;
+                case AffectionLevel.Close: prefix = "（压低声音）有些话……只跟你说。"; break;
+                case AffectionLevel.Soulmate: prefix = "（像老朋友一样）你我之间，不必多言。"; break;
+                default: return dialogueLines;
+            }
+
+            var result = new string[dialogueLines.Length + 1];
+            result[0] = prefix;
+            System.Array.Copy(dialogueLines, 0, result, 1, dialogueLines.Length);
+            return result;
         }
 
         /// <summary>送礼：送当前选中槽位物品给此 NPC</summary>

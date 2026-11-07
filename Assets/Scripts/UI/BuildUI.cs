@@ -93,12 +93,12 @@ namespace PBV.UI
             _moneyText.rectTransform.sizeDelta = new Vector2(100, 28);
 
             // 背包扩容行
-            var bagRow = CreateUpgradeRow("BagRow", "背包扩容", "24→36→48格", bs != null ? bs.BagUpgradeCost : 500);
+            var bagRow = CreateUpgradeRow("BagRow", "背包扩容", "24→36→48格", 500);
             var bagBtn = bagRow.transform.Find("Btn").GetComponent<Button>();
             bagBtn.onClick.AddListener(() => { if (BuildSystem.Instance != null) BuildSystem.Instance.TryUpgradeBag(); Refresh(); });
 
             // 体力上限行
-            var stamRow = CreateUpgradeRow("StamRow", "体力上限", "100→150→200", bs != null ? bs.StaminaUpgradeCost : 800);
+            var stamRow = CreateUpgradeRow("StamRow", "体力上限", "100→150→200", 800);
             var stamBtn = stamRow.transform.Find("Btn").GetComponent<Button>();
             stamBtn.onClick.AddListener(() => { if (BuildSystem.Instance != null) BuildSystem.Instance.TryUpgradeStamina(); Refresh(); });
         }
