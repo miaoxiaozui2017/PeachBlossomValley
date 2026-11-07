@@ -18,6 +18,8 @@ namespace PBV.Core
         public UnityAction<Vector2> MoveEvent;
         public UnityAction InteractEvent;
         public UnityAction UseToolEvent;
+        public UnityAction ToolCycleEvent; // Q 键循环切换工具
+        public UnityAction GiftEvent;     // G 键送礼
 
         [Header("Selection Settings")]
         [SerializeField] private PlayerController _playerController;
@@ -58,6 +60,8 @@ namespace PBV.Core
 
             if (kb.eKey.wasPressedThisFrame) InteractEvent?.Invoke();
             if (kb.spaceKey.wasPressedThisFrame) UseToolEvent?.Invoke();
+            if (kb.qKey.wasPressedThisFrame) ToolCycleEvent?.Invoke();
+            if (kb.gKey.wasPressedThisFrame) GiftEvent?.Invoke();
         }
 
         private Vector2 _lastMoveInput;

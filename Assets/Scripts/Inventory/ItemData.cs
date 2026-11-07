@@ -25,5 +25,9 @@ namespace PBV.Inventory
         [Header("Seed Settings")]
         [Tooltip("仅当 type == Seed 时有效：播种后生成的作物")]
         public CropData cropToPlant;
+
+        [Header("Gift Settings")]
+        [Tooltip("送礼时增加的好感度（0=不适合送礼）")]
+        public int affectionValue = 0;
     }
 }

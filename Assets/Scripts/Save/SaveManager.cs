@@ -107,6 +107,24 @@ namespace PBV.Save
                 var bin = FindObjectOfType<ShippingBinSystem>();
                 if (bin != null) data.shippingPending = bin.PendingValue;
 
+                // 体力
+                if (PlayerStats.Instance != null) data.stamina = PlayerStats.Instance.Stamina;
+
+                // 季节
+                if (PBV.Systems.SeasonSystem.Instance != null)
+                {
+                    data.currentSeason = (int)PBV.Systems.SeasonSystem.Instance.CurrentSeason;
+                    data.dayOfSeason = PBV.Systems.SeasonSystem.Instance.DayOfSeason;
+                }
+
+                // 任务进度
+                if (PBV.Systems.QuestManager.Instance != null)
+                    data.quests = PBV.Systems.QuestManager.Instance.ExportAll();
+
+                // 好感度
+                if (PBV.Systems.RelationshipSystem.Instance != null)
+                    data.affections = PBV.Systems.RelationshipSystem.Instance.ExportAll();
+
                 // 背包（只存非空槽位，含索引）
                 if (InventorySystem.Instance != null)
                 {
@@ -154,6 +172,20 @@ namespace PBV.Save
                 if (PlayerWallet.Instance != null) PlayerWallet.Instance.SetMoney(data.money);
                 var bin = FindObjectOfType<ShippingBinSystem>();
                 if (bin != null) bin.SetPendingValue(data.shippingPending);
+
+                // 体力
+                if (PlayerStats.Instance != null) PlayerStats.Instance.SetStamina(data.stamina);
+
+                // 季节
+                if (PBV.Systems.SeasonSystem.Instance != null) PBV.Systems.SeasonSystem.Instance.Restore(data.currentSeason, data.dayOfSeason);
+
+                // 任务进度
+                if (PBV.Systems.QuestManager.Instance != null)
+                    PBV.Systems.QuestManager.Instance.ImportAll(data.quests);
+
+                // 好感度
+                if (PBV.Systems.RelationshipSystem.Instance != null)
+                    PBV.Systems.RelationshipSystem.Instance.ImportAll(data.affections);
 
                 // 背包
                 if (InventorySystem.Instance != null)

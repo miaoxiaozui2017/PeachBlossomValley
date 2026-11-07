@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using PBV.Systems;
 
 namespace PBV.Save
 {
@@ -15,9 +16,15 @@ namespace PBV.Save
         public float playerY;
         public int money;               // 玩家金钱
         public int shippingPending;     // 出货箱待结算金额
+        public int stamina;             // 玩家体力
+        public int currentSeason;       // 当前季节（0春1夏2秋3冬）
+        public int dayOfSeason;         // 当季第几天
+        public int currentTool;         // 当前工具（ToolType 枚举值）
 
         public List<SlotDTO> inventory = new List<SlotDTO>();
         public List<PlotDTO> plots = new List<PlotDTO>(); // 稀疏存储：只保存改变过的地块
+        public List<QuestDTO> quests = new List<QuestDTO>();
+        public List<AffectionDTO> affections = new List<AffectionDTO>();
     }
 
     /// <summary>

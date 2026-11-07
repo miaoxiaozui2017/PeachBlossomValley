@@ -14,9 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: seed_radish
   itemName: "\u841D\u535C\u79CD\u5B50"
-  description: "\u79CD\u4E0B\u53BB\uFF0C\u6D47\u70B9\u6C34\uFF0C\u7B49\u4E09\u5929\u3002"
+  description: "\u79CD\u4E0B\u53BB\uFF0C\u6D47\u70B9\u6C34\uFF0C\u7B493\u5929\u3002"
   icon: {fileID: 21300000, guid: 66a6ae9c158c1424686494ab1a061259, type: 3}
   type: 3
   maxStack: 99
   sellPrice: 5
   cropToPlant: {fileID: 11400000, guid: 28e75136d30222e4e9d6669612714b5d, type: 2}
+  affectionValue: 0

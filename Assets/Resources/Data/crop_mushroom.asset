@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 167ec4a3516132e4b83c7a699d16dbf6, type: 3}
+  m_Name: crop_mushroom
+  m_EditorClassIdentifier: 
+  cropName: "\u8611\u83C7"
+  description: "\u8611\u83C7\uFF0C4\u5929\u6210\u719F\u3002"
+  daysToMature: 4
+  growthSprites:
+  - {fileID: 21300000, guid: 9f4e6e4cf31f9404d887753fe0f728d9, type: 3}
+  - {fileID: 21300000, guid: 53a5fc8bbae5c7944a4adf107c8cce87, type: 3}
+  - {fileID: 21300000, guid: 3dcdd5a7778f77f4aa9f84f841b85834, type: 3}
+  - {fileID: 21300000, guid: fe893bf819778944ca79151e6dc03d8e, type: 3}
+  harvestItem: {fileID: 11400000, guid: 910e5320ae58eaf4bae779da13e34258, type: 2}
+  minYield: 1
+  maxYield: 2
+  seasons: 03000000

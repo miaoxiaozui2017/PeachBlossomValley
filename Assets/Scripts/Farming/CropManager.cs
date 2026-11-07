@@ -69,9 +69,16 @@ namespace PBV.Farming
             if (plot.status != TileStatus.Tilled && plot.status != TileStatus.Watered) return false;
             if (plot.plantedCrop != null) return false;
 
+            // 季节检查
+            if (PBV.Systems.SeasonSystem.Instance != null && !PBV.Systems.SeasonSystem.Instance.CanPlant(crop))
+            {
+                Debug.Log($"[Crop] {crop.cropName} 不能在{PBV.Systems.SeasonSystem.Instance.CurrentSeasonName}季种植");
+                return false;
+            }
+
             plot.plantedCrop = crop;
             plot.growthDays = 0;
-            
+
             UpdateCropVisual(plot);
             Debug.Log($"Planted {crop.cropName} at {pos}");
             return true;
@@ -89,6 +96,7 @@ namespace PBV.Farming
             if (plot.growthDays >= plot.plantedCrop.daysToMature)
             {
                 Harvest(plot);
+                PBV.Systems.QuestManager.Instance?.RecordHarvest();
                 return true;
             }
 

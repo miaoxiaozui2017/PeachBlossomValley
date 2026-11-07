@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 167ec4a3516132e4b83c7a699d16dbf6, type: 3}
+  m_Name: crop_spinach
+  m_EditorClassIdentifier: 
+  cropName: "\u83E0\u83DC"
+  description: "\u83E0\u83DC\uFF0C5\u5929\u6210\u719F\u3002"
+  daysToMature: 5
+  growthSprites:
+  - {fileID: 21300000, guid: 52f1d3825dfd2044f80bbfd0180a07ff, type: 3}
+  - {fileID: 21300000, guid: a70ecbe87350495449ab1f8846803cba, type: 3}
+  - {fileID: 21300000, guid: 1a986b389d84a4f408a7bc6295944046, type: 3}
+  - {fileID: 21300000, guid: a0e7a658ea0be6042bb8a5e3714f246b, type: 3}
+  harvestItem: {fileID: 11400000, guid: 39088feb186ac90448e490cbe94911b6, type: 2}
+  minYield: 1
+  maxYield: 2
+  seasons: 00000000

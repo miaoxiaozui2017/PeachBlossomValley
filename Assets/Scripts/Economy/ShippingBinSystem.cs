@@ -96,6 +96,7 @@ namespace PBV.Economy
 
             PendingValue += totalValue;
             OnPendingChanged?.Invoke(PendingValue);
+            PBV.Systems.QuestManager.Instance?.RecordShip(totalItems);
             Debug.Log($"[ShippingBin] 投入 {totalItems} 件物品，价值 {totalValue}（待结算总额 {PendingValue}，次日06:00入账）");
         }
 

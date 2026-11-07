@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 167ec4a3516132e4b83c7a699d16dbf6, type: 3}
+  m_Name: crop_tomato
+  m_EditorClassIdentifier: 
+  cropName: "\u756A\u8304"
+  description: "\u756A\u8304\uFF0C4\u5929\u6210\u719F\u3002"
+  daysToMature: 4
+  growthSprites:
+  - {fileID: 21300000, guid: b5f059abb6e6bfe4a87712da8aa30925, type: 3}
+  - {fileID: 21300000, guid: 22ca927a423670f49a135a143826fc1a, type: 3}
+  - {fileID: 21300000, guid: 749fa831a4e260d419d706034006051c, type: 3}
+  - {fileID: 21300000, guid: 16f3709e5ea02314497c713111d20459, type: 3}
+  harvestItem: {fileID: 11400000, guid: e089412bb2f4b764f9d871691915d6e9, type: 2}
+  minYield: 1
+  maxYield: 2
+  seasons: 01000000

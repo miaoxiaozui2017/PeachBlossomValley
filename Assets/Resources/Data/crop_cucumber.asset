@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 167ec4a3516132e4b83c7a699d16dbf6, type: 3}
+  m_Name: crop_cucumber
+  m_EditorClassIdentifier: 
+  cropName: "\u9EC4\u74DC"
+  description: "\u9EC4\u74DC\uFF0C5\u5929\u6210\u719F\u3002"
+  daysToMature: 5
+  growthSprites:
+  - {fileID: 21300000, guid: ea48d6b23e489c34f99e5043a517a4c1, type: 3}
+  - {fileID: 21300000, guid: e00a427c7e7b7ee428cb8745a9cdfd1f, type: 3}
+  - {fileID: 21300000, guid: dfd3aaff674380340bc5962841bd21f3, type: 3}
+  - {fileID: 21300000, guid: 7ce496d73bb71cc46bacb58268c428bf, type: 3}
+  harvestItem: {fileID: 11400000, guid: 379d4bfa2b75ed04a9e83402470d7ad5, type: 2}
+  minYield: 1
+  maxYield: 2
+  seasons: 01000000

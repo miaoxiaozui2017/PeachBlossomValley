@@ -26,7 +26,9 @@ namespace PBV.Farming
         public int minYield = 1;
         public int maxYield = 3;
 
-        // Future: Season requirements, regrowable, etc.
+        [Header("Season")]
+        [Tooltip("可种植的季节（留空=全年可种）")]
+        public PBV.Systems.Season[] seasons;
         
         public Sprite GetSpriteForStage(int stage)
         {

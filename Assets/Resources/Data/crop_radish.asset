@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: crop_radish
   m_EditorClassIdentifier: 
   cropName: "\u841D\u535C"
-  description: "\u6700\u5E38\u89C1\u7684\u4F5C\u7269\uFF0C3\u5929\u6210\u719F\u3002"
+  description: "\u841D\u535C\uFF0C3\u5929\u6210\u719F\u3002"
   daysToMature: 3
   growthSprites:
   - {fileID: 21300000, guid: 212c02aabe4a729448064ba314e9634b, type: 3}
@@ -23,3 +23,4 @@ MonoBehaviour:
   harvestItem: {fileID: 11400000, guid: 6fd2627ea6dc0ad46b4c27a4c36d181b, type: 2}
   minYield: 1
   maxYield: 2
+  seasons: 00000000

@@ -88,44 +88,58 @@ namespace PBV.Farming
             // 区域限制：只能在已铺设的地面（草地）上耕种，绿地外不响应
             if (!IsTillable(targetPos)) return;
 
-            // 上下文敏感的智能工具逻辑 (Smart Tool Logic for MVP)
-            // 优先级：成熟收获 > 空地锄地 > 无作物播种/浇水 > 有作物浇水
             PlotData plot = GetOrCreatePlot(targetPos);
 
-            // 1. 成熟作物 -> 镰刀收获（最高优先级）
-            if (plot.plantedCrop != null && plot.growthDays >= plot.plantedCrop.daysToMature)
-            {
-                HandleToolAction(targetPos, "Sickle");
-                return;
-            }
+            // 按 ToolManager 当前工具执行（v0.2.0：取代上下文智能单键，消除歧义）
+            var toolManager = PBV.Player.ToolManager.Instance;
+            var tool = toolManager != null ? toolManager.CurrentTool : PBV.Player.ToolType.Hoe;
 
-            // 2. 空地 -> 锄地
-            if (plot.status == TileStatus.Empty)
+            bool success = TryUseTool(tool, targetPos, plot);
+            if (success)
             {
-                HandleToolAction(targetPos, "Hoe");
-                return;
+                int cost = toolManager != null ? toolManager.CurrentStaminaCost : 0;
+                PBV.Player.PlayerStats.Instance?.TrySpend(cost);
             }
+        }
 
-            // 3. 已耕地/已浇水 且无作物 -> 有种子则播种；无种子且未浇水则浇水
-            if ((plot.status == TileStatus.Tilled || plot.status == TileStatus.Watered) && plot.plantedCrop == null)
+        /// <summary>根据工具类型尝试操作，成功返回 true</summary>
+        private bool TryUseTool(PBV.Player.ToolType tool, Vector3Int pos, PlotData plot)
+        {
+            switch (tool)
             {
-                if (TryPlantFromInventory(targetPos)) return;
-                // 无种子：Tilled 顺带浇水（方便玩家先整地），Watered 则无事
-                if (plot.status == TileStatus.Tilled)
-                {
-                    HandleToolAction(targetPos, "WateringCan");
-                }
-                return;
-            }
+                case PBV.Player.ToolType.Hoe:
+                    if (plot.status == TileStatus.Empty)
+                    {
+                        HandleToolAction(pos, "Hoe");
+                        return true;
+                    }
+                    return false;
 
-            // 4. 有作物且未成熟 -> 浇水（修复 playtest bug：播种后地块仍 Tilled 时按 Space 无反应）
-            if (plot.plantedCrop != null && plot.status == TileStatus.Tilled)
-            {
-                HandleToolAction(targetPos, "WateringCan");
-                return;
-            }
+                case PBV.Player.ToolType.WateringCan:
+                    // 已耕地（无论有无作物）均可浇水
+                    if (plot.status == TileStatus.Tilled)
+                    {
+                        HandleToolAction(pos, "WateringCan");
+                        return true;
+                    }
+                    return false;
 
-            // 5. 有作物且已浇水 -> 当天无需操作
+                case PBV.Player.ToolType.Sickle:
+                    if (plot.plantedCrop != null && plot.growthDays >= plot.plantedCrop.daysToMature)
+                    {
+                        HandleToolAction(pos, "Sickle");
+                        return true;
+                    }
+                    return false;
+
+                case PBV.Player.ToolType.Seed:
+                    if ((plot.status == TileStatus.Tilled || plot.status == TileStatus.Watered) && plot.plantedCrop == null)
+                    {
+                        return TryPlantFromInventory(pos);
+                    }
+                    return false;
+            }
+            return false;
         }
 
         /// <summary>
@@ -143,6 +157,7 @@ namespace PBV.Farming
             if (_cropManager.TryPlantCrop(gridPos, crop))
             {
                 inventory.RemoveItem(seedSlot.item, 1);
+                PBV.Systems.QuestManager.Instance?.RecordPlant();
                 return true;
             }
             return false;
@@ -159,6 +174,7 @@ namespace PBV.Farming
                     {
                         plot.status = TileStatus.Tilled;
                         UpdateTileVisual(gridPos, _tilledTile);
+                        PBV.Systems.QuestManager.Instance?.RecordTill();
                         Debug.Log($"Tilled ground at {gridPos}");
                     }
                     break;

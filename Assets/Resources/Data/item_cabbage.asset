@@ -14,9 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: item_cabbage
   itemName: "\u767D\u83DC"
-  description: "\u7096\u6C64\u6700\u5B9C\u3002"
+  description: "\u767D\u83DC\uFF0CSpring\u5B63\u4F5C\u7269\u3002"
   icon: {fileID: 21300000, guid: cc82ab3fadf187444a8a4535c9b3b8fc, type: 3}
   type: 0
   maxStack: 99
   sellPrice: 35
   cropToPlant: {fileID: 0}
+  affectionValue: 0

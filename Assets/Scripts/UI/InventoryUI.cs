@@ -22,6 +22,9 @@ namespace PBV.UI
         /// <summary>当前选中的槽位索引（-1 未选中）</summary>
         public int SelectedIndex { get; private set; } = -1;
 
+        /// <summary>静态访问：当前选中槽位（供 NPCController 送礼等外部系统读取）</summary>
+        public static int SelectedSlotIndex = 0;
+
         private GameObject _panel;
         private readonly Image[] _hotbarIcons = new Image[10];
         private readonly Text[] _hotbarCounts = new Text[10];
@@ -101,6 +104,7 @@ namespace PBV.UI
         private void SelectSlot(int index)
         {
             SelectedIndex = index;
+            SelectedSlotIndex = index;
             UpdateSelectionHighlight();
             UpdateInfoBar();
         }
@@ -286,8 +290,6 @@ namespace PBV.UI
             grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             grid.constraintCount = 6;
             grid.childAlignment = TextAnchor.UpperCenter;
-            grid.childControlWidth = false;
-            grid.childControlHeight = false;
 
             // 创建 24 格，GridLayoutGroup 自动定位
             for (int i = 0; i < 24; i++)

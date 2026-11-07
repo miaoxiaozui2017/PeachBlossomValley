@@ -55,6 +55,7 @@ namespace PBV.Player
             {
                 InputHandler.Instance.MoveEvent += OnMoveVector;
                 InputHandler.Instance.InteractEvent += OnInteractInput;
+                InputHandler.Instance.GiftEvent += OnGiftInput;
             }
         }
 
@@ -64,6 +65,7 @@ namespace PBV.Player
             {
                 InputHandler.Instance.MoveEvent -= OnMoveVector;
                 InputHandler.Instance.InteractEvent -= OnInteractInput;
+                InputHandler.Instance.GiftEvent -= OnGiftInput;
             }
         }
 
@@ -86,6 +88,15 @@ namespace PBV.Player
         private void OnInteractInput()
         {
             TryInteract();
+        }
+
+        /// <summary>G 键送礼：向附近 NPC 送当前选中槽位物品</summary>
+        private void OnGiftInput()
+        {
+            if (CurrentNearby is PBV.NPC.NPCController npc)
+            {
+                npc.Gift();
+            }
         }
 
         private void FixedUpdate()

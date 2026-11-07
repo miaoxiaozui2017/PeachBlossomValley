@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 167ec4a3516132e4b83c7a699d16dbf6, type: 3}
+  m_Name: crop_wradish
+  m_EditorClassIdentifier: 
+  cropName: "\u51AC\u841D\u535C"
+  description: "\u51AC\u841D\u535C\uFF0C6\u5929\u6210\u719F\u3002"
+  daysToMature: 6
+  growthSprites:
+  - {fileID: 21300000, guid: 7f5678daf959d7c49b16d97955cd9e7f, type: 3}
+  - {fileID: 21300000, guid: 4198f97a6d9b51f41abdf87f4261ad41, type: 3}
+  - {fileID: 21300000, guid: ae98f8cf18a9ffb46aaf1b761d862ce9, type: 3}
+  - {fileID: 21300000, guid: e7788c88c4584724cbff013725466a4f, type: 3}
+  harvestItem: {fileID: 11400000, guid: 09247e9088c855643b9077f92874170e, type: 2}
+  minYield: 1
+  maxYield: 2
+  seasons: 03000000

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7e0e37fc99f0264581c6e1adcf1bce8, type: 3}
+  m_Name: seed_tomato
+  m_EditorClassIdentifier: 
+  id: seed_tomato
+  itemName: "\u756A\u8304\u79CD\u5B50"
+  description: "\u79CD\u4E0B\u53BB\uFF0C\u6D47\u70B9\u6C34\uFF0C\u7B494\u5929\u3002"
+  icon: {fileID: 21300000, guid: 42f8c561d1684cb4182dc324f7f8ac8d, type: 3}
+  type: 3
+  maxStack: 99
+  sellPrice: 11
+  cropToPlant: {fileID: 11400000, guid: 5bda1465e5e90944693c34a82c696674, type: 2}
+  affectionValue: 0
