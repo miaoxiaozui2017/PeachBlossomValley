@@ -26,6 +26,7 @@ namespace PBV.Save
         public List<PlotDTO> plots = new List<PlotDTO>(); // 稀疏存储：只保存改变过的地块
         public List<QuestDTO> quests = new List<QuestDTO>();
         public List<AffectionDTO> affections = new List<AffectionDTO>();
+        public List<SkillDTO> skills = new List<SkillDTO>();
     }
 
     /// <summary>

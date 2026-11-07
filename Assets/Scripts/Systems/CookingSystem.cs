@@ -91,8 +91,14 @@ namespace PBV.Systems
             if (!CanCook(r)) return false;
             for (int i = 0; i < r._inputs.Length; i++)
                 InventorySystem.Instance.RemoveItem(r._inputs[i], r.inputCounts[i]);
-            PlayerStats.Instance?.Restore(r.staminaRestore);
-            Debug.Log($"[Cooking] 烹饪 {r.name} → 恢复 {r.staminaRestore} 体力");
+            int restore = r.staminaRestore;
+            if (SkillSystem.Instance != null)
+            {
+                restore = Mathf.RoundToInt(restore * (1f + SkillSystem.Instance.CookingBonus));
+                SkillSystem.Instance.AddExp(SkillType.Cooking, 8);
+            }
+            PlayerStats.Instance?.Restore(restore);
+            Debug.Log($"[Cooking] 烹饪 {r.name} → 恢复 {restore} 体力");
             return true;
         }
     }

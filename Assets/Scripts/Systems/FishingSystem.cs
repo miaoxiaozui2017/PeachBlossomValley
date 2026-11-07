@@ -41,7 +41,9 @@ namespace PBV.Systems
             // 按售价排序，前半为普通，后半为稀有
             _fishTypes.Sort((a, b) => a.sellPrice.CompareTo(b.sellPrice));
             int mid = Mathf.Max(1, _fishTypes.Count / 2);
-            bool rare = Random.value < 0.3f;
+            float rareChance = 0.3f;
+            if (SkillSystem.Instance != null) rareChance += SkillSystem.Instance.FishingRareBonus;
+            bool rare = Random.value < rareChance;
             int idx = rare ? Random.Range(mid, _fishTypes.Count) : Random.Range(0, mid);
             return _fishTypes[idx];
         }

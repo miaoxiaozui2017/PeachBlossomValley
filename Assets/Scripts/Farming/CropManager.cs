@@ -108,6 +108,7 @@ namespace PBV.Farming
             if (plot.plantedCrop.harvestItem != null)
             {
                 int yield = Random.Range(plot.plantedCrop.minYield, plot.plantedCrop.maxYield + 1);
+                if (PBV.Systems.SkillSystem.Instance != null) yield += PBV.Systems.SkillSystem.Instance.FarmingYieldBonus;
                 
                 if (InventorySystem.Instance != null)
                 {
@@ -120,6 +121,7 @@ namespace PBV.Farming
                 }
                 
                 Debug.Log($"Harvested {plot.plantedCrop.cropName} x {yield}!");
+                PBV.Systems.SkillSystem.Instance?.AddExp(PBV.Systems.SkillType.Farming, 10);
             }
 
             // 清除作物数据

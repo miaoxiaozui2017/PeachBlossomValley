@@ -129,6 +129,10 @@ namespace PBV.Save
                 if (PBV.Systems.RelationshipSystem.Instance != null)
                     data.affections = PBV.Systems.RelationshipSystem.Instance.ExportAll();
 
+                // 技能
+                if (PBV.Systems.SkillSystem.Instance != null)
+                    data.skills = PBV.Systems.SkillSystem.Instance.ExportAll();
+
                 // 背包（只存非空槽位，含索引）
                 if (InventorySystem.Instance != null)
                 {
@@ -193,6 +197,10 @@ namespace PBV.Save
                 // 好感度
                 if (PBV.Systems.RelationshipSystem.Instance != null)
                     PBV.Systems.RelationshipSystem.Instance.ImportAll(data.affections);
+
+                // 技能
+                if (PBV.Systems.SkillSystem.Instance != null)
+                    PBV.Systems.SkillSystem.Instance.ImportAll(data.skills);
 
                 // 背包
                 if (InventorySystem.Instance != null)

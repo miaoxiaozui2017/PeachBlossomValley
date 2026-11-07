@@ -70,6 +70,14 @@ namespace PBVEditor
             ("金鱼", "item_fish_goldfish", new Color(0.9f, 0.7f, 0.2f), 50, 5),
         };
 
+        // 3 种矿石定义：(名称, id, 色块色, 售价, 好感值)
+        private static readonly (string, string, Color, int, int)[] OreDefs =
+        {
+            ("铜矿", "item_ore_copper", new Color(0.7f, 0.45f, 0.25f), 15, 1),
+            ("铁矿", "item_ore_iron", new Color(0.5f, 0.5f, 0.55f), 30, 2),
+            ("金矿", "item_ore_gold", new Color(0.85f, 0.7f, 0.2f), 80, 4),
+        };
+
         [MenuItem("PBV/构建灰盒场景 v0.1.0")]
         public static void BuildAll()
         {
@@ -160,6 +168,8 @@ namespace PBVEditor
             systemsGo.AddComponent<CraftingSystem>();
             systemsGo.AddComponent<CookingSystem>();
             systemsGo.AddComponent<FishingSystem>();
+            systemsGo.AddComponent<SkillSystem>();
+            systemsGo.AddComponent<MineSystem>();
 
             // 存档系统 + 目录表（全部作物 + 材料）
             var allItems = data.AllItems;
@@ -177,6 +187,7 @@ namespace PBVEditor
             systemsGo.AddComponent<ShopUI>();
             systemsGo.AddComponent<CraftingUI>();
             systemsGo.AddComponent<CookingUI>();
+            systemsGo.AddComponent<MineUI>();
             systemsGo.AddComponent<StarterKit>();
 
             // 玩家
@@ -281,6 +292,17 @@ namespace PBVEditor
             fishCol.size = new Vector2(2f, 1f); fishCol.offset = new Vector2(0, 0.3f);
             fishGo.layer = LayerMask.NameToLayer(InteractableLayerName);
             fishGo.AddComponent<FishingSpot>();
+
+            // 矿洞入口
+            var mineGo = new GameObject("MineEntrance");
+            mineGo.transform.position = new Vector3(10f, 5f, 0);
+            var mineSr = mineGo.AddComponent<SpriteRenderer>();
+            mineSr.sprite = data.BinSprite; mineSr.sortingOrder = 9;
+            mineSr.color = new Color(0.35f, 0.3f, 0.25f);
+            var mineCol = mineGo.AddComponent<BoxCollider2D>();
+            mineCol.size = new Vector2(1.5f, 2f); mineCol.offset = new Vector2(0, 0.8f);
+            mineGo.layer = LayerMask.NameToLayer(InteractableLayerName);
+            mineGo.AddComponent<MineEntrance>();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log("[SceneBuilder] 场景已保存");
@@ -574,6 +596,23 @@ namespace PBVEditor
                 data.FishItems[i] = item;
             }
 
+            // 3 种矿石物品
+            data.OreItems = new ItemData[OreDefs.Length];
+            for (int i = 0; i < OreDefs.Length; i++)
+            {
+                var def = OreDefs[i];
+                var item = GetOrCreateAsset<ItemData>($"{DataDir}/{def.Item2}.asset");
+                item.id = def.Item2;
+                item.itemName = def.Item1;
+                item.description = $"{def.Item1}，矿洞挖矿可得。";
+                item.type = ItemType.Resource;
+                item.icon = GetSprite($"icon_{def.Item2}", CreateIconTexture(def.Item3));
+                item.sellPrice = def.Item4;
+                item.affectionValue = def.Item5;
+                EditorUtility.SetDirty(item);
+                data.OreItems[i] = item;
+            }
+
             data.PlayerSprite = sprites.PlayerSprite;
             data.NpcSprite = sprites.NpcSprite;
             data.NpcSprite2 = sprites.NpcSprite2;
@@ -701,11 +740,12 @@ namespace PBVEditor
             public ItemData[] HarvestItems;// 12
             public ItemData[] Materials;   // 5
             public ItemData[] FishItems;   // 5
+            public ItemData[] OreItems;    // 3
             public Sprite PlayerSprite, NpcSprite, NpcSprite2, NpcSprite3, BinSprite;
 
             public ItemData GetSeed(string cropId) { for (int i = 0; i < CropDefs.Length; i++) if (CropDefs[i].Item2 == cropId) return Seeds[i]; return null; }
             public ItemData GetItem(string itemId) { if (Materials != null) foreach (var m in Materials) if (m.id == itemId) return m; if (FishItems != null) foreach (var f in FishItems) if (f.id == itemId) return f; return null; }
-            public Object[] AllItems { get { var list = new System.Collections.Generic.List<Object>(); if (Seeds != null) list.AddRange(Seeds); if (HarvestItems != null) list.AddRange(HarvestItems); if (Materials != null) list.AddRange(Materials); if (FishItems != null) list.AddRange(FishItems); return list.ToArray(); } }
+            public Object[] AllItems { get { var list = new System.Collections.Generic.List<Object>(); if (Seeds != null) list.AddRange(Seeds); if (HarvestItems != null) list.AddRange(HarvestItems); if (Materials != null) list.AddRange(Materials); if (FishItems != null) list.AddRange(FishItems); if (OreItems != null) list.AddRange(OreItems); return list.ToArray(); } }
             public Object[] AllCrops { get { return Crops ?? System.Array.Empty<Object>(); } }
         }
     }
