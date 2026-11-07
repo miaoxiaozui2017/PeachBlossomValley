@@ -145,6 +145,10 @@ namespace PBV.Save
                 if (PBV.Systems.WorldState.Instance != null)
                     data.world = (int)PBV.Systems.WorldState.Instance.Current;
 
+                // 灵兽
+                if (PBV.Systems.PetSystem.Instance != null)
+                    data.hasPet = PBV.Systems.PetSystem.Instance.Export();
+
                 // 背包（只存非空槽位，含索引）
                 if (InventorySystem.Instance != null)
                 {
@@ -221,6 +225,10 @@ namespace PBV.Save
                 // 世界状态
                 if (PBV.Systems.WorldState.Instance != null)
                     PBV.Systems.WorldState.Instance.Restore(data.world);
+
+                // 灵兽
+                if (PBV.Systems.PetSystem.Instance != null)
+                    PBV.Systems.PetSystem.Instance.Import(data.hasPet);
 
                 // 背包
                 if (InventorySystem.Instance != null)

@@ -24,6 +24,7 @@ namespace PBV.Save
         public int bagLevel;            // 背包扩建等级
         public int staminaLevel;        // 体力上限扩建等级
         public int world;               // 当前世界（WorldType 枚举值）
+        public int hasPet;              // 是否有宠物（0/1）
 
         public List<SlotDTO> inventory = new List<SlotDTO>();
         public List<PlotDTO> plots = new List<PlotDTO>(); // 稀疏存储：只保存改变过的地块

@@ -172,6 +172,7 @@ namespace PBVEditor
             systemsGo.AddComponent<MineSystem>();
             systemsGo.AddComponent<FestivalSystem>();
             systemsGo.AddComponent<WorldState>();
+            systemsGo.AddComponent<PetSystem>();
 
             // 存档系统 + 目录表（全部作物 + 材料）
             var allItems = data.AllItems;
@@ -354,6 +355,17 @@ namespace PBVEditor
             portalCol.size = new Vector2(1.5f, 2f); portalCol.offset = new Vector2(0, 0.8f);
             portalGo.layer = LayerMask.NameToLayer(InteractableLayerName);
             portalGo.AddComponent<WorldPortal>();
+
+            // 灵兽祠（领养猫）
+            var petGo = new GameObject("PetAdoptionSpot");
+            petGo.transform.position = new Vector3(12f, -3f, 0);
+            var petSr = petGo.AddComponent<SpriteRenderer>();
+            petSr.sprite = data.BinSprite; petSr.sortingOrder = 9;
+            petSr.color = new Color(0.5f, 0.5f, 0.2f);
+            var petCol = petGo.AddComponent<BoxCollider2D>();
+            petCol.size = new Vector2(1.5f, 2f); petCol.offset = new Vector2(0, 0.8f);
+            petGo.layer = LayerMask.NameToLayer(InteractableLayerName);
+            petGo.AddComponent<PetAdoptionSpot>();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log("[SceneBuilder] 场景已保存");
