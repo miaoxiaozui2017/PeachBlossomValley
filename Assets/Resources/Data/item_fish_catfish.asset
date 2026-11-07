@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7e0e37fc99f0264581c6e1adcf1bce8, type: 3}
+  m_Name: item_fish_catfish
+  m_EditorClassIdentifier: 
+  id: item_fish_catfish
+  itemName: "\u9CB6\u9C7C"
+  description: "\u9CB6\u9C7C\uFF0C\u9493\u9C7C\u53EF\u5F97\u3002"
+  icon: {fileID: 21300000, guid: a1056a1fce0a9634b9993baa08ca6d02, type: 3}
+  type: 0
+  maxStack: 99
+  sellPrice: 25
+  cropToPlant: {fileID: 0}
+  affectionValue: 1

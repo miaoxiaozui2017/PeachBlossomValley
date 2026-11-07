@@ -53,6 +53,11 @@ namespace PBV.UI
                 OnStaminaChanged(PlayerStats.Instance.Stamina, PlayerStats.Instance.MaxStamina);
             }
 
+            if (PBV.Systems.WeatherSystem.Instance != null)
+            {
+                PBV.Systems.WeatherSystem.Instance.OnWeatherChanged += OnWeatherChanged;
+            }
+
             if (ToolManager.Instance != null)
             {
                 ToolManager.Instance.OnToolChanged += OnToolChanged;
@@ -131,11 +136,19 @@ namespace PBV.UI
             }
         }
 
+        private void OnWeatherChanged(PBV.Systems.Weather weather)
+        {
+            int day = TimeManager.Instance != null ? TimeManager.Instance.CurrentDay : 1;
+            string time = TimeManager.Instance != null ? TimeManager.Instance.GetTimeString() : "06:00";
+            RefreshTimeText(time, day);
+        }
+
         private void RefreshTimeText(string time, int day)
         {
             if (_timeText == null) return;
             string season = PBV.Systems.SeasonSystem.Instance != null ? PBV.Systems.SeasonSystem.Instance.CurrentSeasonName : "";
-            _timeText.text = string.IsNullOrEmpty(season) ? $"第 {day} 天   {time}" : $"{season}季·第 {day} 天   {time}";
+            string weather = PBV.Systems.WeatherSystem.Instance != null ? $" {PBV.Systems.WeatherSystem.Instance.WeatherName}" : "";
+            _timeText.text = string.IsNullOrEmpty(season) ? $"第 {day} 天   {time}{weather}" : $"{season}季·第 {day} 天   {time}{weather}";
         }
 
         private void BuildUI()

@@ -20,6 +20,7 @@ namespace PBV.Save
         public int currentSeason;       // 当前季节（0春1夏2秋3冬）
         public int dayOfSeason;         // 当季第几天
         public int currentTool;         // 当前工具（ToolType 枚举值）
+        public int weather;             // 天气（Weather 枚举值）
 
         public List<SlotDTO> inventory = new List<SlotDTO>();
         public List<PlotDTO> plots = new List<PlotDTO>(); // 稀疏存储：只保存改变过的地块

@@ -117,6 +117,10 @@ namespace PBV.Save
                     data.dayOfSeason = PBV.Systems.SeasonSystem.Instance.DayOfSeason;
                 }
 
+                // 天气
+                if (PBV.Systems.WeatherSystem.Instance != null)
+                    data.weather = (int)PBV.Systems.WeatherSystem.Instance.CurrentWeather;
+
                 // 任务进度
                 if (PBV.Systems.QuestManager.Instance != null)
                     data.quests = PBV.Systems.QuestManager.Instance.ExportAll();
@@ -178,6 +182,9 @@ namespace PBV.Save
 
                 // 季节
                 if (PBV.Systems.SeasonSystem.Instance != null) PBV.Systems.SeasonSystem.Instance.Restore(data.currentSeason, data.dayOfSeason);
+
+                // 天气
+                if (PBV.Systems.WeatherSystem.Instance != null) PBV.Systems.WeatherSystem.Instance.Restore(data.weather);
 
                 // 任务进度
                 if (PBV.Systems.QuestManager.Instance != null)

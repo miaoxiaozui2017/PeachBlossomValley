@@ -60,6 +60,16 @@ namespace PBVEditor
             ("宣纸", "item_xuanpaper", new Color(1f, 0.98f, 0.92f), 100, 5),
         };
 
+        // 5 种鱼类定义：(名称, id, 色块色, 售价, 好感值)
+        private static readonly (string, string, Color, int, int)[] FishDefs =
+        {
+            ("鲫鱼", "item_fish_crucian", new Color(0.7f, 0.7f, 0.6f), 20, 1),
+            ("鲤鱼", "item_fish_carp", new Color(0.8f, 0.5f, 0.3f), 30, 2),
+            ("鲶鱼", "item_fish_catfish", new Color(0.5f, 0.45f, 0.4f), 25, 1),
+            ("草鱼", "item_fish_grassfish", new Color(0.4f, 0.6f, 0.4f), 40, 3),
+            ("金鱼", "item_fish_goldfish", new Color(0.9f, 0.7f, 0.2f), 50, 5),
+        };
+
         [MenuItem("PBV/构建灰盒场景 v0.1.0")]
         public static void BuildAll()
         {
@@ -142,11 +152,14 @@ namespace PBVEditor
             systemsGo.AddComponent<InventorySystem>();
             systemsGo.AddComponent<PlayerWallet>();
             systemsGo.AddComponent<SeasonSystem>();
+            systemsGo.AddComponent<WeatherSystem>();
             systemsGo.AddComponent<PlayerStats>();
             systemsGo.AddComponent<ToolManager>();
             systemsGo.AddComponent<RelationshipSystem>();
             systemsGo.AddComponent<QuestManager>();
             systemsGo.AddComponent<CraftingSystem>();
+            systemsGo.AddComponent<CookingSystem>();
+            systemsGo.AddComponent<FishingSystem>();
 
             // 存档系统 + 目录表（全部作物 + 材料）
             var allItems = data.AllItems;
@@ -163,6 +176,7 @@ namespace PBVEditor
             systemsGo.AddComponent<QuestLogUI>();
             systemsGo.AddComponent<ShopUI>();
             systemsGo.AddComponent<CraftingUI>();
+            systemsGo.AddComponent<CookingUI>();
             systemsGo.AddComponent<StarterKit>();
 
             // 玩家
@@ -245,6 +259,28 @@ namespace PBVEditor
             craftCol.size = new Vector2(1.2f, 1.2f); craftCol.offset = new Vector2(0, 0.4f);
             craftGo.layer = LayerMask.NameToLayer(InteractableLayerName);
             craftGo.AddComponent<CraftingStation>();
+
+            // 厨房（烹饪台）
+            var kitchenGo = new GameObject("CookingStation");
+            kitchenGo.transform.position = new Vector3(-3f, -4f, 0);
+            var kitchenSr = kitchenGo.AddComponent<SpriteRenderer>();
+            kitchenSr.sprite = data.BinSprite; kitchenSr.sortingOrder = 10;
+            kitchenSr.color = new Color(0.6f, 0.4f, 0.3f);
+            var kitchenCol = kitchenGo.AddComponent<BoxCollider2D>();
+            kitchenCol.size = new Vector2(1.2f, 1.2f); kitchenCol.offset = new Vector2(0, 0.4f);
+            kitchenGo.layer = LayerMask.NameToLayer(InteractableLayerName);
+            kitchenGo.AddComponent<CookingStation>();
+
+            // 钓鱼点（池塘边）
+            var fishGo = new GameObject("FishingSpot");
+            fishGo.transform.position = new Vector3(-10f, -6f, 0);
+            var fishSr = fishGo.AddComponent<SpriteRenderer>();
+            fishSr.sprite = data.BinSprite; fishSr.sortingOrder = 9;
+            fishSr.color = new Color(0.3f, 0.5f, 0.7f);
+            var fishCol = fishGo.AddComponent<BoxCollider2D>();
+            fishCol.size = new Vector2(2f, 1f); fishCol.offset = new Vector2(0, 0.3f);
+            fishGo.layer = LayerMask.NameToLayer(InteractableLayerName);
+            fishGo.AddComponent<FishingSpot>();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log("[SceneBuilder] 场景已保存");
@@ -521,6 +557,23 @@ namespace PBVEditor
                 data.Materials[i] = item;
             }
 
+            // 5 种鱼类物品
+            data.FishItems = new ItemData[FishDefs.Length];
+            for (int i = 0; i < FishDefs.Length; i++)
+            {
+                var def = FishDefs[i];
+                var item = GetOrCreateAsset<ItemData>($"{DataDir}/{def.Item2}.asset");
+                item.id = def.Item2;
+                item.itemName = def.Item1;
+                item.description = $"{def.Item1}，钓鱼可得。";
+                item.type = ItemType.Resource;
+                item.icon = GetSprite($"icon_{def.Item2}", CreateIconTexture(def.Item3));
+                item.sellPrice = def.Item4;
+                item.affectionValue = def.Item5;
+                EditorUtility.SetDirty(item);
+                data.FishItems[i] = item;
+            }
+
             data.PlayerSprite = sprites.PlayerSprite;
             data.NpcSprite = sprites.NpcSprite;
             data.NpcSprite2 = sprites.NpcSprite2;
@@ -647,11 +700,12 @@ namespace PBVEditor
             public ItemData[] Seeds;       // 12
             public ItemData[] HarvestItems;// 12
             public ItemData[] Materials;   // 5
+            public ItemData[] FishItems;   // 5
             public Sprite PlayerSprite, NpcSprite, NpcSprite2, NpcSprite3, BinSprite;
 
             public ItemData GetSeed(string cropId) { for (int i = 0; i < CropDefs.Length; i++) if (CropDefs[i].Item2 == cropId) return Seeds[i]; return null; }
-            public ItemData GetItem(string itemId) { if (Materials != null) foreach (var m in Materials) if (m.id == itemId) return m; return null; }
-            public Object[] AllItems { get { var list = new System.Collections.Generic.List<Object>(); if (Seeds != null) list.AddRange(Seeds); if (HarvestItems != null) list.AddRange(HarvestItems); if (Materials != null) list.AddRange(Materials); return list.ToArray(); } }
+            public ItemData GetItem(string itemId) { if (Materials != null) foreach (var m in Materials) if (m.id == itemId) return m; if (FishItems != null) foreach (var f in FishItems) if (f.id == itemId) return f; return null; }
+            public Object[] AllItems { get { var list = new System.Collections.Generic.List<Object>(); if (Seeds != null) list.AddRange(Seeds); if (HarvestItems != null) list.AddRange(HarvestItems); if (Materials != null) list.AddRange(Materials); if (FishItems != null) list.AddRange(FishItems); return list.ToArray(); } }
             public Object[] AllCrops { get { return Crops ?? System.Array.Empty<Object>(); } }
         }
     }

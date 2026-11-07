@@ -251,6 +251,23 @@ namespace PBV.Farming
             }
         }
 
+        /// <summary>雨天自动浇灌所有已耕地（Tilled→Watered）</summary>
+        public void AutoWaterAll()
+        {
+            int count = 0;
+            foreach (var kvp in _plots)
+            {
+                if (kvp.Value.status == TileStatus.Tilled)
+                {
+                    kvp.Value.status = TileStatus.Watered;
+                    kvp.Value.isWateredToday = true;
+                    UpdateTileVisual(kvp.Key, _wateredTile);
+                    count++;
+                }
+            }
+            if (count > 0) Debug.Log($"[FarmGrid] 雨天自动浇水 {count} 块地");
+        }
+
         // ---------------- 存档接口 ----------------
 
         /// <summary>

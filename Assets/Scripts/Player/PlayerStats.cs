@@ -75,6 +75,14 @@ namespace PBV.Player
         public void RestoreFull()
         {
             Stamina = _maxStamina;
+            OnStaminaChanged?.Invoke(Stamina, _maxStamina);
+        }
+
+        /// <summary>恢复指定量体力（烹饪用）</summary>
+        public void Restore(int amount)
+        {
+            Stamina = Mathf.Clamp(Stamina + amount, 0, _maxStamina);
+            OnStaminaChanged?.Invoke(Stamina, _maxStamina);
         }
 
         /// <summary>存档恢复专用</summary>
