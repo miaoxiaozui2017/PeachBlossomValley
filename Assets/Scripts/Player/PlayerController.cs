@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 using PBV.Core;
 
 namespace PBV.Player
@@ -36,29 +35,46 @@ namespace PBV.Player
             _rb = GetComponent<Rigidbody2D>();
             _rb.gravityScale = 0;
             _rb.freezeRotation = true;
-            
+
             if (_animator == null) _animator = GetComponent<Animator>();
         }
 
-        /// <summary>
-        /// 由 Input System 事件调用 (SendMessage 或 PlayerInput 组件)
-        /// </summary>
-        /// <param name="value">输入向量</param>
-        public void OnMove(InputValue value)
+        private void Start()
         {
-            _moveInput = value.Get<Vector2>();
-            
-            if (_moveInput.sqrMagnitude > 0.01f)
+            // 订阅 InputHandler 统一输入分发（灰盒直读键盘 / PlayerInput 双通道兼容）
+            if (InputHandler.Instance != null)
             {
-                _lastLookDir = _moveInput.normalized;
-                // 规范化到 8 方向 (或者 4 方向，取决于美术资源，这里保留原始向量供混合树使用)
+                InputHandler.Instance.MoveEvent += OnMoveVector;
+                InputHandler.Instance.InteractEvent += OnInteractInput;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (InputHandler.Instance != null)
+            {
+                InputHandler.Instance.MoveEvent -= OnMoveVector;
+                InputHandler.Instance.InteractEvent -= OnInteractInput;
             }
         }
 
         /// <summary>
-        /// 由 Input System 事件调用 (SendMessage - Interact)
+        /// InputHandler.MoveEvent 回调
         /// </summary>
-        public void OnInteract()
+        private void OnMoveVector(Vector2 value)
+        {
+            _moveInput = value;
+
+            if (_moveInput.sqrMagnitude > 0.01f)
+            {
+                _lastLookDir = _moveInput.normalized;
+            }
+        }
+
+        /// <summary>
+        /// InputHandler.InteractEvent 回调
+        /// </summary>
+        private void OnInteractInput()
         {
             TryInteract();
         }

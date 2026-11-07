@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 167ec4a3516132e4b83c7a699d16dbf6, type: 3}
+  m_Name: crop_cabbage
+  m_EditorClassIdentifier: 
+  cropName: "\u767D\u83DC"
+  description: "\u8010\u5BD2\u7684\u4F5C\u7269\uFF0C4\u5929\u6210\u719F\u3002"
+  daysToMature: 4
+  growthSprites:
+  - {fileID: 21300000, guid: a607dca4490bc2044bd4921244b0ca7a, type: 3}
+  - {fileID: 21300000, guid: 6eaa405148474574fa52be0317c3e8d0, type: 3}
+  - {fileID: 21300000, guid: 4904148192249c043ad914105ecafe3f, type: 3}
+  - {fileID: 21300000, guid: f23c341d473d3934d859577441fa4d20, type: 3}
+  harvestItem: {fileID: 11400000, guid: 8286baaed430d0a4895e8f2b7ad38b7c, type: 2}
+  minYield: 1
+  maxYield: 2

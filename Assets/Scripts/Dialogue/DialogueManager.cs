@@ -29,6 +29,7 @@ namespace PBV.Dialogue
         private string _speakerName;
         private bool _isTyping;
         private Coroutine _typewriterCoroutine;
+        private int _startFrame;
 
         private void Awake()
         {
@@ -65,6 +66,7 @@ namespace PBV.Dialogue
             _speakerName = speakerName;
             _currentLines = lines;
             _lineIndex = 0;
+            _startFrame = Time.frameCount; // 防止同帧 E 键既触发对话又翻页
             IsDialogueActive = true;
 
             _panel.SetActive(true);
@@ -77,6 +79,7 @@ namespace PBV.Dialogue
         private void OnAdvanceInput()
         {
             if (!IsDialogueActive) return;
+            if (Time.frameCount == _startFrame) return; // 触发对话的同一帧忽略翻页
 
             if (_isTyping)
             {

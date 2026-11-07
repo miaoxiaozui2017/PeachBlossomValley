@@ -15,7 +15,7 @@ namespace PBV.Systems
 
         [Header("Time Settings")]
         [Tooltip("Real seconds per game minute")]
-        [SerializeField] private float _realSecondsPerGameMinute = 2f; // 2s = 1min -> 1h = 120s -> 24h = 48min (Too slow for test? Maybe 0.5s)
+        [SerializeField] private float _realSecondsPerGameMinute = 0.5f; // 0.5s = 1min -> 1天约9分钟
         
         [Header("Day/Night Cycle")]
         [SerializeField] private Light2D _globalLight;
@@ -41,6 +41,14 @@ namespace PBV.Systems
         private void Update()
         {
             if (_isPaused) return;
+
+            // 调试：N 键跳到次日（测试作物生长/结算用）
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            if (kb != null && kb.nKey.wasPressedThisFrame)
+            {
+                ForceNextDay();
+                return;
+            }
 
             _timer += Time.deltaTime;
 

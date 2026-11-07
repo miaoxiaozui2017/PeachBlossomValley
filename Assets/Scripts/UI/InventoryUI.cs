@@ -69,7 +69,7 @@ namespace PBV.UI
             SelectByKey(keyboard.digit0Key, 9);
         }
 
-        private void SelectByKey(UnityEngine.InputSystem.Key key, int slotIndex)
+        private void SelectByKey(UnityEngine.InputSystem.Controls.KeyControl key, int slotIndex)
         {
             if (key.wasPressedThisFrame) SelectSlot(slotIndex);
         }
@@ -164,7 +164,7 @@ namespace PBV.UI
 
             for (int i = 0; i < _hotbarCount; i++)
             {
-                CreateSlot(hotbarGo.transform, i, 58f, out _slotIcons[i], out _slotCounts[i], null);
+                CreateSlot(hotbarGo.transform, i, 58f, out _slotIcons[i], out _slotCounts[i], out _);
 
                 var slotRect = _slotIcons[i].GetComponentInParent<RectTransform>();
                 slotRect.anchoredPosition = new Vector2(-_hotbarCount * 62f / 2f + 31f + i * 62f, 0);
@@ -201,7 +201,7 @@ namespace PBV.UI
 
                     // 点击选中
                     var button = slotRect.gameObject.AddComponent<Button>();
-                    button.transition = SelectTransition.None;
+                    button.transition = UnityEngine.UI.Selectable.Transition.None;
                     button.onClick.AddListener(() => SelectSlot(slotIndex));
                     index++;
                 }

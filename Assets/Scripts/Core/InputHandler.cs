@@ -36,8 +36,31 @@ namespace PBV.Core
 
         private void Update()
         {
+            PollKeyboard();
             CalculateSelection();
         }
+
+        /// <summary>
+        /// 灰盒模式：无 PlayerInput 资产时直读键盘（WASD/E/Space）
+        /// </summary>
+        private void PollKeyboard()
+        {
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            if (kb == null) return;
+
+            Vector2 move = Vector2.zero;
+            if (kb.wKey.isPressed || kb.upArrowKey.isPressed) move.y += 1f;
+            if (kb.sKey.isPressed || kb.downArrowKey.isPressed) move.y -= 1f;
+            if (kb.aKey.isPressed || kb.leftArrowKey.isPressed) move.x -= 1f;
+            if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) move.x += 1f;
+            _lastMoveInput = move;
+            MoveEvent?.Invoke(move);
+
+            if (kb.eKey.wasPressedThisFrame) InteractEvent?.Invoke();
+            if (kb.spaceKey.wasPressedThisFrame) UseToolEvent?.Invoke();
+        }
+
+        private Vector2 _lastMoveInput;
 
         /// <summary>
         /// Input System "Move" 映射

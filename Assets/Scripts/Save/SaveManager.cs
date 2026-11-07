@@ -28,6 +28,9 @@ namespace PBV.Save
         [SerializeField] private bool _autoSaveOnNewDay = true;
         [SerializeField] private bool _loadOnStart = true;
 
+        /// <summary>本次运行是否已从存档恢复（StarterKit 依据此判断是否发初始物资）</summary>
+        public bool LoadedFromSave { get; private set; }
+
         public string SavePath => Path.Combine(Application.persistentDataPath, "pbv_save.json");
         public bool HasSaveFile => File.Exists(SavePath);
 
@@ -38,6 +41,16 @@ namespace PBV.Save
         {
             if (Instance == null) Instance = this;
             else { Destroy(gameObject); return; }
+
+            // 灰盒兜底：Inspector 未配置目录时自动从 Resources/Data 加载
+            if (_itemCatalog == null || _itemCatalog.Length == 0)
+            {
+                _itemCatalog = Resources.LoadAll<ItemData>("Data");
+            }
+            if (_cropCatalog == null || _cropCatalog.Length == 0)
+            {
+                _cropCatalog = Resources.LoadAll<CropData>("Data");
+            }
         }
 
         private void Start()
@@ -166,6 +179,7 @@ namespace PBV.Save
                 }
 
                 Debug.Log($"[Save] 已读档 <- {SavePath} (Day {data.day})");
+                LoadedFromSave = true;
                 OnLoaded?.Invoke();
                 return true;
             }

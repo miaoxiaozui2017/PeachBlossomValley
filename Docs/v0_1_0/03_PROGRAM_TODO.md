@@ -4,17 +4,18 @@
 
 ## 1. 核心框架 (Core)
 
-*   [ ] **Project Setup**：创建 Unity 工程，设置 2D URP 环境。
-*   [ ] **InputManager**：
+*   [x] **Project Setup**：创建 Unity 工程，设置 2D URP 环境。
+*   [x] **InputManager**：
     *   实现基于新 Input System 的按键映射 (WASD移动、E交互、Space工具)。
     *   **九宫格选择逻辑**：根据玩家面向，计算并高亮前方九宫格内最合适的目标地块。
+    *   灰盒模式直读键盘（不依赖 .inputactions 资产），保留 InputValue 回调通道兼容 PlayerInput。
 
 ## 2. 角色与控制 (Player)
 
-*   [ ] [AI-Generated] **PlayerController**：
+*   [x] [AI-Generated] **PlayerController**：
     *   实现 8 方向移动逻辑。
-    *   实现基于 Animator 的状态切换 (Idle/Walk/Action)。
-    *   **交互判定**：增加对出货箱、NPC 的 Raycast/OverlapCircle 检测。
+    *   实现基于 Animator 的状态切换 (Idle/Walk/Action) —— 参数已广播，待接入动画资源。
+    *   **交互判定**：增加对出货箱、NPC 的 Raycast/OverlapCircle 检测（IInteractable 接口）。
 
 ## 3. 种植系统 (Farming - Core)
 
@@ -63,7 +64,18 @@
 
 ## 7. 昼夜循环 (Time)
 
-*   [ ] [AI-Generated] **TimeManager**：
-    *   **调整转换率**：设定 `2 Real Seconds = 1 Game Minute`。
-    *   **强制睡眠逻辑**：02:00 自动触发 `EndDay()`。
+*   [x] [AI-Generated] **TimeManager**：
+    *   **调整转换率**：设定 `0.5 Real Seconds = 1 Game Minute`（一天约 9 分钟）。
+    *   **跨日逻辑**：24:00 触发 `StartNewDay()`（重置到 06:00）。
     *   Global Light 颜色插值 (Color Gradient)。
+    *   调试键：N 键跳过到次日。
+    *   [ ] **强制睡眠逻辑**：02:00 自动触发 `EndDay()`（待实现，需接入"日期跨越到凌晨"判定）。
+
+## 8. 场景与占位资源
+
+*   [x] **SceneBuilder（Editor 一键构建）**：菜单 `PBV/构建灰盒场景 v0.1.0`
+    *   自动生成 32x32 占位像素贴图（地块/角色/NPC/出货箱/作物4阶段/物品图标）
+    *   自动生成 Tile 与 CropData/ItemData 资产（Assets/Resources/Data）
+    *   自动搭建 01_FarmGreyBox 场景（Grid+三层Tilemap/玩家/NPC/出货箱/系统管理器/GlobalLight2D/相机跟随）
+    *   幂等：可重复执行，不产生重复资产
+*   [x] **HUD**：天数/时间/金钱显示 + 操作提示。

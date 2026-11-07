@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7e0e37fc99f0264581c6e1adcf1bce8, type: 3}
+  m_Name: seed_radish
+  m_EditorClassIdentifier: 
+  id: seed_radish
+  itemName: "\u841D\u535C\u79CD\u5B50"
+  description: "\u79CD\u4E0B\u53BB\uFF0C\u6D47\u70B9\u6C34\uFF0C\u7B49\u4E09\u5929\u3002"
+  icon: {fileID: 21300000, guid: 66a6ae9c158c1424686494ab1a061259, type: 3}
+  type: 3
+  maxStack: 99
+  sellPrice: 5
+  cropToPlant: {fileID: 11400000, guid: 28e75136d30222e4e9d6669612714b5d, type: 2}
