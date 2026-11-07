@@ -150,7 +150,8 @@ namespace PBV.UI
             string weather = PBV.Systems.WeatherSystem.Instance != null ? $" {PBV.Systems.WeatherSystem.Instance.WeatherName}" : "";
             string festival = PBV.Systems.FestivalSystem.Instance != null && PBV.Systems.FestivalSystem.Instance.IsFestivalToday ? $" 【{PBV.Systems.FestivalSystem.Instance.FestivalName}】" : "";
             string world = PBV.Systems.WorldState.Instance != null ? $" [{PBV.Systems.WorldState.Instance.WorldName}]" : "";
-            _timeText.text = string.IsNullOrEmpty(season) ? $"第 {day} 天   {time}{weather}{festival}{world}" : $"{season}季·第 {day} 天   {time}{weather}{festival}{world}";
+            string term = PBV.Systems.SolarTermSystem.CurrentTerm;
+            _timeText.text = string.IsNullOrEmpty(season) ? $"第 {day} 天   {time}{weather}{festival}{world}" : $"{season}季·{term}·第 {day} 天   {time}{weather}{festival}{world}";
         }
 
         private void BuildUI()
