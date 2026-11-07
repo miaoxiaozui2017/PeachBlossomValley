@@ -174,6 +174,7 @@ namespace PBVEditor
             systemsGo.AddComponent<WorldState>();
             systemsGo.AddComponent<PetSystem>();
             systemsGo.AddComponent<AchievementSystem>();
+            systemsGo.AddComponent<EndingSystem>();
 
             // 存档系统 + 目录表（全部作物 + 材料）
             var allItems = data.AllItems;
