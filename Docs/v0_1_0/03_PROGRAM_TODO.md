@@ -37,9 +37,9 @@
     *   24格数据结构。
     *   添加/移除/堆叠逻辑。
     *   种子查找（FindSeedSlot）与数量统计（CountItem）。
-*   [ ] [AI-Generated] **ShippingBinSystem (新增)**：
-    *   交互逻辑：打开界面/直接投入物品。
-    *   结算逻辑：每日 06:00 计算总价值并增加玩家金钱。
+*   [x] [AI-Generated] **ShippingBinSystem (新增)**：
+    *   交互逻辑：E 键投入背包中全部可出售物品（跳过工具/种子）。
+    *   结算逻辑：每日 06:00 (TimeManager.OnDayChanged) 结算总价值并入账 `PlayerWallet`。
 *   [ ] **UI_Inventory**：
     *   简单的网格显示。
     *   点击选中/快捷栏映射。
