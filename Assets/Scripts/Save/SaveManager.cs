@@ -149,6 +149,10 @@ namespace PBV.Save
                 if (PBV.Systems.PetSystem.Instance != null)
                     data.hasPet = PBV.Systems.PetSystem.Instance.Export();
 
+                // 成就
+                if (PBV.Systems.AchievementSystem.Instance != null)
+                    data.achievements = PBV.Systems.AchievementSystem.Instance.Export();
+
                 // 背包（只存非空槽位，含索引）
                 if (InventorySystem.Instance != null)
                 {
@@ -229,6 +233,10 @@ namespace PBV.Save
                 // 灵兽
                 if (PBV.Systems.PetSystem.Instance != null)
                     PBV.Systems.PetSystem.Instance.Import(data.hasPet);
+
+                // 成就
+                if (PBV.Systems.AchievementSystem.Instance != null)
+                    PBV.Systems.AchievementSystem.Instance.Import(data.achievements);
 
                 // 背包
                 if (InventorySystem.Instance != null)
