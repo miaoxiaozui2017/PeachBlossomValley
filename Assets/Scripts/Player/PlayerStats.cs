@@ -85,6 +85,14 @@ namespace PBV.Player
             OnStaminaChanged?.Invoke(Stamina, _maxStamina);
         }
 
+        /// <summary>扩建体力上限（建造系统用）</summary>
+        public void ExpandMaxStamina(int newMax)
+        {
+            _maxStamina = newMax;
+            if (Stamina > _maxStamina) Stamina = _maxStamina;
+            OnStaminaChanged?.Invoke(Stamina, _maxStamina);
+        }
+
         /// <summary>存档恢复专用</summary>
         public void SetStamina(int value)
         {

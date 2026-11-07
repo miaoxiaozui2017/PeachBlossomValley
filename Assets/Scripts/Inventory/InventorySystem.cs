@@ -171,6 +171,18 @@ namespace PBV.Inventory
 
         public int Capacity => _capacity;
 
+        /// <summary>扩容背包（建造系统用）</summary>
+        public void ExpandCapacity(int newCapacity)
+        {
+            if (newCapacity <= _capacity) return;
+            var newSlots = new InventorySlot[newCapacity];
+            for (int i = 0; i < _slots.Length; i++) newSlots[i] = _slots[i];
+            for (int i = _slots.Length; i < newCapacity; i++) newSlots[i] = new InventorySlot();
+            _slots = newSlots;
+            _capacity = newCapacity;
+            OnInventoryChanged?.Invoke();
+        }
+
         /// <summary>
         /// 存档恢复专用：按索引写入槽位（不触发堆叠合并）
         /// </summary>

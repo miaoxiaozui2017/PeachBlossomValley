@@ -21,6 +21,8 @@ namespace PBV.Save
         public int dayOfSeason;         // 当季第几天
         public int currentTool;         // 当前工具（ToolType 枚举值）
         public int weather;             // 天气（Weather 枚举值）
+        public int bagLevel;            // 背包扩建等级
+        public int staminaLevel;        // 体力上限扩建等级
 
         public List<SlotDTO> inventory = new List<SlotDTO>();
         public List<PlotDTO> plots = new List<PlotDTO>(); // 稀疏存储：只保存改变过的地块

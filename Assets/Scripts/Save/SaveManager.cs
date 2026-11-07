@@ -133,6 +133,14 @@ namespace PBV.Save
                 if (PBV.Systems.SkillSystem.Instance != null)
                     data.skills = PBV.Systems.SkillSystem.Instance.ExportAll();
 
+                // 建造等级
+                if (PBV.Systems.BuildSystem.Instance != null)
+                {
+                    var (bag, stam) = PBV.Systems.BuildSystem.Instance.Export();
+                    data.bagLevel = bag;
+                    data.staminaLevel = stam;
+                }
+
                 // 背包（只存非空槽位，含索引）
                 if (InventorySystem.Instance != null)
                 {
@@ -201,6 +209,10 @@ namespace PBV.Save
                 // 技能
                 if (PBV.Systems.SkillSystem.Instance != null)
                     PBV.Systems.SkillSystem.Instance.ImportAll(data.skills);
+
+                // 建造等级
+                if (PBV.Systems.BuildSystem.Instance != null)
+                    PBV.Systems.BuildSystem.Instance.Import(data.bagLevel, data.staminaLevel);
 
                 // 背包
                 if (InventorySystem.Instance != null)

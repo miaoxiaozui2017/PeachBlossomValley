@@ -191,6 +191,8 @@ namespace PBVEditor
             systemsGo.AddComponent<MineUI>();
             systemsGo.AddComponent<ToolUpgradeUI>();
             systemsGo.AddComponent<SkillPanelUI>();
+            systemsGo.AddComponent<BuildSystem>();
+            systemsGo.AddComponent<BuildUI>();
             systemsGo.AddComponent<StarterKit>();
 
             // 玩家
@@ -328,6 +330,17 @@ namespace PBVEditor
             bedCol.size = new Vector2(1.5f, 1f); bedCol.offset = new Vector2(0, 0.3f);
             bedGo.layer = LayerMask.NameToLayer(InteractableLayerName);
             bedGo.AddComponent<Bed>();
+
+            // 建造台（房屋扩建）
+            var buildGo = new GameObject("BuildStation");
+            buildGo.transform.position = new Vector3(2f, 5f, 0);
+            var buildSr = buildGo.AddComponent<SpriteRenderer>();
+            buildSr.sprite = data.BinSprite; buildSr.sortingOrder = 9;
+            buildSr.color = new Color(0.4f, 0.45f, 0.5f);
+            var buildCol = buildGo.AddComponent<BoxCollider2D>();
+            buildCol.size = new Vector2(1.5f, 2f); buildCol.offset = new Vector2(0, 0.8f);
+            buildGo.layer = LayerMask.NameToLayer(InteractableLayerName);
+            buildGo.AddComponent<BuildStation>();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log("[SceneBuilder] 场景已保存");
