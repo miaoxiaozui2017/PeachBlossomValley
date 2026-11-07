@@ -171,6 +171,29 @@ namespace PBV.Inventory
 
         public int Capacity => _capacity;
 
+        /// <summary>
+        /// 存档恢复专用：按索引写入槽位（不触发堆叠合并）
+        /// </summary>
+        public void SetSlot(int index, ItemData item, int count)
+        {
+            if (index < 0 || index >= _capacity) return;
+            _slots[index].item = item;
+            _slots[index].count = Mathf.Max(0, count);
+            OnInventoryChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// 清空背包（读档前调用）
+        /// </summary>
+        public void ClearAll()
+        {
+            for (int i = 0; i < _capacity; i++)
+            {
+                _slots[i].Clear();
+            }
+            OnInventoryChanged?.Invoke();
+        }
+
         // For Debug
         public void AddTestItem(ItemData item)
         {

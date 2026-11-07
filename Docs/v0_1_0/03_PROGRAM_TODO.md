@@ -54,10 +54,12 @@
 
 ## 6. 存档系统 (Save - Optimized)
 
-*   [ ] [AI-Generated] **SaveManager**：
+*   [x] [AI-Generated] **SaveManager**：
     *   定义 `SaveData` 类 (包含 PlayerPos, InventoryList, Money)。
     *   **稀疏矩阵存储**：地块数据仅存储 `List<ChangedPlotData>`，跳过未改变的空地块，减小文件体积。
-    *   序列化为 JSON 并写入本地文件。
+    *   序列化为 JSON 并写入本地文件 (persistentDataPath)。
+    *   每日 06:00 自动存档；F5 手动存档 / F9 读档。
+    *   恢复范围：天数/玩家位置/金钱/背包(含槽位索引)/地块/出货箱待结算。
 
 ## 7. 昼夜循环 (Time)
 

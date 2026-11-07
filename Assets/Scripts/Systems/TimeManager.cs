@@ -102,6 +102,15 @@ namespace PBV.Systems
         {
             StartNewDay();
         }
+
+        /// <summary>当前天数（存档用）</summary>
+        public int CurrentDay => _currentDay;
+
+        /// <summary>读档恢复天数（不触发事件）</summary>
+        public void RestoreDay(int day)
+        {
+            _currentDay = Mathf.Max(1, day);
+        }
         
         public string GetTimeString()
         {

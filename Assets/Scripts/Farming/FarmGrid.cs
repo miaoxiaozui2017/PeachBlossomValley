@@ -214,5 +214,64 @@ namespace PBV.Farming
                 }
             }
         }
+
+        // ---------------- 存档接口 ----------------
+
+        /// <summary>
+        /// 导出改变过的地块（稀疏存储：跳过 Empty 且无作物的地块）
+        /// </summary>
+        public System.Collections.Generic.List<PBV.Save.PlotDTO> ExportChangedPlots()
+        {
+            var result = new System.Collections.Generic.List<PBV.Save.PlotDTO>();
+            foreach (var kvp in _plots)
+            {
+                var plot = kvp.Value;
+                if (plot.status == TileStatus.Empty && plot.plantedCrop == null) continue;
+
+                result.Add(new PBV.Save.PlotDTO
+                {
+                    x = plot.position.x,
+                    y = plot.position.y,
+                    status = (int)plot.status,
+                    growthDays = plot.growthDays,
+                    wateredToday = plot.isWateredToday,
+                    cropName = plot.plantedCrop != null ? plot.plantedCrop.cropName : string.Empty
+                });
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 从存档恢复地块（cropResolver: 作物名 -> CropData）
+        /// </summary>
+        public void ImportPlots(System.Collections.Generic.List<PBV.Save.PlotDTO> data, System.Func<string, CropData> cropResolver)
+        {
+            _plots.Clear();
+
+            if (data != null)
+            {
+                foreach (var dto in data)
+                {
+                    var pos = new Vector3Int(dto.x, dto.y, 0);
+                    var plot = new PlotData(pos)
+                    {
+                        status = (TileStatus)dto.status,
+                        growthDays = dto.growthDays,
+                        isWateredToday = dto.wateredToday,
+                        plantedCrop = cropResolver != null ? cropResolver(dto.cropName) : null
+                    };
+                    _plots[pos] = plot;
+
+                    // 恢复地块视觉
+                    TileBase tile = null;
+                    if (plot.status == TileStatus.Tilled) tile = _tilledTile;
+                    else if (plot.status == TileStatus.Watered) tile = _wateredTile;
+                    if (tile != null) UpdateTileVisual(pos, tile);
+                }
+            }
+
+            // 恢复作物视觉
+            if (_cropManager != null) _cropManager.RefreshAllVisuals();
+        }
     }
 }

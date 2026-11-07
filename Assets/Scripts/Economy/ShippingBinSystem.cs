@@ -20,6 +20,12 @@ namespace PBV.Economy
         /// <summary>已投入未结算的总价值</summary>
         public int PendingValue { get; private set; }
 
+        /// <summary>存档恢复专用</summary>
+        public void SetPendingValue(int value)
+        {
+            PendingValue = Mathf.Max(0, value);
+        }
+
         private InventorySystem _inventory;
 
         public string GetInteractPrompt() => "出货箱：投入物品（次日 06:00 结算）";

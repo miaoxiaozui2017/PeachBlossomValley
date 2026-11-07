@@ -130,7 +130,6 @@ namespace PBV.Farming
         private void UpdateCropVisual(PlotData plot)
         {
             if (_cropTilemap == null || plot.plantedCrop == null) return;
-
             // 计算生长阶段
             // 假设 daysToMature = 4, sprites.Length = 4
             // 0 days -> stage 0
@@ -156,6 +155,18 @@ namespace PBV.Farming
             tile.sprite = sprite;
             
             _cropTilemap.SetTile(plot.position, tile);
+        }
+
+        /// <summary>
+        /// 刷新所有地块的作物视觉（存档恢复后调用）
+        /// </summary>
+        public void RefreshAllVisuals()
+        {
+            if (_farmGrid == null) return;
+            foreach (var plot in _farmGrid.GetAllPlots().Values)
+            {
+                if (plot.plantedCrop != null) UpdateCropVisual(plot);
+            }
         }
     }
 }
