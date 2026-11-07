@@ -115,11 +115,13 @@ namespace PBV.Economy
         {
             if (PendingValue <= 0) return;
 
-            int settled = PendingValue;
+            float mult = PBV.Systems.FestivalSystem.Instance != null ? PBV.Systems.FestivalSystem.Instance.PriceMultiplier : 1f;
+            int earnings = Mathf.RoundToInt(PendingValue * mult);
             if (PlayerWallet.Instance != null)
             {
-                PlayerWallet.Instance.AddMoney(PendingValue);
-                Debug.Log($"[ShippingBin] 昨日出货结算：+{PendingValue} 金钱");
+                PlayerWallet.Instance.AddMoney(earnings);
+                string festMsg = mult > 1f ? $" (节日x{mult})" : "";
+                Debug.Log($"[ShippingBin] 昨日出货结算：+{earnings} 金钱{festMsg}");
             }
             PendingValue = 0;
             OnPendingChanged?.Invoke(PendingValue);

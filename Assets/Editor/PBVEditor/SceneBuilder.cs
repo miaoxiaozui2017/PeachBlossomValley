@@ -170,6 +170,7 @@ namespace PBVEditor
             systemsGo.AddComponent<FishingSystem>();
             systemsGo.AddComponent<SkillSystem>();
             systemsGo.AddComponent<MineSystem>();
+            systemsGo.AddComponent<FestivalSystem>();
 
             // 存档系统 + 目录表（全部作物 + 材料）
             var allItems = data.AllItems;
