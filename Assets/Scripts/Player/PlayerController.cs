@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using PBV.Core;
 
@@ -24,6 +25,14 @@ namespace PBV.Player
         private Rigidbody2D _rb;
         private Vector2 _moveInput;
         private Vector2 _lastLookDir = Vector2.down;
+
+        /// <summary>当前附近检测到的可交互对象（null 表示无）</summary>
+        public IInteractable CurrentNearby { get; private set; }
+        /// <summary>附近可交互对象变化时触发（参数可为 null）</summary>
+        public event Action<IInteractable> OnNearbyChanged;
+
+        private float _detectTimer;
+        private const float DetectInterval = 0.1f;
         
         private static readonly int AnimDirX = Animator.StringToHash("DirX");
         private static readonly int AnimDirY = Animator.StringToHash("DirY");
@@ -87,6 +96,34 @@ namespace PBV.Player
         private void Update()
         {
             UpdateAnimations();
+
+            // 周期检测附近可交互对象（供交互提示 UI 显示）
+            _detectTimer += Time.deltaTime;
+            if (_detectTimer >= DetectInterval)
+            {
+                _detectTimer = 0f;
+                DetectNearby();
+            }
+        }
+
+        private void DetectNearby()
+        {
+            Vector2 origin = _rb.position + _interactOffset;
+            Vector2 interactPos = origin + _lastLookDir * 0.5f;
+            var hits = Physics2D.OverlapCircleAll(interactPos, _interactRadius, _interactLayer);
+
+            IInteractable found = null;
+            foreach (var hit in hits)
+            {
+                var interactable = hit.GetComponent<IInteractable>();
+                if (interactable != null) { found = interactable; break; }
+            }
+
+            if (found != CurrentNearby)
+            {
+                CurrentNearby = found;
+                OnNearbyChanged?.Invoke(found);
+            }
         }
 
         private void ApplyMovement()
@@ -107,21 +144,14 @@ namespace PBV.Player
 
         private void TryInteract()
         {
-            // 计算交互中心点 (玩家位置 + 偏移 + 面向 * 距离)
-            Vector2 origin = _rb.position + _interactOffset;
-            Vector2 interactPos = origin + _lastLookDir * 0.5f;
-
-            Collider2D[] hits = Physics2D.OverlapCircleAll(interactPos, _interactRadius, _interactLayer);
-            
-            foreach (var hit in hits)
+            // 优先使用持续检测的结果；检测未命中时再做一次即时检测（兜底）
+            IInteractable target = CurrentNearby;
+            if (target == null)
             {
-                var interactable = hit.GetComponent<PBV.Core.IInteractable>();
-                if (interactable != null)
-                {
-                    interactable.OnInteract();
-                    break; // 只交互一个
-                }
+                DetectNearby();
+                target = CurrentNearby;
             }
+            target?.OnInteract();
         }
 
         /// <summary>

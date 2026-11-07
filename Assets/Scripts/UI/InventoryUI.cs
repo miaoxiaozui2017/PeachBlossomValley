@@ -183,9 +183,20 @@ namespace PBV.UI
             panelRect.anchoredPosition = new Vector2(-16f, -16f);
 
             var panelImage = _panel.AddComponent<Image>();
-            panelImage.color = new Color(0.1f, 0.08f, 0.06f, 0.9f);
+            panelImage.color = new Color(0.22f, 0.18f, 0.14f, 0.94f);
 
-            CreateText("Title", _panel.transform, new Vector2(0f, 1f), new Vector2(1f, 0.9f), 22, FontStyle.Bold, new Color(1f, 0.93f, 0.75f), "背包 (Tab 开关)");
+            // 标题栏背景（与面板区分）
+            var titleBgGo = new GameObject("TitleBg");
+            titleBgGo.transform.SetParent(_panel.transform, false);
+            var titleBgRect = titleBgGo.AddComponent<RectTransform>();
+            titleBgRect.anchorMin = new Vector2(0f, 0.88f);
+            titleBgRect.anchorMax = new Vector2(1f, 1f);
+            titleBgRect.offsetMin = Vector2.zero;
+            titleBgRect.offsetMax = Vector2.zero;
+            var titleBg = titleBgGo.AddComponent<Image>();
+            titleBg.color = new Color(0.35f, 0.28f, 0.18f, 0.95f);
+
+            CreateText("Title", _panel.transform, new Vector2(0f, 0.88f), new Vector2(1f, 1f), 22, FontStyle.Bold, new Color(1f, 0.93f, 0.75f), "背包 (Tab 开关)");
 
             // 6 x 4 = 24 格
             int index = 0;

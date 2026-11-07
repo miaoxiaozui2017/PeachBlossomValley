@@ -86,36 +86,43 @@ namespace PBV.Farming
             Vector3Int targetPos = InputHandler.Instance.SelectedGridPosition;
 
             // 上下文敏感的智能工具逻辑 (Smart Tool Logic for MVP)
+            // 优先级：成熟收获 > 空地锄地 > 无作物播种/浇水 > 有作物浇水
             PlotData plot = GetOrCreatePlot(targetPos);
 
-            // 1. 如果有成熟作物 -> 镰刀收获
+            // 1. 成熟作物 -> 镰刀收获（最高优先级）
             if (plot.plantedCrop != null && plot.growthDays >= plot.plantedCrop.daysToMature)
             {
                 HandleToolAction(targetPos, "Sickle");
                 return;
             }
 
-            // 2. 如果是空地 -> 锄地
+            // 2. 空地 -> 锄地
             if (plot.status == TileStatus.Empty)
             {
                 HandleToolAction(targetPos, "Hoe");
                 return;
             }
 
-            // 3. 已耕地/已浇水 且无作物 -> 优先播种（消耗背包种子）
+            // 3. 已耕地/已浇水 且无作物 -> 有种子则播种；无种子且未浇水则浇水
             if ((plot.status == TileStatus.Tilled || plot.status == TileStatus.Watered) && plot.plantedCrop == null)
             {
                 if (TryPlantFromInventory(targetPos)) return;
-                if (_debugCrop != null && _cropManager != null && _cropManager.TryPlantCrop(targetPos, _debugCrop))
+                // 无种子：Tilled 顺带浇水（方便玩家先整地），Watered 则无事
+                if (plot.status == TileStatus.Tilled)
                 {
-                    return; // 无种子时回退到调试种子
+                    HandleToolAction(targetPos, "WateringCan");
                 }
-                // 没种子则浇水
+                return;
+            }
+
+            // 4. 有作物且未成熟 -> 浇水（修复 playtest bug：播种后地块仍 Tilled 时按 Space 无反应）
+            if (plot.plantedCrop != null && plot.status == TileStatus.Tilled)
+            {
                 HandleToolAction(targetPos, "WateringCan");
                 return;
             }
 
-            // 4. 已浇水且有未成熟作物 -> 无事可做
+            // 5. 有作物且已浇水 -> 当天无需操作
         }
 
         /// <summary>
@@ -188,6 +195,13 @@ namespace PBV.Farming
                 _plots[pos] = new PlotData(pos);
             }
             return _plots[pos];
+        }
+
+        /// <summary>查询地块（不存在则返回 null，不创建）—— 供 UI/指示器读取状态</summary>
+        public PlotData GetPlot(Vector3Int pos)
+        {
+            _plots.TryGetValue(pos, out var plot);
+            return plot;
         }
 
         private void UpdateTileVisual(Vector3Int pos, TileBase tile)

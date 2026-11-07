@@ -2,11 +2,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using PBV.Inventory;
 using PBV.Save;
+using PBV.Economy;
 
 namespace PBV.Core
 {
     /// <summary>
-    /// 新游戏初始物资（从 Resources/Data 自动加载，读档时不发放）
+    /// 新游戏初始物资（从 Resources/Data 自动加载）
+    /// 读档时不发放；但若存档异常（空背包+0金钱，如被测试污染），兜底补发。
+    /// 修复 playtest bug: 冒烟测试残留存档导致玩家开局背包空。
     /// </summary>
     public class StarterKit : MonoBehaviour
     {
@@ -24,12 +27,33 @@ namespace PBV.Core
             if (_applied) return;
             _applied = true;
 
-            // 等待 SaveManager.Start 完成：读档则跳过
-            if (SaveManager.Instance != null && SaveManager.Instance.LoadedFromSave) return;
-
             var inventory = InventorySystem.Instance;
-            if (inventory == null) return;
+            if (inventory == null)
+            {
+                _applied = false; // 等下一帧重试
+                return;
+            }
 
+            bool loadedFromSave = SaveManager.Instance != null && SaveManager.Instance.LoadedFromSave;
+            bool inventoryEmpty = IsInventoryEmpty(inventory);
+            int money = PlayerWallet.Instance != null ? PlayerWallet.Instance.Money : 0;
+
+            // 读档且状态正常（有东西或有钱）-> 不发
+            if (loadedFromSave && !(inventoryEmpty && money == 0))
+            {
+                Debug.Log($"[StarterKit] 已读档(钱={money}, 背包空={inventoryEmpty})，跳过初始物资");
+                return;
+            }
+
+            // 新游戏 或 异常存档 -> 发放
+            GrantStarterItems(inventory);
+            Debug.Log(loadedFromSave
+                ? "[StarterKit] 检测到异常存档(空背包+0金钱)，补发初始物资"
+                : "[StarterKit] 初始物资已发放");
+        }
+
+        private void GrantStarterItems(InventorySystem inventory)
+        {
             foreach (var entry in _startingItems)
             {
                 var parts = entry.Split(':');
@@ -47,8 +71,16 @@ namespace PBV.Core
                     inventory.AddItem(item, count);
                 }
             }
+        }
 
-            Debug.Log("[StarterKit] 初始物资已发放");
+        private static bool IsInventoryEmpty(InventorySystem inventory)
+        {
+            for (int i = 0; i < inventory.Capacity; i++)
+            {
+                var slot = inventory.GetSlot(i);
+                if (slot != null && !slot.IsEmpty) return false;
+            }
+            return true;
         }
     }
 }

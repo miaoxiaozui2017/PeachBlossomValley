@@ -57,6 +57,29 @@ namespace PBVEditor
             EditorApplication.Exit(0);
         }
 
+        /// <summary>清除运行时存档（开始新游戏），用于摆脱冒烟测试等残留存档</summary>
+        [MenuItem("PBV/清除存档(开始新游戏)")]
+        public static void ClearSaveFile()
+        {
+            var path = System.IO.Path.Combine(Application.persistentDataPath, "pbv_save.json");
+            if (System.IO.File.Exists(path))
+            {
+                System.IO.File.Delete(path);
+                Debug.Log($"[SceneBuilder] 存档已删除: {path}");
+            }
+            else
+            {
+                Debug.Log("[SceneBuilder] 无存档文件可清除");
+            }
+        }
+
+        /// <summary>命令行：清除存档后退出</summary>
+        public static void ClearSaveFromCommandLine()
+        {
+            ClearSaveFile();
+            EditorApplication.Exit(0);
+        }
+
         // ---------------- 场景搭建 ----------------
 
         private static void BuildScene(TileSet tiles, DataSet data)
@@ -109,6 +132,12 @@ namespace PBVEditor
             SetRef(cropManager, "_farmGrid", farmGrid);
             SetRef(cropManager, "_cropTilemap", cropMap);
 
+            // 选中地块高亮指示器（修复 playtest bug：运行时看不到要耕哪块地）
+            var indicatorGo = new GameObject("SelectionIndicator");
+            indicatorGo.transform.SetParent(farmGo.transform, false);
+            indicatorGo.AddComponent<SpriteRenderer>();
+            var indicator = indicatorGo.AddComponent<SelectionIndicator>();
+
             // 系统管理器
             var systemsGo = new GameObject("Systems");
             systemsGo.AddComponent<InputHandler>();
@@ -127,6 +156,7 @@ namespace PBVEditor
             systemsGo.AddComponent<DialogueManager>();
             systemsGo.AddComponent<InventoryUI>();
             systemsGo.AddComponent<HUD>();
+            systemsGo.AddComponent<InteractionPromptUI>();
             systemsGo.AddComponent<StarterKit>();
 
             // 玩家
