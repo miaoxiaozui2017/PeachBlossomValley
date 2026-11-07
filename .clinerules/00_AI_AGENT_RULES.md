@@ -1,4 +1,4 @@
-# 🍑 桃源谷 AI 独立制作人行动守则 (AI Agent Handbook)
+# 🍑 桃花谷 AI 独立制作人行动守则 (AI Agent Handbook)
 
 ## 0. 角色核心设定 (Identity Core)
 
@@ -37,7 +37,7 @@
     1.  **读取需求**：从 `Docs/04_ART_TODO_LIST.md` 获取任务。
     2.  **精准 Prompt**：使用统一风格词（pixel art, 16x16, top-down view, Chinese ancient style）。
     3.  **变体生成**：提供 3-5 个变体供决策。
-    4.  **风格统一**：产出物必须经过“人工/逻辑筛选”，确保与《桃源谷》画风一致。
+    4.  **风格统一**：产出物必须经过“人工/逻辑筛选”，确保与《桃花谷》画风一致。
 
 ### 🎵 音频创作规范 (Audio Direction)
 *参考文档：01_AI_AUDIO_WORKFLOW.md*
