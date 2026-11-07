@@ -40,9 +40,9 @@
 *   [x] [AI-Generated] **ShippingBinSystem (新增)**：
     *   交互逻辑：E 键投入背包中全部可出售物品（跳过工具/种子）。
     *   结算逻辑：每日 06:00 (TimeManager.OnDayChanged) 结算总价值并入账 `PlayerWallet`。
-*   [ ] **UI_Inventory**：
-    *   简单的网格显示。
-    *   点击选中/快捷栏映射。
+*   [x] **UI_Inventory**：
+    *   简单的网格显示（24 格 6x4 面板，Tab 开关，灰盒 UI 自动构建）。
+    *   点击选中/快捷栏映射（底部常驻快捷栏槽位 0-9，数字键 1-0 选择）。
 
 ## 5. NPC与对话 (Dialogue - Basic)
 
