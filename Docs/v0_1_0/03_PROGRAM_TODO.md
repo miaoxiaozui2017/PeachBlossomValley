@@ -46,10 +46,11 @@
 
 ## 5. NPC与对话 (Dialogue - Basic)
 
-*   [ ] [AI-Generated] **SimpleDialogueSystem**：
-    *   显示文本框。
+*   [x] [AI-Generated] **SimpleDialogueSystem**：
+    *   显示文本框（灰盒 UI 自动构建，后续可替换）。
     *   逐字显示效果。
-    *   按键翻页。
+    *   按键翻页（E，打字中先补全再翻页）。
+    *   **NPCController**：挂载即用的基础 NPC（碰撞体 + 对话数据）。
 
 ## 6. 存档系统 (Save - Optimized)
 
