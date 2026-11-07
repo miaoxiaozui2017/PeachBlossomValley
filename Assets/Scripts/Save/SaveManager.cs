@@ -141,6 +141,10 @@ namespace PBV.Save
                     data.staminaLevel = stam;
                 }
 
+                // 世界状态
+                if (PBV.Systems.WorldState.Instance != null)
+                    data.world = (int)PBV.Systems.WorldState.Instance.Current;
+
                 // 背包（只存非空槽位，含索引）
                 if (InventorySystem.Instance != null)
                 {
@@ -213,6 +217,10 @@ namespace PBV.Save
                 // 建造等级
                 if (PBV.Systems.BuildSystem.Instance != null)
                     PBV.Systems.BuildSystem.Instance.Import(data.bagLevel, data.staminaLevel);
+
+                // 世界状态
+                if (PBV.Systems.WorldState.Instance != null)
+                    PBV.Systems.WorldState.Instance.Restore(data.world);
 
                 // 背包
                 if (InventorySystem.Instance != null)

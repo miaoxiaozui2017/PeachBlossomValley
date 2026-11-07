@@ -171,6 +171,7 @@ namespace PBVEditor
             systemsGo.AddComponent<SkillSystem>();
             systemsGo.AddComponent<MineSystem>();
             systemsGo.AddComponent<FestivalSystem>();
+            systemsGo.AddComponent<WorldState>();
 
             // 存档系统 + 目录表（全部作物 + 材料）
             var allItems = data.AllItems;
@@ -342,6 +343,17 @@ namespace PBVEditor
             buildCol.size = new Vector2(1.5f, 2f); buildCol.offset = new Vector2(0, 0.8f);
             buildGo.layer = LayerMask.NameToLayer(InteractableLayerName);
             buildGo.AddComponent<BuildStation>();
+
+            // 传送门（穿越时空）
+            var portalGo = new GameObject("WorldPortal");
+            portalGo.transform.position = new Vector3(0f, -7f, 0);
+            var portalSr = portalGo.AddComponent<SpriteRenderer>();
+            portalSr.sprite = data.BinSprite; portalSr.sortingOrder = 9;
+            portalSr.color = new Color(0.6f, 0.4f, 0.8f);
+            var portalCol = portalGo.AddComponent<BoxCollider2D>();
+            portalCol.size = new Vector2(1.5f, 2f); portalCol.offset = new Vector2(0, 0.8f);
+            portalGo.layer = LayerMask.NameToLayer(InteractableLayerName);
+            portalGo.AddComponent<WorldPortal>();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log("[SceneBuilder] 场景已保存");
