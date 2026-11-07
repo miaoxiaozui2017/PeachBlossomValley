@@ -318,6 +318,17 @@ namespace PBVEditor
             smithGo.layer = LayerMask.NameToLayer(InteractableLayerName);
             smithGo.AddComponent<PBV.Player.ToolUpgradeStation>();
 
+            // 床（睡觉恢复体力+跳日）
+            var bedGo = new GameObject("Bed");
+            bedGo.transform.position = new Vector3(-2f, 0f, 0);
+            var bedSr = bedGo.AddComponent<SpriteRenderer>();
+            bedSr.sprite = data.BinSprite; bedSr.sortingOrder = 9;
+            bedSr.color = new Color(0.5f, 0.4f, 0.5f);
+            var bedCol = bedGo.AddComponent<BoxCollider2D>();
+            bedCol.size = new Vector2(1.5f, 1f); bedCol.offset = new Vector2(0, 0.3f);
+            bedGo.layer = LayerMask.NameToLayer(InteractableLayerName);
+            bedGo.AddComponent<Bed>();
+
             EditorSceneManager.SaveScene(scene, ScenePath);
             Debug.Log("[SceneBuilder] 场景已保存");
         }
