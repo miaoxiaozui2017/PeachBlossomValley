@@ -44,6 +44,8 @@ namespace PBV.UI
         private Text _moneyText;
         private Text _infoText;
         private int _lastCapacity = -1;
+        private bool _subscribed;
+        private float _refreshTimer;
 
         private static Font _font;
 
@@ -51,12 +53,9 @@ namespace PBV.UI
         {
             _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             BuildUI();
-            RefreshAll();
-
-            if (InventorySystem.Instance != null)
-            {
-                InventorySystem.Instance.OnInventoryChanged += RefreshAll;
-            }
+            // 不在 Awake 订阅：InventorySystem 与本组件挂在同一物体上，Awake 顺序不保证，
+            // 那时 Instance 可能还是 null，订阅会静默丢失 —— 结果就是开局背包一片空白，
+            // 直到扩容等事件碰巧触发一次刷新才显示物品。
         }
 
         private void Start()
@@ -66,13 +65,21 @@ namespace PBV.UI
                 PlayerWallet.Instance.OnMoneyChanged += RefreshMoney;
                 RefreshMoney(PlayerWallet.Instance.Money);
             }
-            // Awake 时 InventorySystem 可能还没初始化，这里再刷一次
+            EnsureSubscribed();
             RefreshAll();
+        }
+
+        /// <summary>懒订阅：Instance 一就绪就补上，且只补一次</summary>
+        private void EnsureSubscribed()
+        {
+            if (_subscribed || InventorySystem.Instance == null) return;
+            InventorySystem.Instance.OnInventoryChanged += RefreshAll;
+            _subscribed = true;
         }
 
         private void OnDestroy()
         {
-            if (InventorySystem.Instance != null)
+            if (_subscribed && InventorySystem.Instance != null)
             {
                 InventorySystem.Instance.OnInventoryChanged -= RefreshAll;
             }
@@ -84,14 +91,24 @@ namespace PBV.UI
 
         private void Update()
         {
+            // 兜底三件套：懒订阅 / 容量变化 / 定时刷新。
+            // 这些不依赖键盘，必须放在 keyboard==null 的提前 return 之前。
+            EnsureSubscribed();
+
+            var inv = InventorySystem.Instance;
+            if (inv != null && inv.Capacity != _lastCapacity) RefreshAll();
+
+            _refreshTimer -= Time.unscaledDeltaTime;
+            if (_refreshTimer <= 0f)
+            {
+                _refreshTimer = 0.2f;
+                RefreshAll(); // 初始物资由 StarterKit 在首帧 Update 发放，任何事件漏掉都能补回来
+            }
+
             var keyboard = UnityEngine.InputSystem.Keyboard.current;
             if (keyboard == null) return;
 
             if (keyboard.tabKey.wasPressedThisFrame) TogglePanel();
-
-            // 扩容不一定触发背包变更事件，这里兜底比对容量，保证格子立刻变多
-            var inv = InventorySystem.Instance;
-            if (inv != null && inv.Capacity != _lastCapacity) RefreshAll();
 
             // 数字键 1-0 选择快捷栏槽位
             SelectByKey(keyboard.digit1Key, 0);
@@ -113,7 +130,10 @@ namespace PBV.UI
 
         private void TogglePanel()
         {
-            if (_panel != null) _panel.SetActive(!_panel.activeSelf);
+            if (_panel == null) return;
+            bool open = !_panel.activeSelf;
+            _panel.SetActive(open);
+            if (open) RefreshAll(); // 打开瞬间强制对齐背包真实内容
         }
 
         private void SelectSlot(int index)
