@@ -19,6 +19,7 @@ namespace PBV.UI
         [SerializeField] private float _rowHeight = 64f;
 
         private GameObject _root;
+        private GameObject _canvasGo;   // 整块 Canvas（含全屏 BG），关闭时一起隐藏，避免 BG 常驻吃点击
         private GameObject _listContent;
         private Text _titleText;
         private Text _moneyText;
@@ -31,7 +32,7 @@ namespace PBV.UI
             if (Instance == null) Instance = this;
             else { Destroy(gameObject); return; }
             BuildUI();
-            _root.SetActive(false);
+            _canvasGo.SetActive(false);
         }
 
         private void Update()
@@ -48,7 +49,7 @@ namespace PBV.UI
         {
             _currentShop = shop;
             _isOpen = true;
-            _root.SetActive(true);
+            _canvasGo.SetActive(true);
             Refresh();
         }
 
@@ -56,7 +57,7 @@ namespace PBV.UI
         {
             _isOpen = false;
             _currentShop = null;
-            _root.SetActive(false);
+            _canvasGo.SetActive(false);
         }
 
         private void Refresh()
@@ -183,7 +184,8 @@ namespace PBV.UI
 
         private void BuildUI()
         {
-            var canvasGo = new GameObject("ShopCanvas");
+            _canvasGo = new GameObject("ShopCanvas");
+            var canvasGo = _canvasGo;
             canvasGo.transform.SetParent(transform, false);
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;

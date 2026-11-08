@@ -193,7 +193,7 @@ namespace PBV.UI
             canvasGo.transform.SetParent(transform, false);
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 50;
+            canvas.sortingOrder = 15; // 常驻快捷栏不压在功能面板（23~30）之上
             var scaler = canvasGo.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
@@ -216,6 +216,7 @@ namespace PBV.UI
 
             var bg = hotbarGo.AddComponent<Image>();
             bg.color = new Color(0, 0, 0, 0.35f);
+            bg.raycastTarget = false; // 快捷栏底板纯展示，点击交给格子上的 Button
 
             // HorizontalLayoutGroup 让快捷栏内格子自动横向排列
             var hgroup = hotbarGo.AddComponent<HorizontalLayoutGroup>();

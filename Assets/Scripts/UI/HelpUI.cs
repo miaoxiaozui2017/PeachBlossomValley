@@ -7,13 +7,14 @@ namespace PBV.UI
     public class HelpUI : MonoBehaviour
     {
         private GameObject _root;
+        private GameObject _canvasGo;   // 整块 Canvas（含全屏 BG），关闭时一起隐藏，避免 BG 常驻吃点击
         private bool _isOpen;
         private static Font _font;
 
         private void Awake()
         {
             BuildUI();
-            _root.SetActive(false);
+            _canvasGo.SetActive(false);
         }
 
         private void Update()
@@ -21,13 +22,14 @@ namespace PBV.UI
             if (Input.GetKeyDown(KeyCode.H))
             {
                 _isOpen = !_isOpen;
-                _root.SetActive(_isOpen);
+                _canvasGo.SetActive(_isOpen);
             }
         }
 
         private void BuildUI()
         {
-            var canvasGo = new GameObject("HelpCanvas");
+            _canvasGo = new GameObject("HelpCanvas");
+            var canvasGo = _canvasGo;
             canvasGo.transform.SetParent(transform, false);
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;

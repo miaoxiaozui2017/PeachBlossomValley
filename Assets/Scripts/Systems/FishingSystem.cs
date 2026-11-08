@@ -25,7 +25,7 @@ namespace PBV.Systems
         public void ResolveFish()
         {
             _fishTypes.Clear();
-            var allItems = Resources.FindObjectsOfTypeAll<ItemData>();
+            var allItems = Resources.LoadAll<ItemData>("Data");
             foreach (var item in allItems)
             {
                 if (item.id != null && item.id.StartsWith("item_fish_"))

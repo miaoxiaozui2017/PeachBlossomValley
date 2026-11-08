@@ -109,6 +109,13 @@ namespace PBVEditor
         private static void BuildScene(TileSet tiles, DataSet data)
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+
+            // UI 按钮必需：没有 EventSystem 时所有制作/购买/升级按钮都收不到鼠标点击。
+            // 运行时 UIEventSystemBootstrap 也会兜底补建，这里给重建后的场景补齐。
+            var eventSystemGo = new GameObject("EventSystem");
+            eventSystemGo.AddComponent<UnityEngine.EventSystems.EventSystem>();
+            eventSystemGo.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+
             var defaultLight = Object.FindObjectOfType<Light>();
             if (defaultLight != null) Object.DestroyImmediate(defaultLight.gameObject);
 

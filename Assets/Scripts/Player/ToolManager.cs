@@ -114,7 +114,7 @@ namespace PBV.Player
 
         private ItemData FindItemById(string id)
         {
-            var all = Resources.FindObjectsOfTypeAll<ItemData>();
+            var all = Resources.LoadAll<ItemData>("Data");
             foreach (var i in all) if (i.id == id) return i;
             return null;
         }

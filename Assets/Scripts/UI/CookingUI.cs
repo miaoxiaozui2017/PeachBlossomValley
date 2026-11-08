@@ -10,6 +10,7 @@ namespace PBV.UI
     {
         public static CookingUI Instance { get; private set; }
         private GameObject _root;
+        private GameObject _canvasGo;   // 整块 Canvas（含全屏 BG），关闭时一起隐藏，避免 BG 常驻吃点击
         private Transform _listContent;
         private bool _isOpen;
         private static Font _font;
@@ -19,7 +20,7 @@ namespace PBV.UI
             if (Instance == null) Instance = this;
             else { Destroy(gameObject); return; }
             BuildUI();
-            _root.SetActive(false);
+            _canvasGo.SetActive(false);
         }
 
         private void Start()
@@ -37,7 +38,7 @@ namespace PBV.UI
         public void Toggle()
         {
             _isOpen = !_isOpen;
-            _root.SetActive(_isOpen);
+            _canvasGo.SetActive(_isOpen);
             if (_isOpen) Refresh();
         }
 
@@ -109,7 +110,8 @@ namespace PBV.UI
 
         private void BuildUI()
         {
-            var canvasGo = new GameObject("CookingUICanvas");
+            _canvasGo = new GameObject("CookingUICanvas");
+            var canvasGo = _canvasGo;
             canvasGo.transform.SetParent(transform, false);
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;

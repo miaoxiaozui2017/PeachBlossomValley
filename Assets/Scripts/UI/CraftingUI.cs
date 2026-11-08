@@ -15,6 +15,7 @@ namespace PBV.UI
         public static CraftingUI Instance { get; private set; }
 
         private GameObject _root;
+        private GameObject _canvasGo;   // 整块 Canvas（含全屏 BG），关闭时一起隐藏，避免 BG 常驻吃点击
         private Transform _listContent;
         private bool _isOpen;
         private readonly Dictionary<string, Button> _buttons = new Dictionary<string, Button>();
@@ -25,7 +26,7 @@ namespace PBV.UI
             if (Instance == null) Instance = this;
             else { Destroy(gameObject); return; }
             BuildUI();
-            _root.SetActive(false);
+            _canvasGo.SetActive(false);
         }
 
         private void Start()
@@ -49,13 +50,15 @@ namespace PBV.UI
         public void Toggle()
         {
             _isOpen = !_isOpen;
-            _root.SetActive(_isOpen);
+            _canvasGo.SetActive(_isOpen);
             if (_isOpen) Refresh();
         }
 
         private void Refresh()
         {
             if (CraftingSystem.Instance == null || _listContent == null) return;
+            // 打开面板/背包变化时重试解析，避免 Start 时序过早导致配方引用为空、按钮一直灰
+            CraftingSystem.Instance.ResolveReferences();
 
             // 清空
             for (int i = _listContent.childCount - 1; i >= 0; i--)
@@ -146,7 +149,8 @@ namespace PBV.UI
 
         private void BuildUI()
         {
-            var canvasGo = new GameObject("CraftingCanvas");
+            _canvasGo = new GameObject("CraftingCanvas");
+            var canvasGo = _canvasGo;
             canvasGo.transform.SetParent(transform, false);
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;

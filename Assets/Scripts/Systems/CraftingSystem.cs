@@ -61,7 +61,11 @@ namespace PBV.Systems
         public void ResolveReferences()
         {
             if (_resolved) return;
-            var allItems = Resources.FindObjectsOfTypeAll<ItemData>();
+            // 必须主动从 Resources/Data 加载：FindObjectsOfTypeAll 只返回已加载对象，
+            // 未被背包引用过的材料资产不会在内存里，会导致配方引用为 null、永远判定材料不足。
+            var allItems = Resources.LoadAll<ItemData>("Data");
+            if (allItems == null || allItems.Length == 0) return; // 资产还没就绪，下次重试
+
             foreach (var r in _recipes)
             {
                 r._inputs = new ItemData[r.inputItemIds.Length];
@@ -76,6 +80,14 @@ namespace PBV.Systems
                 {
                     if (item.id == r.outputItemId) { r._output = item; break; }
                 }
+            }
+
+            // 有任何一个引用没解析到就不锁定 _resolved，允许后续重试，
+            // 否则配方会永久判定「材料不足」，制作按钮一直是灰的。
+            foreach (var r in _recipes)
+            {
+                if (r._output == null) return;
+                foreach (var inp in r._inputs) if (inp == null) return;
             }
             _resolved = true;
             OnRecipesResolved?.Invoke();

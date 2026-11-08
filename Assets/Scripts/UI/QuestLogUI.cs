@@ -11,6 +11,7 @@ namespace PBV.UI
     public class QuestLogUI : MonoBehaviour
     {
         private GameObject _root;
+        private GameObject _canvasGo;   // 整块 Canvas，关闭时一起隐藏
         private Transform _listContent;
         private bool _isOpen;
         private static Font _font;
@@ -18,7 +19,7 @@ namespace PBV.UI
         private void Awake()
         {
             BuildUI();
-            _root.SetActive(false);
+            _canvasGo.SetActive(false);
             if (QuestManager.Instance != null)
                 QuestManager.Instance.OnQuestsChanged += Refresh;
         }
@@ -28,7 +29,7 @@ namespace PBV.UI
             if (Input.GetKeyDown(KeyCode.J))
             {
                 _isOpen = !_isOpen;
-                _root.SetActive(_isOpen);
+                _canvasGo.SetActive(_isOpen);
                 if (_isOpen) Refresh();
             }
         }
@@ -102,7 +103,8 @@ namespace PBV.UI
 
         private void BuildUI()
         {
-            var canvasGo = new GameObject("QuestLogCanvas");
+            _canvasGo = new GameObject("QuestLogCanvas");
+            var canvasGo = _canvasGo;
             canvasGo.transform.SetParent(transform, false);
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;

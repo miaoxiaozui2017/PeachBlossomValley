@@ -8,7 +8,7 @@ namespace PBV.UI
     /// <summary>
     /// 交互提示 UI：玩家靠近可交互对象（NPC/出货箱）时，屏幕底部显示 "[E] xxx"。
     /// 订阅 PlayerController.OnNearbyChanged，自动显隐。
-    /// 修复 playtest bug: 靠近 NPC 无任何提示。
+    /// 纯展示层：排序低于所有功能面板，不挂 GraphicRaycaster，不拦截按钮点击。
     /// </summary>
     public class InteractionPromptUI : MonoBehaviour
     {
@@ -17,6 +17,7 @@ namespace PBV.UI
 
         private void Awake()
         {
+            UIEventSystemBootstrap.Ensure();
             BuildUI();
             SetVisible(false);
         }
@@ -55,10 +56,10 @@ namespace PBV.UI
             canvasGo.transform.SetParent(transform, false);
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 55;
+            canvas.sortingOrder = 10; // 低于所有功能面板（23~30），不会盖住面板
             var scaler = canvasGo.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            canvasGo.AddComponent<GraphicRaycaster>();
+            // 纯展示层不挂 GraphicRaycaster
 
             _root = new GameObject("Prompt");
             _root.transform.SetParent(canvasGo.transform, false);
@@ -71,6 +72,7 @@ namespace PBV.UI
 
             var bg = _root.AddComponent<Image>();
             bg.color = new Color(0.08f, 0.06f, 0.04f, 0.85f);
+            bg.raycastTarget = false;
 
             var textGo = new GameObject("Text");
             textGo.transform.SetParent(_root.transform, false);
@@ -87,6 +89,7 @@ namespace PBV.UI
             _promptText.alignment = TextAnchor.MiddleCenter;
             _promptText.horizontalOverflow = HorizontalWrapMode.Overflow;
             _promptText.verticalOverflow = VerticalWrapMode.Overflow;
+            _promptText.raycastTarget = false;
         }
     }
 }

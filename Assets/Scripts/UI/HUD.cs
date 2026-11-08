@@ -8,6 +8,8 @@ namespace PBV.UI
 {
     /// <summary>
     /// 灰盒 HUD：时间/天数/金钱/待结算/体力条/当前工具 + 操作提示（事件驱动）
+    /// 纯展示层：排序最底、不挂 GraphicRaycaster、所有 Graphic 关 raycastTarget，
+    /// 避免遮挡/拦截下层功能面板（制作、商店等）的按钮点击。
     /// </summary>
     public class HUD : MonoBehaviour
     {
@@ -21,6 +23,8 @@ namespace PBV.UI
 
         private void Awake()
         {
+            // 场景未放置 EventSystem，运行时补建，否则所有 UI 按钮点不动
+            UIEventSystemBootstrap.Ensure();
             _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             BuildUI();
         }
@@ -160,9 +164,9 @@ namespace PBV.UI
             canvasGo.transform.SetParent(transform, false);
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 40;
+            canvas.sortingOrder = 5; // 最底层：所有功能面板（23~30）都在它上面
             canvasGo.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            canvasGo.AddComponent<GraphicRaycaster>();
+            // 纯展示层不挂 GraphicRaycaster，不参与点击命中
 
             _timeText = CreateText(canvasGo.transform, "TimeText", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(24f, -20f), new Vector2(420f, 36f), 24, FontStyle.Bold, new Color(1f, 0.96f, 0.86f));
@@ -183,6 +187,7 @@ namespace PBV.UI
             staminaBgRect.sizeDelta = new Vector2(220f, 22f);
             var staminaBg = staminaBgGo.AddComponent<Image>();
             staminaBg.color = new Color(0.1f, 0.08f, 0.06f, 0.8f);
+            staminaBg.raycastTarget = false;
 
             var staminaFillGo = new GameObject("StaminaFill");
             staminaFillGo.transform.SetParent(staminaBgGo.transform, false);
@@ -196,6 +201,7 @@ namespace PBV.UI
             _staminaFill.fillMethod = Image.FillMethod.Horizontal;
             _staminaFill.fillAmount = 1f;
             _staminaFill.color = new Color(0.4f, 0.85f, 0.45f);
+            _staminaFill.raycastTarget = false;
 
             // 体力数值标签
             var staminaLabel = CreateText(canvasGo.transform, "StaminaLabel", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
@@ -207,10 +213,11 @@ namespace PBV.UI
             _toolText = CreateText(canvasGo.transform, "ToolText", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
                 new Vector2(24f, -175f), new Vector2(460f, 28f), 18, FontStyle.Bold, new Color(0.85f, 0.9f, 1f));
 
-            var hint = CreateText(canvasGo.transform, "HintText", new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0.5f, 0f),
-                new Vector2(0f, 80f), new Vector2(-40f, 30f), 15, FontStyle.Normal, new Color(1f, 1f, 1f, 0.65f));
-            hint.text = "WASD 移动   Space 使用工具   Q 切换工具   E 交互   Tab 背包   F5 存档   F9 读档   N 次日";
-            hint.alignment = TextAnchor.MiddleCenter;
+            // 操作条移到左下角，避开屏幕中央的 [E] 交互提示，也不压住任何面板
+            var hint = CreateText(canvasGo.transform, "HintText", new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f),
+                new Vector2(24f, 8f), new Vector2(900f, 24f), 14, FontStyle.Normal, new Color(1f, 1f, 1f, 0.55f));
+            hint.text = "H 帮助（全部快捷键与玩法）    F5 存档    F9 读档    N 次日";
+            hint.alignment = TextAnchor.MiddleLeft;
         }
 
         private static Text CreateText(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 pivot,
@@ -233,6 +240,7 @@ namespace PBV.UI
             text.alignment = TextAnchor.MiddleLeft;
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
             text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.raycastTarget = false; // 纯展示文字不接收点击
             return text;
         }
     }

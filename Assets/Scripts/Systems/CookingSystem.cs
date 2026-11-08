@@ -63,7 +63,7 @@ namespace PBV.Systems
         public void ResolveReferences()
         {
             if (_resolved) return;
-            var allItems = Resources.FindObjectsOfTypeAll<ItemData>();
+            var allItems = Resources.LoadAll<ItemData>("Data");
             foreach (var r in _recipes)
             {
                 r._inputs = new ItemData[r.inputItemIds.Length];
