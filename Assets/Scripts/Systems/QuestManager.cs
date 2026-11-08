@@ -32,6 +32,9 @@ namespace PBV.Systems
 
         public event Action OnQuestsChanged;
 
+        /// <summary>每次任务状态/进度变化自增；UI 用它做兜底轮询，避免漏订阅事件</summary>
+        public int Version { get; private set; }
+
         private readonly List<Quest> _quests = new List<Quest>();
 
         public IReadOnlyList<Quest> Quests => _quests;
@@ -63,7 +66,7 @@ namespace PBV.Systems
                 {
                     q.status = QuestStatus.Active;
                     Debug.Log($"[Quest] 新任务: {q.title}");
-                    OnQuestsChanged?.Invoke();
+                    NotifyChanged();
                     return;
                 }
             }
@@ -82,6 +85,12 @@ namespace PBV.Systems
                 ClaimReward(q);
                 ActivateNext();
             }
+            NotifyChanged();
+        }
+
+        private void NotifyChanged()
+        {
+            Version++;
             OnQuestsChanged?.Invoke();
         }
 
@@ -99,7 +108,7 @@ namespace PBV.Systems
 
         private Inventory.ItemData FindItemById(string id)
         {
-            var all = Resources.FindObjectsOfTypeAll<Inventory.ItemData>();
+            var all = Resources.LoadAll<Inventory.ItemData>("Data");
             foreach (var i in all) if (i.id == id) return i;
             return null;
         }
@@ -128,7 +137,7 @@ namespace PBV.Systems
                 var q = _quests.Find(x => x.id == d.id);
                 if (q != null) { q.status = (QuestStatus)d.status; q.currentCount = d.currentCount; }
             }
-            OnQuestsChanged?.Invoke();
+            NotifyChanged();
         }
     }
 

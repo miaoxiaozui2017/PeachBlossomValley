@@ -67,6 +67,11 @@ namespace PBV.Economy
             int totalValue = 0;
             int totalItems = 0;
 
+            // 价格倍率在"投入的这一刻"锁定：穿越到现代后投入即享 ×2，
+            // 不必等到次日 06:00 还得恰好人在现代，规则更直观。
+            float worldMult = WorldState.Instance != null ? WorldState.Instance.SellMultiplier : 1f;
+            float festMult = FestivalSystem.Instance != null ? FestivalSystem.Instance.PriceMultiplier : 1f;
+
             // 收集后再移除，避免边遍历边修改
             for (int i = 0; i < _inventory.Capacity; i++)
             {
@@ -74,7 +79,7 @@ namespace PBV.Economy
                 if (slot == null || slot.IsEmpty) continue;
                 if (!IsSellable(slot.item)) continue;
 
-                totalValue += slot.item.sellPrice * slot.count;
+                totalValue += Mathf.RoundToInt(slot.item.sellPrice * slot.count * worldMult * festMult);
                 totalItems += slot.count;
             }
 
@@ -115,16 +120,12 @@ namespace PBV.Economy
         {
             if (PendingValue <= 0) return;
 
-            float festMult = PBV.Systems.FestivalSystem.Instance != null ? PBV.Systems.FestivalSystem.Instance.PriceMultiplier : 1f;
-            float worldMult = PBV.Systems.WorldState.Instance != null ? PBV.Systems.WorldState.Instance.SellMultiplier : 1f;
-            int earnings = Mathf.RoundToInt(PendingValue * festMult * worldMult);
+            // 倍率已在投入时结算，次日只负责入账，避免重复乘算
+            int earnings = PendingValue;
             if (PlayerWallet.Instance != null)
             {
                 PlayerWallet.Instance.AddMoney(earnings);
-                string bonus = "";
-                if (festMult > 1f) bonus += $" (节日x{festMult})";
-                if (worldMult > 1f) bonus += $" (现代x{worldMult})";
-                Debug.Log($"[ShippingBin] 昨日出货结算：+{earnings} 金钱{bonus}");
+                Debug.Log($"[ShippingBin] 昨日出货结算：+{earnings} 金钱");
             }
             PendingValue = 0;
             OnPendingChanged?.Invoke(PendingValue);

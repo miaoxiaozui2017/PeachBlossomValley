@@ -58,6 +58,9 @@ namespace PBV.Player
             Debug.Log($"[PlayerStats] 新一天，体力恢复至 {Stamina}/{_maxStamina}");
         }
 
+        /// <summary>体力是否足够（工具动作执行前先查询，避免"先做完再扣不动"）</summary>
+        public bool HasEnough(int cost) => cost <= 0 || Stamina >= cost;
+
         /// <summary>尝试消耗体力，不足返回 false</summary>
         public bool TrySpend(int cost)
         {

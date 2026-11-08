@@ -52,7 +52,7 @@ namespace PBV.UI
             var row = new GameObject($"Tool_{toolIndex}");
             row.transform.SetParent(_listContent, false);
             var rt = row.AddComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(0, 64);
+            rt.sizeDelta = new Vector2(0, 80);
             var img = row.AddComponent<Image>();
             img.color = canUpgrade ? new Color(0.15f, 0.18f, 0.12f, 0.95f) : new Color(0.1f, 0.1f, 0.1f, 0.8f);
 
@@ -64,7 +64,7 @@ namespace PBV.UI
             var infoGo = new GameObject("Info");
             infoGo.transform.SetParent(row.transform, false);
             var infoRt = infoGo.AddComponent<RectTransform>();
-            infoRt.sizeDelta = new Vector2(340, 56);
+            infoRt.sizeDelta = new Vector2(340, 72);
             var infoText = infoGo.AddComponent<Text>();
             if (_font == null) _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             infoText.font = _font;
@@ -74,7 +74,9 @@ namespace PBV.UI
             infoText.supportRichText = true;
 
             string costText = level >= 3 ? "<color=#888>已满级</color>" : $"升级: {cost.Value.oreCount}个{OreName(cost.Value.oreId)} + ¥{cost.Value.money}";
-            infoText.text = $"<b>{tm.GetToolName(toolIndex)}</b>  Lv.{level}\n{costText}  (体力消耗: {Mathf.Max(0, new int[]{3,2,1,1}[toolIndex] - (level-1))})";
+            string effect = $"现在: {tm.GetToolEffect(toolIndex)}";
+            if (level < 3) effect += $"\n<color=#8f8>下级: {ToolManager.DescribeEffect(toolIndex, level + 1)}</color>";
+            infoText.text = $"<b>{tm.GetToolName(toolIndex)}</b>  Lv.{level}\n{costText}\n{effect}";
             infoText.raycastTarget = false;
 
             // 按钮

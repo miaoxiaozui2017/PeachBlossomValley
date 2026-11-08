@@ -14,37 +14,70 @@ namespace PBV.UI
         private GameObject _canvasGo;   // 整块 Canvas，关闭时一起隐藏
         private Transform _listContent;
         private bool _isOpen;
+        private bool _subscribed;
+        private int _lastVersion = -1;
+        private float _pollTimer;
         private static Font _font;
 
         private void Awake()
         {
             BuildUI();
             _canvasGo.SetActive(false);
-            if (QuestManager.Instance != null)
-                QuestManager.Instance.OnQuestsChanged += Refresh;
+            // 不在 Awake 订阅：本组件与 QuestManager 挂在同一物体上，Awake 顺序不确定，
+            // 那时 QuestManager.Instance 可能还是 null，导致永远收不到更新事件。
+        }
+
+        private void Start() => TrySubscribe();
+
+        private void TrySubscribe()
+        {
+            if (_subscribed || QuestManager.Instance == null) return;
+            QuestManager.Instance.OnQuestsChanged += Refresh;
+            _subscribed = true;
+        }
+
+        private void OnDestroy()
+        {
+            if (_subscribed && QuestManager.Instance != null)
+                QuestManager.Instance.OnQuestsChanged -= Refresh;
         }
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.J))
+            TrySubscribe(); // 懒订阅兜底
+
+            if (Input.GetKeyDown(KeyCode.J) || (_isOpen && Input.GetKeyDown(KeyCode.Escape)))
+                Toggle();
+
+            // 面板开着时每 0.2s 比对版本号：即使事件漏掉，进度也会实时刷新
+            if (_isOpen)
             {
-                _isOpen = !_isOpen;
-                _canvasGo.SetActive(_isOpen);
-                if (_isOpen) Refresh();
+                _pollTimer -= Time.unscaledDeltaTime;
+                if (_pollTimer <= 0f)
+                {
+                    _pollTimer = 0.2f;
+                    var qm = QuestManager.Instance;
+                    if (qm != null && qm.Version != _lastVersion) Refresh();
+                }
             }
+        }
+
+        public void Toggle()
+        {
+            _isOpen = !_isOpen;
+            _canvasGo.SetActive(_isOpen);
+            if (_isOpen) Refresh();
         }
 
         private void Refresh()
         {
-            if (QuestManager.Instance == null || _listContent == null) return;
+            var qm = QuestManager.Instance;
+            if (qm == null || _listContent == null) return;
+            _lastVersion = qm.Version;
             for (int i = _listContent.childCount - 1; i >= 0; i--)
                 Destroy(_listContent.GetChild(i).gameObject);
 
-            foreach (var q in QuestManager.Instance.Quests)
-            {
-                if (q.status == QuestStatus.Locked) continue;
-                CreateQuestRow(q);
-            }
+            foreach (var q in qm.Quests) CreateQuestRow(q);
         }
 
         private void CreateQuestRow(Quest q)
@@ -77,7 +110,7 @@ namespace PBV.UI
                 case QuestStatus.Active: statusIcon = "[进行中]"; break;
                 case QuestStatus.Completed: statusIcon = "[已完成]"; break;
                 case QuestStatus.Rewarded: statusIcon = "[已领奖]"; break;
-                default: statusIcon = ""; break;
+                default: statusIcon = "[未解锁]"; break;
             }
             var title = CreateText(row.transform, "Title", 16, FontStyle.Bold,
                 q.status == QuestStatus.Rewarded ? new Color(0.6f, 0.6f, 0.6f) : new Color(1f, 0.92f, 0.7f),
@@ -94,7 +127,9 @@ namespace PBV.UI
             // 进度+奖励
             string progressText = q.status == QuestStatus.Active
                 ? $"进度: {q.currentCount}/{q.targetCount}   奖励: ¥{q.rewardMoney}"
-                : $"奖励: ¥{q.rewardMoney}";
+                : q.status == QuestStatus.Locked
+                    ? $"完成上一个任务后解锁   奖励: ¥{q.rewardMoney}"
+                    : $"奖励: ¥{q.rewardMoney}";
             var prog = CreateText(row.transform, "Prog", 13, FontStyle.Normal,
                 new Color(1f, 0.85f, 0.4f), progressText);
             var progRt = prog.rectTransform;

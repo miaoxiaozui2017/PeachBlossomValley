@@ -4,6 +4,7 @@ using UnityEngine.UI;
 using PBV.Economy;
 using PBV.Inventory;
 using PBV.Systems;
+using PBV.Player;
 
 namespace PBV.UI
 {
@@ -81,6 +82,14 @@ namespace PBV.UI
 
         private void CreateRow(ShopEntry entry)
         {
+            // 种子包升级的实际收益：杂货铺种子打折（Lv2 九折 / Lv3 八折）
+            var toolMgr = ToolManager.Instance;
+            bool isSeed = entry.item.type == ItemType.Seed && entry.item.cropToPlant != null;
+            float discount = (isSeed && toolMgr != null) ? toolMgr.SeedShopDiscount : 1f;
+            int price = discount < 1f
+                ? Mathf.Max(1, Mathf.CeilToInt(entry.price * discount))
+                : entry.price;
+
             var row = new GameObject($"Row_{entry.item.itemName}");
             row.transform.SetParent(_listContent.transform, false);
             var rt = row.AddComponent<RectTransform>();
@@ -133,8 +142,9 @@ namespace PBV.UI
             priceText.font = Font;
             priceText.fontSize = 18;
             priceText.alignment = TextAnchor.MiddleRight;
-            priceText.color = new Color(1f, 0.85f, 0.4f);
-            priceText.text = $"¥{entry.price}";
+            priceText.color = discount < 1f ? new Color(0.5f, 0.95f, 0.6f) : new Color(1f, 0.85f, 0.4f);
+            priceText.text = discount < 1f ? $"¥{price}\n<size=10>种子包{discount * 10f:0.#}折</size>" : $"¥{price}";
+            priceText.supportRichText = true;
 
             // 购买按钮
             var btnGo = new GameObject("BuyBtn");
@@ -158,7 +168,6 @@ namespace PBV.UI
             btnText.text = "购买";
             btnText.raycastTarget = false;
 
-            int price = entry.price;
             ItemData item = entry.item;
             btn.onClick.AddListener(() => TryBuy(item, price));
         }

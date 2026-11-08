@@ -94,12 +94,19 @@ namespace PBV.Farming
             var toolManager = PBV.Player.ToolManager.Instance;
             var tool = toolManager != null ? toolManager.CurrentTool : PBV.Player.ToolType.Hoe;
 
-            bool success = TryUseTool(tool, targetPos, plot);
-            if (success)
+            // 关键：先查体力再执行动作。以前是"先干完活再 TrySpend 且忽略返回值"，
+            // 导致体力为 0 时依旧能锄地/浇水/收获。
+            int cost = toolManager != null ? toolManager.CurrentStaminaCost : 0;
+            var stats = PBV.Player.PlayerStats.Instance;
+            if (stats != null && !stats.HasEnough(cost))
             {
-                int cost = toolManager != null ? toolManager.CurrentStaminaCost : 0;
-                PBV.Player.PlayerStats.Instance?.TrySpend(cost);
+                PBV.UI.HUD.Instance?.ShowNotice(
+                    $"体力不足（需要 {cost}，当前 {stats.Stamina}/{stats.MaxStamina}）· 吃料理 / 睡觉 / 按 N 跳日可恢复");
+                return;
             }
+
+            bool success = TryUseTool(tool, targetPos, plot);
+            if (success) stats?.TrySpend(cost);
         }
 
         /// <summary>根据工具类型尝试操作，成功返回 true</summary>
@@ -143,24 +150,51 @@ namespace PBV.Farming
         }
 
         /// <summary>
-        /// 从背包取种子播种，成功则消耗 1 颗种子
+        /// 从背包取种子播种。种子包等级决定一次可覆盖几格（Lv1=1 / Lv2=3 / Lv3=5），
+        /// 每格消耗 1 颗种子，整个动作只扣 1 次体力。
         /// </summary>
         private bool TryPlantFromInventory(Vector3Int gridPos)
         {
             var inventory = PBV.Inventory.InventorySystem.Instance;
             if (inventory == null || _cropManager == null) return false;
 
-            var seedSlot = inventory.FindSeedSlot();
-            if (seedSlot == null) return false;
+            var tm = PBV.Player.ToolManager.Instance;
+            int maxPlots = tm != null ? tm.SeedPlotsPerUse : 1;
 
-            CropData crop = seedSlot.item.cropToPlant;
-            if (_cropManager.TryPlantCrop(gridPos, crop))
+            // 顺序：脚下 → 右 → 左 → 上 → 下；只挑已耕且空着的地块
+            Vector3Int[] offsets =
             {
-                inventory.RemoveItem(seedSlot.item, 1);
-                PBV.Systems.QuestManager.Instance?.RecordPlant();
-                return true;
+                new Vector3Int(0, 0, 0), new Vector3Int(1, 0, 0), new Vector3Int(-1, 0, 0),
+                new Vector3Int(0, 1, 0), new Vector3Int(0, -1, 0)
+            };
+
+            int planted = 0;
+            for (int i = 0; i < offsets.Length && planted < maxPlots; i++)
+            {
+                Vector3Int p = gridPos + offsets[i];
+                if (!IsTillable(p)) continue;
+
+                PlotData plot = GetPlot(p);
+                if (plot == null) continue;
+                if (plot.status != TileStatus.Tilled && plot.status != TileStatus.Watered) continue;
+                if (plot.plantedCrop != null) continue;
+
+                var seedSlot = inventory.FindSeedSlot();
+                if (seedSlot == null) break;
+                CropData crop = seedSlot.item.cropToPlant;
+                if (crop == null) continue;
+
+                if (_cropManager.TryPlantCrop(p, crop))
+                {
+                    inventory.RemoveItem(seedSlot.item, 1);
+                    PBV.Systems.QuestManager.Instance?.RecordPlant();
+                    planted++;
+                }
             }
-            return false;
+
+            if (planted > 1)
+                PBV.UI.HUD.Instance?.ShowNotice($"种子包 Lv{tm?.CurrentLevel ?? 1}：一次播种 {planted} 格");
+            return planted > 0;
         }
 
         public void HandleToolAction(Vector3Int gridPos, string toolType)
@@ -187,16 +221,8 @@ namespace PBV.Farming
                         Debug.Log($"Watered ground at {gridPos}");
                     }
                     break;
-                case "Seed": // 种子包：直接指定作物播种
-                    if ((plot.status == TileStatus.Tilled || plot.status == TileStatus.Watered) && plot.plantedCrop == null)
-                    {
-                        var inventory = PBV.Inventory.InventorySystem.Instance;
-                        var seedSlot = inventory?.FindSeedSlot();
-                        if (seedSlot != null && _cropManager != null && _cropManager.TryPlantCrop(gridPos, seedSlot.item.cropToPlant))
-                        {
-                            inventory.RemoveItem(seedSlot.item, 1);
-                        }
-                    }
+                case "Seed": // 统一走背包播种（含种子包多格效果），避免两套逻辑不一致
+                    TryPlantFromInventory(gridPos);
                     break;
                 case "Sickle": // 镰刀：收获成熟作物
                     if (plot.plantedCrop != null && plot.growthDays >= plot.plantedCrop.daysToMature)

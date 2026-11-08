@@ -40,7 +40,12 @@ namespace PBV.Systems
         /// <summary>挖矿：消耗10体力，随机获得矿石。返回(矿石, 数量)，体力不足返回null。</summary>
         public (ItemData ore, int count)? TryMine()
         {
-            if (PlayerStats.Instance == null || PlayerStats.Instance.Stamina < 10) return null;
+            if (PlayerStats.Instance == null) return null;
+            if (!PlayerStats.Instance.HasEnough(10))
+            {
+                PBV.UI.HUD.Instance?.ShowNotice("挖矿需要 10 体力，先吃料理 / 睡觉 / 按 N 跳日恢复");
+                return null;
+            }
             if (_ores.Count == 0) return null;
 
             PlayerStats.Instance.TrySpend(10);

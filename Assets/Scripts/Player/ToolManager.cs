@@ -36,11 +36,37 @@ namespace PBV.Player
         private static readonly int[] _staminaCosts = { 3, 2, 1, 1 };
         // 工具等级（1-3）
         private readonly int[] _toolLevels = { 1, 1, 1, 1 };
+        // 种子包等级 -> 一次播种覆盖格数
+        private static readonly int[] _seedPlots = { 1, 3, 5 };
 
         /// <summary>当前工具体力消耗（等级越高消耗越低）</summary>
         public int CurrentStaminaCost => Mathf.Max(0, _staminaCosts[_index] - (_toolLevels[_index] - 1));
 
         public int CurrentLevel => _toolLevels[_index];
+
+        /// <summary>种子包等级（1-3）。升级不只减体力：一次播种覆盖 1/3/5 格，商店种子还打折。</summary>
+        public int SeedLevel => _toolLevels[3];
+
+        /// <summary>种子包一次播种最多覆盖的地块数：Lv1=1 / Lv2=3 / Lv3=5</summary>
+        public int SeedPlotsPerUse => _seedPlots[Mathf.Clamp(_toolLevels[3], 1, 3) - 1];
+
+        /// <summary>商店种子折扣：Lv1=1.0 / Lv2=0.9 / Lv3=0.8</summary>
+        public float SeedShopDiscount => 1f - (Mathf.Clamp(_toolLevels[3], 1, 3) - 1) * 0.1f;
+
+        /// <summary>工具效果说明（升级面板/帮助页用）</summary>
+        public string GetToolEffect(int toolIndex) => DescribeEffect(toolIndex, _toolLevels[toolIndex]);
+
+        /// <summary>指定等级下的效果说明（用于预览"下级会变成什么"）</summary>
+        public static string DescribeEffect(int toolIndex, int level)
+        {
+            if (toolIndex == 3)
+            {
+                int lv = Mathf.Clamp(level, 1, 3);
+                return $"一次播 {_seedPlots[lv - 1]} 格 · 商店种子 {(10 - (lv - 1))} 折";
+            }
+            int cost = Mathf.Max(0, _staminaCosts[toolIndex] - (level - 1));
+            return $"每次耗 {cost} 体力";
+        }
 
         private void Awake()
         {
