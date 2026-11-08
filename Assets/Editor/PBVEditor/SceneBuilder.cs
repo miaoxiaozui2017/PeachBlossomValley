@@ -197,8 +197,8 @@ namespace PBVEditor
             systemsGo.AddComponent<SkillPanelUI>();
             systemsGo.AddComponent<BuildSystem>();
             systemsGo.AddComponent<BuildUI>();
+            systemsGo.AddComponent<HelpUI>();
             systemsGo.AddComponent<StarterKit>();
-            systemsGo.AddComponent<IntroSystem>();
 
             // 玩家
             var playerGo = new GameObject("Player");

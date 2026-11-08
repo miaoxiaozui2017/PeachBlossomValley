@@ -24,7 +24,7 @@ namespace PBV.UI
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.H) || (_isOpen && Input.GetKeyDown(KeyCode.Escape))) Toggle();
+            if (Input.GetKeyDown(KeyCode.B) || (_isOpen && Input.GetKeyDown(KeyCode.Escape))) Toggle();
         }
 
         public void Toggle()
@@ -86,7 +86,7 @@ namespace PBV.UI
             headerGo.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 28);
             var hlg = headerGo.AddComponent<HorizontalLayoutGroup>();
             hlg.childControlWidth = true; hlg.childForceExpandWidth = true;
-            var title = CreateText(headerGo.transform, "Title", 20, FontStyle.Bold, new Color(0.8f, 0.9f, 1f), "房屋扩建 (H/Esc)");
+            var title = CreateText(headerGo.transform, "Title", 20, FontStyle.Bold, new Color(0.8f, 0.9f, 1f), "房屋扩建 (B/Esc)");
             title.rectTransform.sizeDelta = new Vector2(0, 28);
             _moneyText = CreateText(headerGo.transform, "Money", 18, FontStyle.Bold, new Color(1f, 0.85f, 0.4f), "¥ 0");
             _moneyText.alignment = TextAnchor.MiddleRight;
