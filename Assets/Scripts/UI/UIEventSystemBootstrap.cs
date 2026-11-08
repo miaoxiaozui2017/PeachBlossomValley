@@ -65,6 +65,9 @@ namespace PBV.UI
             // v0.4.0：声望 / Buff / 节气事件 / 餐厅订单 / 穿梭贸易 与 O、R 两个面板
             if (UnityEngine.Object.FindObjectOfType<PBV.Systems.V04Bootstrap>() == null)
                 new GameObject("V04Bootstrap (Auto)").AddComponent<PBV.Systems.V04Bootstrap>();
+            // v0.6.0：收集图鉴 / 鱼塘 / 隐藏彩蛋 与 Y 面板
+            if (UnityEngine.Object.FindObjectOfType<PBV.Systems.V06Bootstrap>() == null)
+                new GameObject("V06Bootstrap (Auto)").AddComponent<PBV.Systems.V06Bootstrap>();
 
             if (UnityEngine.Object.FindObjectOfType<EventSystem>() != null) return;
 
