@@ -225,6 +225,7 @@ namespace PBVEditor
             systemsGo.AddComponent<BuildUI>();
             systemsGo.AddComponent<HelpUI>();
             systemsGo.AddComponent<AchievementUI>();
+            systemsGo.AddComponent<StationLayoutBootstrap>();
             systemsGo.AddComponent<StarterKit>();
 
             // 玩家
@@ -237,7 +238,7 @@ namespace PBVEditor
             SetInt(playerController, "_interactLayer", 1 << LayerMask.NameToLayer(InteractableLayerName));
 
             // NPC：老农
-            CreateNPC("NPC_LaoNong", new Vector3(5f, 2f, 0), data.NpcSprite, "老农", new string[]
+            CreateNPC("NPC_LaoNong", data.NpcSprite, "老农", new string[]
             {
                 "后生，你是从山外来的吧？",
                 "这片地荒了三年，你若肯下力气，便是你的了。",
@@ -247,7 +248,7 @@ namespace PBVEditor
             });
 
             // NPC：药婆
-            CreateNPC("NPC_YaoPo", new Vector3(-5f, -3f, 0), data.NpcSprite2, "药婆", new string[]
+            CreateNPC("NPC_YaoPo", data.NpcSprite2, "药婆", new string[]
             {
                 "哟，新来的后生，老身这儿有草药方子。",
                 "山里的树皮、田里的稻草，别嫌它们不起眼。",
@@ -256,7 +257,7 @@ namespace PBVEditor
             });
 
             // NPC：书生
-            CreateNPC("NPC_ShuSheng", new Vector3(7f, -2f, 0), data.NpcSprite3, "书生", new string[]
+            CreateNPC("NPC_ShuSheng", data.NpcSprite3, "书生", new string[]
             {
                 "桃花谷的宣纸，远近闻名。",
                 "树皮制浆，稻草亦可，抄纸晾干便是纸张。",
@@ -266,7 +267,7 @@ namespace PBVEditor
 
             // 出货箱
             var binGo = new GameObject("ShippingBin");
-            binGo.transform.position = new Vector3(-4f, 2f, 0);
+            StationLayoutData.Place(binGo);
             var binSr = binGo.AddComponent<SpriteRenderer>();
             binSr.sprite = data.BinSprite; binSr.sortingOrder = 10;
             var binCol = binGo.AddComponent<BoxCollider2D>();
@@ -276,7 +277,7 @@ namespace PBVEditor
 
             // 商人（杂货铺）
             var shopGo = new GameObject("NPC_ShopKeeper");
-            shopGo.transform.position = new Vector3(0f, 5f, 0);
+            StationLayoutData.Place(shopGo);
             var shopSr = shopGo.AddComponent<SpriteRenderer>();
             shopSr.sprite = data.NpcSprite; shopSr.sortingOrder = 10;
             var shopCol = shopGo.AddComponent<BoxCollider2D>();
@@ -299,7 +300,7 @@ namespace PBVEditor
 
             // 造纸台（制作台）
             var craftGo = new GameObject("CraftingStation");
-            craftGo.transform.position = new Vector3(3f, -4f, 0);
+            StationLayoutData.Place(craftGo);
             var craftSr = craftGo.AddComponent<SpriteRenderer>();
             craftSr.sprite = data.BinSprite; craftSr.sortingOrder = 10; // 复用木箱贴图
             craftSr.color = new Color(0.7f, 0.6f, 0.5f);
@@ -310,7 +311,7 @@ namespace PBVEditor
 
             // 厨房（烹饪台）
             var kitchenGo = new GameObject("CookingStation");
-            kitchenGo.transform.position = new Vector3(-3f, -4f, 0);
+            StationLayoutData.Place(kitchenGo);
             var kitchenSr = kitchenGo.AddComponent<SpriteRenderer>();
             kitchenSr.sprite = data.BinSprite; kitchenSr.sortingOrder = 10;
             kitchenSr.color = new Color(0.6f, 0.4f, 0.3f);
@@ -321,7 +322,7 @@ namespace PBVEditor
 
             // 钓鱼点（池塘边）
             var fishGo = new GameObject("FishingSpot");
-            fishGo.transform.position = new Vector3(-10f, -6f, 0);
+            StationLayoutData.Place(fishGo);
             var fishSr = fishGo.AddComponent<SpriteRenderer>();
             fishSr.sprite = data.BinSprite; fishSr.sortingOrder = 9;
             fishSr.color = new Color(0.3f, 0.5f, 0.7f);
@@ -332,7 +333,7 @@ namespace PBVEditor
 
             // 矿洞入口
             var mineGo = new GameObject("MineEntrance");
-            mineGo.transform.position = new Vector3(10f, 5f, 0);
+            StationLayoutData.Place(mineGo);
             var mineSr = mineGo.AddComponent<SpriteRenderer>();
             mineSr.sprite = data.BinSprite; mineSr.sortingOrder = 9;
             mineSr.color = new Color(0.35f, 0.3f, 0.25f);
@@ -343,7 +344,7 @@ namespace PBVEditor
 
             // 铁匠铺（工具升级）
             var smithGo = new GameObject("ToolUpgradeStation");
-            smithGo.transform.position = new Vector3(-10f, 5f, 0);
+            StationLayoutData.Place(smithGo);
             var smithSr = smithGo.AddComponent<SpriteRenderer>();
             smithSr.sprite = data.BinSprite; smithSr.sortingOrder = 9;
             smithSr.color = new Color(0.4f, 0.35f, 0.3f);
@@ -354,7 +355,7 @@ namespace PBVEditor
 
             // 床（睡觉恢复体力+跳日）
             var bedGo = new GameObject("Bed");
-            bedGo.transform.position = new Vector3(-2f, 0f, 0);
+            StationLayoutData.Place(bedGo);
             var bedSr = bedGo.AddComponent<SpriteRenderer>();
             bedSr.sprite = data.BinSprite; bedSr.sortingOrder = 9;
             bedSr.color = new Color(0.5f, 0.4f, 0.5f);
@@ -365,7 +366,7 @@ namespace PBVEditor
 
             // 建造台（房屋扩建）
             var buildGo = new GameObject("BuildStation");
-            buildGo.transform.position = new Vector3(2f, 5f, 0);
+            StationLayoutData.Place(buildGo);
             var buildSr = buildGo.AddComponent<SpriteRenderer>();
             buildSr.sprite = data.BinSprite; buildSr.sortingOrder = 9;
             buildSr.color = new Color(0.4f, 0.45f, 0.5f);
@@ -376,7 +377,7 @@ namespace PBVEditor
 
             // 传送门（穿越时空）
             var portalGo = new GameObject("WorldPortal");
-            portalGo.transform.position = new Vector3(0f, -7f, 0);
+            StationLayoutData.Place(portalGo);
             var portalSr = portalGo.AddComponent<SpriteRenderer>();
             portalSr.sprite = data.BinSprite; portalSr.sortingOrder = 9;
             portalSr.color = new Color(0.6f, 0.4f, 0.8f);
@@ -387,7 +388,7 @@ namespace PBVEditor
 
             // 灵兽祠（领养猫）
             var petGo = new GameObject("PetAdoptionSpot");
-            petGo.transform.position = new Vector3(12f, -3f, 0);
+            StationLayoutData.Place(petGo);
             var petSr = petGo.AddComponent<SpriteRenderer>();
             petSr.sprite = data.BinSprite; petSr.sortingOrder = 9;
             petSr.color = new Color(0.5f, 0.5f, 0.2f);
@@ -400,10 +401,10 @@ namespace PBVEditor
             Debug.Log("[SceneBuilder] 场景已保存");
         }
 
-        private static void CreateNPC(string goName, Vector3 pos, Sprite sprite, string name, string[] lines)
+        private static void CreateNPC(string goName, Sprite sprite, string name, string[] lines)
         {
             var go = new GameObject(goName);
-            go.transform.position = pos;
+            StationLayoutData.Place(go);
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = sprite; sr.sortingOrder = 10;
             var col = go.AddComponent<BoxCollider2D>();

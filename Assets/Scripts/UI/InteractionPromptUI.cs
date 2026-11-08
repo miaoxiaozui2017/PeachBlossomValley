@@ -67,8 +67,8 @@ namespace PBV.UI
             rect.anchorMin = new Vector2(0.5f, 0f);
             rect.anchorMax = new Vector2(0.5f, 0f);
             rect.pivot = new Vector2(0.5f, 0f);
-            rect.sizeDelta = new Vector2(360f, 46f);
-            rect.anchoredPosition = new Vector2(0f, 90f);
+            rect.sizeDelta = new Vector2(300f, 32f);
+            rect.anchoredPosition = new Vector2(0f, 74f);
 
             var bg = _root.AddComponent<Image>();
             bg.color = new Color(0.08f, 0.06f, 0.04f, 0.85f);
@@ -83,7 +83,7 @@ namespace PBV.UI
             textRect.offsetMax = new Vector2(-8, -2);
             _promptText = textGo.AddComponent<Text>();
             _promptText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            _promptText.fontSize = 24;
+            _promptText.fontSize = 17;
             _promptText.fontStyle = FontStyle.Bold;
             _promptText.color = new Color(1f, 0.93f, 0.7f);
             _promptText.alignment = TextAnchor.MiddleCenter;

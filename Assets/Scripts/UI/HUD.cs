@@ -173,7 +173,7 @@ namespace PBV.UI
             string line = ws == null
                 ? "【桃花谷】出货 ×1"
                 : ws.Current == WorldType.Ancient
-                    ? "【桃花谷】出货 ×1  ·  传送门(下方紫) E 前往现代"
+                    ? "【桃花谷】出货 ×1  ·  传送门 E 前往现代"
                     : "【现代】出货 ×2  ·  按 T 回桃花谷";
             if (line == _lastWorldLine) return;
             _lastWorldLine = line;
@@ -266,11 +266,11 @@ namespace PBV.UI
             // 纯展示层不挂 GraphicRaycaster，不参与点击命中
 
             _timeText = CreateText(canvasGo.transform, "TimeText", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                new Vector2(24f, -20f), new Vector2(420f, 36f), 24, FontStyle.Bold, new Color(1f, 0.96f, 0.86f));
+                new Vector2(20f, -14f), new Vector2(400f, 24f), 15, FontStyle.Bold, new Color(1f, 0.96f, 0.86f));
             _moneyText = CreateText(canvasGo.transform, "MoneyText", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                new Vector2(24f, -62f), new Vector2(420f, 36f), 24, FontStyle.Bold, new Color(1f, 0.85f, 0.4f));
+                new Vector2(20f, -38f), new Vector2(220f, 24f), 17, FontStyle.Bold, new Color(1f, 0.85f, 0.4f));
             _pendingText = CreateText(canvasGo.transform, "PendingText", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                new Vector2(24f, -100f), new Vector2(460f, 28f), 16, FontStyle.Normal, new Color(0.95f, 0.7f, 0.35f, 0.95f));
+                new Vector2(20f, -62f), new Vector2(420f, 18f), 12, FontStyle.Normal, new Color(0.95f, 0.7f, 0.35f, 0.95f));
 
             // 体力条（背景+填充）
             var staminaBgGo = new GameObject("StaminaBarBg");
@@ -279,8 +279,8 @@ namespace PBV.UI
             staminaBgRect.anchorMin = new Vector2(0f, 1f);
             staminaBgRect.anchorMax = new Vector2(0f, 1f);
             staminaBgRect.pivot = new Vector2(0f, 1f);
-            staminaBgRect.anchoredPosition = new Vector2(24f, -140f);
-            staminaBgRect.sizeDelta = new Vector2(220f, 22f);
+            staminaBgRect.anchoredPosition = new Vector2(20f, -84f);
+            staminaBgRect.sizeDelta = new Vector2(160f, 14f);
             var staminaBg = staminaBgGo.AddComponent<Image>();
             staminaBg.color = new Color(0.1f, 0.08f, 0.06f, 0.8f);
             staminaBg.raycastTarget = false;
@@ -299,19 +299,19 @@ namespace PBV.UI
 
             // 体力数值（实时变化的数字，比单看色条更直观）
             _staminaValueText = CreateText(canvasGo.transform, "StaminaValue", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                new Vector2(252f, -140f), new Vector2(200f, 22f), 16, FontStyle.Bold, new Color(0.7f, 0.95f, 0.75f));
+                new Vector2(188f, -84f), new Vector2(160f, 18f), 12, FontStyle.Bold, new Color(0.7f, 0.95f, 0.75f));
             _staminaValueText.text = "100 / 100";
 
             _toolText = CreateText(canvasGo.transform, "ToolText", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f),
-                new Vector2(24f, -175f), new Vector2(460f, 28f), 18, FontStyle.Bold, new Color(0.85f, 0.9f, 1f));
+                new Vector2(20f, -106f), new Vector2(440f, 20f), 13, FontStyle.Bold, new Color(0.85f, 0.9f, 1f));
 
             // 右上角：世界状态 + 常驻任务进度（不用打开 J 也能看到进度实时变化）
             _worldText = CreateText(canvasGo.transform, "WorldText", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f),
-                new Vector2(-24f, -20f), new Vector2(560f, 28f), 17, FontStyle.Bold, new Color(0.75f, 0.9f, 0.7f));
+                new Vector2(-20f, -14f), new Vector2(480f, 22f), 13, FontStyle.Bold, new Color(0.75f, 0.9f, 0.7f));
             _worldText.alignment = TextAnchor.MiddleRight;
 
             _questText = CreateText(canvasGo.transform, "QuestText", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f),
-                new Vector2(-24f, -56f), new Vector2(520f, 72f), 15, FontStyle.Normal, new Color(1f, 0.92f, 0.72f));
+                new Vector2(-20f, -38f), new Vector2(400f, 52f), 12, FontStyle.Normal, new Color(1f, 0.92f, 0.72f));
             _questText.alignment = TextAnchor.UpperRight;
             _questText.horizontalOverflow = HorizontalWrapMode.Wrap;
 
@@ -322,8 +322,8 @@ namespace PBV.UI
             noticeRt.anchorMin = new Vector2(0.5f, 1f);
             noticeRt.anchorMax = new Vector2(0.5f, 1f);
             noticeRt.pivot = new Vector2(0.5f, 1f);
-            noticeRt.anchoredPosition = new Vector2(0f, -230f);
-            noticeRt.sizeDelta = new Vector2(900f, 40f);
+            noticeRt.anchoredPosition = new Vector2(0f, -136f);
+            noticeRt.sizeDelta = new Vector2(760f, 34f);
             var noticeBg = _noticeGo.AddComponent<Image>();
             noticeBg.color = new Color(0.08f, 0.06f, 0.05f, 0.9f);
             noticeBg.raycastTarget = false;
@@ -333,7 +333,7 @@ namespace PBV.UI
             nRect.anchorMin = Vector2.zero; nRect.anchorMax = Vector2.one; nRect.sizeDelta = Vector2.zero;
             _noticeText = noticeTextGo.AddComponent<Text>();
             _noticeText.font = _font;
-            _noticeText.fontSize = 17;
+            _noticeText.fontSize = 14;
             _noticeText.fontStyle = FontStyle.Bold;
             _noticeText.alignment = TextAnchor.MiddleCenter;
             _noticeText.color = new Color(1f, 0.88f, 0.55f);
@@ -342,7 +342,7 @@ namespace PBV.UI
 
             // 操作条移到左下角，避开屏幕中央的 [E] 交互提示，也不压住任何面板
             var hint = CreateText(canvasGo.transform, "HintText", new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f),
-                new Vector2(24f, 8f), new Vector2(900f, 24f), 14, FontStyle.Normal, new Color(1f, 1f, 1f, 0.55f));
+                new Vector2(20f, 6f), new Vector2(900f, 18f), 12, FontStyle.Normal, new Color(1f, 1f, 1f, 0.5f));
             hint.text = "《谷中仙》   H 帮助（全部快捷键与玩法）    F5 存档    F9 读档    N 次日";
             hint.alignment = TextAnchor.MiddleLeft;
         }

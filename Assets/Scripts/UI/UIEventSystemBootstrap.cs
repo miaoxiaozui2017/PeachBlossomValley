@@ -56,6 +56,9 @@ namespace PBV.UI
                 new GameObject("HelpUI (Auto)").AddComponent<HelpUI>();
             if (UnityEngine.Object.FindObjectOfType<AchievementUI>() == null)
                 new GameObject("AchievementUI (Auto)").AddComponent<AchievementUI>();
+            // 测试期布局：运行时把所有交互点排到北侧两排并挂名字标签，无需重建场景
+            if (UnityEngine.Object.FindObjectOfType<PBV.Systems.StationLayoutBootstrap>() == null)
+                new GameObject("StationLayout (Auto)").AddComponent<PBV.Systems.StationLayoutBootstrap>();
 
             if (UnityEngine.Object.FindObjectOfType<EventSystem>() != null) return;
 

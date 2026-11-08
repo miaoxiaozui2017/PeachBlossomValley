@@ -9,7 +9,7 @@ namespace PBV.Systems
     /// 世界状态：古代桃花谷 ⇄ 现代世界。
     /// 说明：灰盒只有一张农场地图，切换世界不换场景、不移动玩家 ——
     /// 农场、商店、制作、任务等全部功能照常可用，唯一区别是出货售价。
-    /// 去现代：走到传送门(下方紫色)按 E；回来：按 T，或对传送门再按一次 E。
+    /// 去现代：走到北侧功能台区的传送门按 E；回来：按 T，或对传送门再按一次 E。
     /// </summary>
     public class WorldState : MonoBehaviour
     {
@@ -32,7 +32,7 @@ namespace PBV.Systems
             if (UnityEngine.Input.GetKeyDown(KeyCode.T))
             {
                 if (Current == WorldType.Modern) ReturnToAncient();
-                else PBV.UI.HUD.Instance?.ShowNotice("去现代：走到下方紫色传送门按 E（现代出货 ×2）");
+                else PBV.UI.HUD.Instance?.ShowNotice("去现代：到北侧功能台区的传送门按 E（现代出货 ×2）");
             }
         }
 
