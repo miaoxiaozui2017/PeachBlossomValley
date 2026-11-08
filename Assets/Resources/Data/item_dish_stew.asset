@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: item_dish_stew
   itemName: "\u852C\u83DC\u7096\u83DC"
-  description: "\u852C\u83DC\u7096\u83DC\uFF0C\u6309 F \u98DF\u7528\u6062\u590D 50 \u4F53\u529B\uFF0C\u4E5F\u53EF\u9001\u793C\u6216\u51FA\u552E\u3002"
-  icon: {fileID: 0}
+  description: "\u852C\u83DC\u7096\u83DC\uFF0C\u6309 F \u98DF\u7528\u6062\u590D 50
+    \u4F53\u529B\uFF0C\u4E5F\u53EF\u9001\u793C\u6216\u51FA\u552E\u3002"
+  icon: {fileID: 21300000, guid: 6978788444e4ff148a8f32a63db8019b, type: 3}
   type: 2
   maxStack: 99
   sellPrice: 70

@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: item_dish_xuan_chicken
   itemName: "\u5BA3\u7EB8\u5305\u83DC"
-  description: "\u5BA3\u7EB8\u5305\u83DC\uFF0C\u6309 F \u98DF\u7528\u6062\u590D 60 \u4F53\u529B\uFF0C\u4E5F\u53EF\u9001\u793C\u6216\u51FA\u552E\u3002"
-  icon: {fileID: 0}
+  description: "\u5BA3\u7EB8\u5305\u83DC\uFF0C\u6309 F \u98DF\u7528\u6062\u590D 60
+    \u4F53\u529B\uFF0C\u4E5F\u53EF\u9001\u793C\u6216\u51FA\u552E\u3002"
+  icon: {fileID: 21300000, guid: 2f79afaa9e50b3c42ba8f5c287c088d2, type: 3}
   type: 2
   maxStack: 99
   sellPrice: 90

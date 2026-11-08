@@ -13,22 +13,30 @@ namespace PBV.Systems
         // (场景物体名, 头顶标签；NPC 自带好感名牌所以留空, x, y)
         public static readonly (string goName, string label, float x, float y)[] Layout =
         {
-            // 上排 y = 7：生产 / 交易 / 采集
-            ("ShippingBin",        "出货箱 E",    -12f, 7f),
-            ("NPC_ShopKeeper",     "杂货铺 E",     -8f, 7f),
-            ("CraftingStation",    "造纸台 C/E",   -4f, 7f),
-            ("CookingStation",     "厨房 K/E",      0f, 7f),
-            ("FishingSpot",        "钓鱼点 E",      4f, 7f),
-            ("MineEntrance",       "矿洞 M/E",      8f, 7f),
-            ("ToolUpgradeStation", "铁匠铺 U/E",   12f, 7f),
-            // 下排 y = 3：生活 / 养成 / NPC
-            ("Bed",                "床 E",        -12f, 3f),
-            ("BuildStation",       "建造台 B/E",   -8f, 3f),
-            ("WorldPortal",        "传送门 E",     -4f, 3f),
-            ("PetAdoptionSpot",    "灵兽祠 E",      0f, 3f),
-            ("NPC_LaoNong",        null,            4f, 3f),
-            ("NPC_YaoPo",          null,            8f, 3f),
-            ("NPC_ShuSheng",       null,           12f, 3f),
+            // 第 1 排 y = 9：生产 / 交易 / 采集
+            ("ShippingBin",        "出货箱 E",    -12f, 9f),
+            ("NPC_ShopKeeper",     "杂货铺 E",     -8f, 9f),
+            ("CraftingStation",    "造纸台 C/E",   -4f, 9f),
+            ("CookingStation",     "厨房 K/E",      0f, 9f),
+            ("FishingSpot",        "溪钓点 E",     4f, 9f),
+            ("MineEntrance",       "矿洞 M/E",      8f, 9f),
+            ("ToolUpgradeStation", "铁匠铺 U/E",   12f, 9f),
+            // 第 2 排 y = 6：生活 / 养成 / 老 NPC
+            ("Bed",                "床 E",        -12f, 6f),
+            ("BuildStation",       "建造台 B/E",   -8f, 6f),
+            ("WorldPortal",        "传送门 E",     -4f, 6f),
+            ("PetAdoptionSpot",    "灵兽祠 E",      0f, 6f),
+            ("NPC_LaoNong",        null,            4f, 6f),
+            ("NPC_YaoPo",          null,            8f, 6f),
+            ("NPC_ShuSheng",       null,           12f, 6f),
+            // 第 3 排 y = 3：v0.3.0 内容扩展（运行时自动补建，无需重建场景）
+            ("DyeingStation",      "染坊 C/E",   -12f, 3f),
+            ("FishingSpot_River",  "河钓点 E",    -8f, 3f),
+            ("FishingSpot_Lake",   "湖钓点 E",    -4f, 3f),
+            ("NPC_RanFang",        null,           0f, 3f),
+            ("NPC_TieJiangNiang",  null,           4f, 3f),
+            ("NPC_DaoShi",         null,           8f, 3f),
+            ("NPC_TaoGong",        null,          12f, 3f),
         };
 
         public static Vector3 GetPosition(string goName)

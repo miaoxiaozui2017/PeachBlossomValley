@@ -68,6 +68,13 @@ namespace PBVEditor
             ("鲶鱼", "item_fish_catfish", new Color(0.5f, 0.45f, 0.4f), 25, 1),
             ("草鱼", "item_fish_grassfish", new Color(0.4f, 0.6f, 0.4f), 40, 3),
             ("金鱼", "item_fish_goldfish", new Color(0.9f, 0.7f, 0.2f), 50, 5),
+            ("白条鱼", "item_fish_bleak", new Color(0.8f, 0.85f, 0.9f), 15, 1),
+            ("泥鳅", "item_fish_loach", new Color(0.45f, 0.4f, 0.3f), 22, 1),
+            ("鳜鱼", "item_fish_mandarin", new Color(0.6f, 0.65f, 0.35f), 60, 3),
+            ("鲈鱼", "item_fish_bass", new Color(0.65f, 0.7f, 0.75f), 70, 4),
+            ("银鱼", "item_fish_icefish", new Color(0.9f, 0.95f, 1f), 85, 4),
+            ("锦鲤", "item_fish_koi", new Color(0.95f, 0.5f, 0.35f), 110, 6),
+            ("龙门鲤", "item_fish_dragoncarp", new Color(1f, 0.8f, 0.3f), 180, 9),
         };
 
         // 3 种矿石定义：(名称, id, 色块色, 售价, 好感值)
@@ -294,8 +301,10 @@ namespace PBVEditor
             }
             var bark = data.GetItem("item_bark");
             var straw = data.GetItem("item_straw");
+            var indigo = AssetDatabase.LoadAssetAtPath<ItemData>($"{DataDir}/item_indigo.asset");
             if (bark != null) shopEntries.Add(bark);
             if (straw != null) shopEntries.Add(straw);
+            if (indigo != null) shopEntries.Add(indigo); // 草木扎染产业链原料
             SetShopEntries(shop, shopEntries.ToArray(), data);
 
             // 造纸台（制作台）

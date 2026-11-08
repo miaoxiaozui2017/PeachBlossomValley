@@ -15,7 +15,7 @@ MonoBehaviour:
   id: item_dish_sweetpotato
   itemName: "\u70E4\u7EA2\u85AF"
   description: "\u70E4\u7EA2\u85AF\uFF0C\u6309 F \u98DF\u7528\u6062\u590D 25 \u4F53\u529B\uFF0C\u4E5F\u53EF\u9001\u793C\u6216\u51FA\u552E\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: bcb067d6486c1fb4695449e2a992efe6, type: 3}
   type: 2
   maxStack: 99
   sellPrice: 30

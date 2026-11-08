@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7e0e37fc99f0264581c6e1adcf1bce8, type: 3}
+  m_Name: item_cloth_plain
+  m_EditorClassIdentifier: 
+  id: item_cloth_plain
+  itemName: "\u7D20\u8272\u5E03"
+  description: "\u84DD\u8349\u624E\u67D3\u51FA\u7684\u7D20\u5E03\uFF0C\u7EB9\u6837\u5E03\u7684\u539F\u6599\u3002"
+  icon: {fileID: 0}
+  type: 0
+  maxStack: 99
+  sellPrice: 30
+  cropToPlant: {fileID: 0}
+  affectionValue: 2

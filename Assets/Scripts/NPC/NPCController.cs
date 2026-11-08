@@ -32,6 +32,14 @@ namespace PBV.NPC
 
         public string NpcName => npcName;
 
+        /// <summary>运行时创建 NPC 时配置（内容扩展用）</summary>
+        public void Configure(string name, string[] lines, Color tagColor)
+        {
+            npcName = name;
+            if (lines != null && lines.Length > 0) dialogueLines = lines;
+            _nameTagColor = tagColor;
+        }
+
         // 名牌引用（供好感更新刷新）
         private Text _nameTagText;
 

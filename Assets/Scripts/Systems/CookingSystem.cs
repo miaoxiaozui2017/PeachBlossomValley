@@ -226,6 +226,7 @@ namespace PBV.Systems
             inv.RemoveItem(food, 1);
             int restore = food.staminaRestore;
             if (SkillSystem.Instance != null) restore = Mathf.RoundToInt(restore * (1f + SkillSystem.Instance.CookingBonus));
+            if (FestivalSystem.Instance != null) restore = Mathf.RoundToInt(restore * FestivalSystem.Instance.FoodMultiplier);
             PlayerStats.Instance?.Restore(restore);
             PBV.UI.HUD.Instance?.ShowNotice($"吃掉 {food.itemName}，体力 +{restore}");
             Debug.Log($"[Cooking] 食用 {food.itemName} → 恢复 {restore} 体力");

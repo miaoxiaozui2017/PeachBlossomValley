@@ -59,6 +59,9 @@ namespace PBV.UI
             // 测试期布局：运行时把所有交互点排到北侧两排并挂名字标签，无需重建场景
             if (UnityEngine.Object.FindObjectOfType<PBV.Systems.StationLayoutBootstrap>() == null)
                 new GameObject("StationLayout (Auto)").AddComponent<PBV.Systems.StationLayoutBootstrap>();
+            // v0.3.0 内容扩展：补建 4 NPC / 2 钓点 / 染坊，并给商店上架蓝草
+            if (UnityEngine.Object.FindObjectOfType<PBV.Systems.ContentExpansionBootstrap>() == null)
+                new GameObject("ContentExpansion (Auto)").AddComponent<PBV.Systems.ContentExpansionBootstrap>();
 
             if (UnityEngine.Object.FindObjectOfType<EventSystem>() != null) return;
 

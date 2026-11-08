@@ -15,6 +15,8 @@ namespace PBV.UI
         private GameObject _canvasGo;   // 整块 Canvas（含全屏 BG），关闭时一起隐藏，避免 BG 常驻吃点击
         private Text _staminaText;
         private Text _resultText;
+        private Text _floorText;
+        private Text _mineBtnText;
         private bool _isOpen;
         private static Font _font;
 
@@ -46,7 +48,17 @@ namespace PBV.UI
             {
                 if (PlayerStats.Instance != null) UpdateStamina(PlayerStats.Instance.Stamina, PlayerStats.Instance.MaxStamina);
                 if (_resultText != null) _resultText.text = "点击挖矿开始挖掘";
+                RefreshFloor();
             }
+        }
+
+        private void RefreshFloor()
+        {
+            var ms = MineSystem.Instance;
+            if (ms == null) return;
+            if (_floorText != null)
+                _floorText.text = $"第 {ms.CurrentFloor} / {MineSystem.MaxFloor} 层  ·  越深矿石越稀有";
+            if (_mineBtnText != null) _mineBtnText.text = $"挖矿 (消耗 {ms.StaminaCost} 体力)";
         }
 
         private void UpdateStamina(int value, int max)
@@ -59,9 +71,10 @@ namespace PBV.UI
             var result = MineSystem.Instance?.TryMine();
             if (result == null)
             {
-                if (_resultText != null) _resultText.text = "体力不足！需要10体力";
+                if (_resultText != null) _resultText.text = "体力不足，无法挖矿";
                 return;
             }
+            RefreshFloor();
             var (ore, count) = result.Value;
             bool added = InventorySystem.Instance != null && InventorySystem.Instance.AddItem(ore, count);
             if (_resultText != null)
@@ -99,7 +112,7 @@ namespace PBV.UI
             _root.transform.SetParent(canvasGo.transform, false);
             var panelRt = _root.AddComponent<RectTransform>();
             panelRt.anchorMin = new Vector2(0.5f, 0.5f); panelRt.anchorMax = new Vector2(0.5f, 0.5f);
-            panelRt.sizeDelta = new Vector2(360, 280); panelRt.anchoredPosition = Vector2.zero;
+            panelRt.sizeDelta = new Vector2(360, 370); panelRt.anchoredPosition = Vector2.zero;
             var panelImg = _root.AddComponent<Image>();
             panelImg.color = new Color(0.1f, 0.09f, 0.07f, 0.96f);
 
@@ -117,6 +130,10 @@ namespace PBV.UI
             _staminaText = CreateText("体力: 100/100", 18, FontStyle.Normal, new Color(0.5f, 0.9f, 0.5f));
             _staminaText.rectTransform.sizeDelta = new Vector2(0, 24);
 
+            // 层数
+            _floorText = CreateText("第 1 / 10 层", 16, FontStyle.Bold, new Color(0.9f, 0.75f, 0.5f));
+            _floorText.rectTransform.sizeDelta = new Vector2(0, 22);
+
             // 挖矿按钮
             var btnGo = new GameObject("MineBtn");
             btnGo.transform.SetParent(_root.transform, false);
@@ -133,8 +150,26 @@ namespace PBV.UI
             var btnText = btnTextGo.AddComponent<Text>();
             btnText.font = _font; btnText.fontSize = 24; btnText.fontStyle = FontStyle.Bold;
             btnText.alignment = TextAnchor.MiddleCenter; btnText.color = Color.white;
-            btnText.text = "挖矿 (消耗10体力)"; btnText.raycastTarget = false;
+            btnText.text = "挖矿 (消耗 10 体力)"; btnText.raycastTarget = false;
+            _mineBtnText = btnText;
             btn.onClick.AddListener(DoMine);
+
+            // 下潜一层
+            var nextGo = new GameObject("DescendBtn");
+            nextGo.transform.SetParent(_root.transform, false);
+            nextGo.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 42);
+            var nextImg = nextGo.AddComponent<Image>();
+            nextImg.color = new Color(0.25f, 0.35f, 0.5f, 1f);
+            var nextBtn = nextGo.AddComponent<Button>();
+            nextBtn.targetGraphic = nextImg;
+            var nextTxtGo = new GameObject("Text");
+            nextTxtGo.transform.SetParent(nextGo.transform, false);
+            var nextRt = nextTxtGo.AddComponent<RectTransform>();
+            nextRt.anchorMin = Vector2.zero; nextRt.anchorMax = Vector2.one; nextRt.sizeDelta = Vector2.zero;
+            var nextTxt = nextTxtGo.AddComponent<Text>();
+            nextTxt.font = _font; nextTxt.fontSize = 18; nextTxt.alignment = TextAnchor.MiddleCenter;
+            nextTxt.color = Color.white; nextTxt.text = "下潜一层 (消耗 12 体力)"; nextTxt.raycastTarget = false;
+            nextBtn.onClick.AddListener(() => { MineSystem.Instance?.Descend(); RefreshFloor(); });
 
             // 结果
             _resultText = CreateText("点击挖矿开始挖掘", 16, FontStyle.Normal, new Color(1f, 0.9f, 0.6f));

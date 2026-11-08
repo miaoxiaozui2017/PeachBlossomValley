@@ -32,6 +32,19 @@ namespace PBV.Economy
         public string ShopName => _shopName;
         public ShopEntry[] Items => _items;
 
+        /// <summary>运行时追加商品（内容扩展用，幂等）</summary>
+        public void AddShopEntry(ItemData item, int price)
+        {
+            if (item == null) return;
+            if (_items != null)
+                foreach (var e in _items)
+                    if (e != null && e.item == item) return;
+            var list = new System.Collections.Generic.List<ShopEntry>();
+            if (_items != null) list.AddRange(_items);
+            list.Add(new ShopEntry { item = item, price = price, stock = -1 });
+            _items = list.ToArray();
+        }
+
         public string GetInteractPrompt() => $"打开{_shopName}";
 
         public void OnInteract()

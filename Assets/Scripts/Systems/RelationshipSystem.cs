@@ -66,7 +66,8 @@ namespace PBV.Systems
         public bool TryGift(string npcName, PBV.Inventory.ItemData item)
         {
             if (item == null) return false;
-            int gain = Mathf.Max(1, item.affectionValue);
+            float festMult = FestivalSystem.Instance != null ? FestivalSystem.Instance.GiftMultiplier : 1f;
+            int gain = Mathf.Max(1, Mathf.RoundToInt(item.affectionValue * festMult));
             int before = GetAffection(npcName);
             int after = AddAffection(npcName, gain);
             QuestManager.Instance?.RecordGift();

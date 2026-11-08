@@ -15,7 +15,7 @@ MonoBehaviour:
   id: item_dish_tomato
   itemName: "\u70E4\u756A\u8304"
   description: "\u70E4\u756A\u8304\uFF0C\u6309 F \u98DF\u7528\u6062\u590D 40 \u4F53\u529B\uFF0C\u4E5F\u53EF\u9001\u793C\u6216\u51FA\u552E\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 8b2d41f5dcddf9e44baf857c25c6c1e5, type: 3}
   type: 2
   maxStack: 99
   sellPrice: 50

@@ -34,18 +34,27 @@ namespace PBV.Systems
             Debug.Log($"[Fishing] 已加载 {_fishTypes.Count} 种鱼");
         }
 
-        /// <summary>随机钓一条鱼（稀有度权重：普通鱼70% / 稀有鱼30%）</summary>
-        public ItemData GetRandomFish()
+        /// <summary>
+        /// 按钓点分池随机钓鱼：0=溪(低价常见) / 1=河(中档) / 2=湖(高价稀有)。
+        /// 12 种鱼按售价升序分成有重叠的三段，越往湖里越容易出稀有鱼。
+        /// </summary>
+        public ItemData GetRandomFish(int spotIndex = 0)
         {
             if (_fishTypes.Count == 0) return null;
-            // 按售价排序，前半为普通，后半为稀有
             _fishTypes.Sort((a, b) => a.sellPrice.CompareTo(b.sellPrice));
-            int mid = Mathf.Max(1, _fishTypes.Count / 2);
-            float rareChance = 0.3f;
+            int n = _fishTypes.Count;
+            int spot = Mathf.Clamp(spotIndex, 0, 2);
+
+            int lo = spot == 0 ? 0 : spot == 1 ? n / 3 : n * 2 / 3;
+            int hi = spot == 0 ? Mathf.Max(lo + 1, n / 2) : spot == 1 ? Mathf.Max(lo + 1, n * 5 / 6) : n;
+            hi = Mathf.Min(hi, n);
+
+            float rareChance = 0.3f + spot * 0.1f;
             if (SkillSystem.Instance != null) rareChance += SkillSystem.Instance.FishingRareBonus;
+            if (FestivalSystem.Instance != null) rareChance += FestivalSystem.Instance.RareFishBonus;
             bool rare = Random.value < rareChance;
-            int idx = rare ? Random.Range(mid, _fishTypes.Count) : Random.Range(0, mid);
-            return _fishTypes[idx];
+            int idx = rare ? Random.Range(Mathf.Max(lo, hi - Mathf.Max(1, (hi - lo) / 2)), hi) : lo;
+            return _fishTypes[Mathf.Clamp(idx, 0, n - 1)];
         }
 
         public int FishCount => _fishTypes.Count;

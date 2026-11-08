@@ -19,10 +19,22 @@ namespace PBV.Systems
         private Text _promptText;
         private Canvas _canvas;
 
+        [SerializeField] private int _spotIndex = 0; // 0=溪 1=河 2=湖
+        private static readonly string[] SpotNames = { "溪", "河", "湖" };
+
+        /// <summary>钓点编号（决定鱼池），运行时创建钓点时设置</summary>
+        public int SpotIndex
+        {
+            get => _spotIndex;
+            set => _spotIndex = Mathf.Clamp(value, 0, 2);
+        }
+
         /// <summary>全局：有任一钓鱼 QTE 进行中时，禁用鼠标左键农事操作</summary>
         public static bool IsFishingActive { get; private set; }
 
-        public string GetInteractPrompt() => _isFishing ? "钓鱼中（Space 收竿）" : "钓鱼 (E)";
+        public string GetInteractPrompt() => _isFishing
+            ? "钓鱼中（Space 收竿）"
+            : $"{SpotNames[_spotIndex]}钓点 (E)";
 
         private void Start()
         {
@@ -70,7 +82,7 @@ namespace PBV.Systems
             // 阶段3：结果
             if (caught && FishingSystem.Instance != null)
             {
-                var fish = FishingSystem.Instance.GetRandomFish();
+                var fish = FishingSystem.Instance.GetRandomFish(_spotIndex);
                 if (fish != null && InventorySystem.Instance != null)
                 {
                     bool added = InventorySystem.Instance.AddItem(fish, 1);

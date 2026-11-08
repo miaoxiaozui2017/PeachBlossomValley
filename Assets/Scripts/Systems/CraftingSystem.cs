@@ -55,6 +55,11 @@ namespace PBV.Systems
             _recipes.Add(new Recipe { id = "r_straw_to_pulp", name = "稻草制浆", inputItemIds = new[] { "item_straw" }, inputCounts = new[] { 3 }, outputItemId = "item_pulp", outputCount = 1 });
             _recipes.Add(new Recipe { id = "r_pulp_to_paper", name = "抄纸", inputItemIds = new[] { "item_pulp" }, inputCounts = new[] { 2 }, outputItemId = "item_paper", outputCount = 3 });
             _recipes.Add(new Recipe { id = "r_paper_to_xuan", name = "制宣纸", inputItemIds = new[] { "item_paper" }, inputCounts = new[] { 5 }, outputItemId = "item_xuanpaper", outputCount = 1 });
+
+            // 第二条非遗产业链：草木扎染（蓝草 → 素色布 → 纹样布 → 成衣）
+            _recipes.Add(new Recipe { id = "r_dye_indigo", name = "蓝草染布", inputItemIds = new[] { "item_indigo" }, inputCounts = new[] { 2 }, outputItemId = "item_cloth_plain", outputCount = 1 });
+            _recipes.Add(new Recipe { id = "r_dye_pattern", name = "扎出纹样", inputItemIds = new[] { "item_cloth_plain" }, inputCounts = new[] { 2 }, outputItemId = "item_cloth_pattern", outputCount = 1 });
+            _recipes.Add(new Recipe { id = "r_dye_garment", name = "缝制成衣", inputItemIds = new[] { "item_cloth_pattern", "item_bark" }, inputCounts = new[] { 1, 1 }, outputItemId = "item_garment", outputCount = 1 });
         }
 
         /// <summary>解析物品引用（Resources 查找）</summary>

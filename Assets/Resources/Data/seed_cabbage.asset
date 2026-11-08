@@ -21,3 +21,4 @@ MonoBehaviour:
   sellPrice: 8
   cropToPlant: {fileID: 11400000, guid: 6e5f9b1707d9542498bdf83f2cc8dd50, type: 2}
   affectionValue: 0
+  staminaRestore: 0
