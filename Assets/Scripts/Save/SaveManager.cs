@@ -48,17 +48,25 @@ namespace PBV.Save
             }
         }
 
+        /// <summary>迁移标记：保证只在首次以新名字启动时尝试一次，之后玩家清档不会再被旧档"复活"。</summary>
+        private string MigrationFlagPath => Path.Combine(Path.GetDirectoryName(SavePath), "pbv_migrated.flag");
+
         /// <summary>一次性迁移旧存档：只复制、不删除原文件；失败也不影响新档。</summary>
         private void MigrateLegacySave()
         {
             try
             {
-                if (File.Exists(SavePath)) return;
+                if (File.Exists(MigrationFlagPath)) return;
+
                 string legacy = LegacySavePath;
-                if (string.IsNullOrEmpty(legacy) || !File.Exists(legacy)) return;
-                Directory.CreateDirectory(Path.GetDirectoryName(SavePath));
-                File.Copy(legacy, SavePath, false);
-                Debug.Log($"[Save] 已从旧项目目录迁移存档 -> {SavePath}");
+                if (!File.Exists(SavePath) && !string.IsNullOrEmpty(legacy) && File.Exists(legacy))
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(SavePath));
+                    File.Copy(legacy, SavePath, false);
+                    Debug.Log($"[Save] 已从旧项目目录迁移存档 -> {SavePath}");
+                }
+                // 无论是否真的迁移过都落标记：编辑器「清除存档」/ DeleteSave 后不会被旧档重新覆盖
+                File.WriteAllText(MigrationFlagPath, "migrated from Peach Blossom Valley");
             }
             catch (Exception e)
             {
