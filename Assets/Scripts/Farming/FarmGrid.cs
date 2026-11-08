@@ -94,9 +94,15 @@ namespace PBV.Farming
             var toolManager = PBV.Player.ToolManager.Instance;
             var tool = toolManager != null ? toolManager.CurrentTool : PBV.Player.ToolType.Hoe;
 
+            // 成熟作物：左键直接收获，不必先切镰刀；体力按镰刀等级消耗计。
+            bool mature = plot.plantedCrop != null && plot.growthDays >= plot.plantedCrop.daysToMature;
+            bool directHarvest = mature && tool != PBV.Player.ToolType.Sickle;
+            int cost = directHarvest
+                ? (toolManager != null ? toolManager.GetStaminaCost(PBV.Player.ToolType.Sickle) : 1)
+                : (toolManager != null ? toolManager.CurrentStaminaCost : 0);
+
             // 关键：先查体力再执行动作。以前是"先干完活再 TrySpend 且忽略返回值"，
             // 导致体力为 0 时依旧能锄地/浇水/收获。
-            int cost = toolManager != null ? toolManager.CurrentStaminaCost : 0;
             var stats = PBV.Player.PlayerStats.Instance;
             if (stats != null && !stats.HasEnough(cost))
             {
@@ -105,8 +111,17 @@ namespace PBV.Farming
                 return;
             }
 
-            bool success = TryUseTool(tool, targetPos, plot);
+            bool success = directHarvest ? TryHarvestDirect(targetPos) : TryUseTool(tool, targetPos, plot);
             if (success) stats?.TrySpend(cost);
+        }
+
+        /// <summary>左键直收成熟作物（不需要切换到镰刀）</summary>
+        private bool TryHarvestDirect(Vector3Int pos)
+        {
+            if (_cropManager == null) return false;
+            if (_cropManager.TryHarvestCrop(pos)) return true;
+            PBV.UI.HUD.Instance?.ShowNotice("收获失败：背包已满或作物还没成熟");
+            return false;
         }
 
         /// <summary>根据工具类型尝试操作，成功返回 true</summary>
@@ -132,12 +147,8 @@ namespace PBV.Farming
                     return false;
 
                 case PBV.Player.ToolType.Sickle:
-                    if (plot.plantedCrop != null && plot.growthDays >= plot.plantedCrop.daysToMature)
-                    {
-                        HandleToolAction(pos, "Sickle");
-                        return true;
-                    }
-                    return false;
+                    // 用真实返回值：背包满时收获失败，不应扣体力也不应记任务进度
+                    return _cropManager != null && _cropManager.TryHarvestCrop(pos);
 
                 case PBV.Player.ToolType.Seed:
                     if ((plot.status == TileStatus.Tilled || plot.status == TileStatus.Watered) && plot.plantedCrop == null)
@@ -277,8 +288,12 @@ namespace PBV.Farming
             }
         }
 
-        /// <summary>雨天自动浇灌所有已耕地（Tilled→Watered）</summary>
-        public void AutoWaterAll()
+        /// <summary>
+        /// 雨天自动浇灌所有已耕地（Tilled→Watered）。
+        /// countAsWatered=false 用于雨天：视觉保持湿润，但当天生长已由 CropManager 结算过，
+        /// 不再给次日留一次「免费生长」。
+        /// </summary>
+        public void AutoWaterAll(bool countAsWatered = true)
         {
             int count = 0;
             foreach (var kvp in _plots)
@@ -286,7 +301,7 @@ namespace PBV.Farming
                 if (kvp.Value.status == TileStatus.Tilled)
                 {
                     kvp.Value.status = TileStatus.Watered;
-                    kvp.Value.isWateredToday = true;
+                    kvp.Value.isWateredToday = countAsWatered;
                     UpdateTileVisual(kvp.Key, _wateredTile);
                     count++;
                 }

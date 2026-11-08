@@ -41,6 +41,7 @@ namespace PBV.UI
         {
             _isOpen = !_isOpen;
             _canvasGo.SetActive(_isOpen);
+            if (_isOpen) UIEventSystemBootstrap.RegisterTopPanel(Toggle); else UIEventSystemBootstrap.ClearTopPanel();
             if (_isOpen)
             {
                 if (PlayerStats.Instance != null) UpdateStamina(PlayerStats.Instance.Stamina, PlayerStats.Instance.MaxStamina);

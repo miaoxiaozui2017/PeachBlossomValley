@@ -105,9 +105,13 @@ namespace PBV.Systems
             }
         }
 
-        // For Debug/Testing
-        public void ForceNextDay()
+        /// <summary>本次跨日是否由「睡觉」触发：睡觉恢复满体力，直接跳日只回一半</summary>
+        public bool LastAdvanceWasSleep { get; private set; }
+
+        // For Debug/Testing（N 键走 fromBed=false）
+        public void ForceNextDay(bool fromBed = false)
         {
+            LastAdvanceWasSleep = fromBed;
             StartNewDay();
         }
 

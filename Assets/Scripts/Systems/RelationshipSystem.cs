@@ -70,6 +70,8 @@ namespace PBV.Systems
             int before = GetAffection(npcName);
             int after = AddAffection(npcName, gain);
             QuestManager.Instance?.RecordGift();
+            PBV.UI.HUD.Instance?.ShowNotice(
+                $"送 {npcName} {item.itemName} · 好感 +{gain}（{before}→{after} · {LevelToName(GetLevel(npcName))}）");
             Debug.Log($"[Relationship] 送 {npcName} {item.itemName} +{gain} 好感 ({before}->{after})");
             return true;
         }

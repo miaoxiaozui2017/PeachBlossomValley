@@ -66,6 +66,7 @@ namespace PBV.UI
         {
             _isOpen = !_isOpen;
             _canvasGo.SetActive(_isOpen);
+            if (_isOpen) UIEventSystemBootstrap.RegisterTopPanel(Toggle); else UIEventSystemBootstrap.ClearTopPanel();
             if (_isOpen) Refresh();
         }
 

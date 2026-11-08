@@ -51,6 +51,7 @@ namespace PBV.UI
             _currentShop = shop;
             _isOpen = true;
             _canvasGo.SetActive(true);
+            UIEventSystemBootstrap.RegisterTopPanel(CloseShop);
             Refresh();
         }
 
@@ -59,6 +60,7 @@ namespace PBV.UI
             _isOpen = false;
             _currentShop = null;
             _canvasGo.SetActive(false);
+            UIEventSystemBootstrap.ClearTopPanel();
         }
 
         private void Refresh()
@@ -177,6 +179,7 @@ namespace PBV.UI
             if (PlayerWallet.Instance == null || InventorySystem.Instance == null) return;
             if (!PlayerWallet.Instance.TrySpend(price))
             {
+                HUD.Instance?.ShowNotice($"金钱不足：{item.itemName} 需要 ¥{price}");
                 Debug.Log("[Shop] 金钱不足");
                 return;
             }
@@ -184,10 +187,48 @@ namespace PBV.UI
             {
                 // 背包满，退款
                 PlayerWallet.Instance.AddMoney(price);
+                HUD.Instance?.ShowNotice("背包已满，购买取消（已退款）");
                 Debug.Log("[Shop] 背包已满");
                 return;
             }
+            HUD.Instance?.ShowNotice($"购买 {item.itemName} ×1  -¥{price}");
             Debug.Log($"[Shop] 购买 {item.itemName} -¥{price}");
+            Refresh();
+        }
+
+        /// <summary>
+        /// 商店回收：把背包里所有可售物品按基础价一次性卖出，当场到账。
+        /// 不乘现代×2 / 节日×1.5，所以出货箱仍是高价渠道，急用钱才来商店。
+        /// </summary>
+        private void SellAllFromBag()
+        {
+            var inv = InventorySystem.Instance;
+            var wallet = PlayerWallet.Instance;
+            if (inv == null || wallet == null) return;
+
+            var toSell = new List<KeyValuePair<ItemData, int>>();
+            int total = 0;
+            int count = 0;
+            for (int i = 0; i < inv.Capacity; i++)
+            {
+                var slot = inv.GetSlot(i);
+                if (slot == null || slot.IsEmpty) continue;
+                if (!ShippingBinSystem.CanSell(slot.item)) continue;
+                toSell.Add(new KeyValuePair<ItemData, int>(slot.item, slot.count));
+                total += slot.item.sellPrice * slot.count;
+                count += slot.count;
+            }
+
+            if (count == 0)
+            {
+                HUD.Instance?.ShowNotice("背包里没有可回收物品 · 工具 / 种子 / 无售价材料不回收");
+                return;
+            }
+
+            foreach (var kv in toSell) inv.RemoveItem(kv.Key, kv.Value);
+            wallet.AddMoney(total);
+            HUD.Instance?.ShowNotice($"回收 {count} 件 → 即时到账 ¥{total}（出货箱才享现代×2 / 节日×1.5）");
+            Debug.Log($"[Shop] 回收 {count} 件 +¥{total}");
             Refresh();
         }
 
@@ -255,9 +296,30 @@ namespace PBV.UI
             moneyRt.sizeDelta = new Vector2(120, 40);
 
             // 提示行
-            var hint = CreateText(_root.transform, "Hint", 12, FontStyle.Normal, new Color(0.7f, 0.65f, 0.55f), "点击购买 · B/Esc 关闭");
+            var hint = CreateText(_root.transform, "Hint", 12, FontStyle.Normal, new Color(0.7f, 0.65f, 0.55f), "点击购买 · E/Esc/B 关闭");
             var hintRt = hint.rectTransform;
             hintRt.sizeDelta = new Vector2(0, 16);
+
+            // 回收按钮：按基础售价即时到账，与出货箱的「次日结算 + 倍率」形成互补
+            var sellGo = new GameObject("SellAllBtn");
+            sellGo.transform.SetParent(_root.transform, false);
+            sellGo.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 36);
+            var sellImg = sellGo.AddComponent<Image>();
+            sellImg.color = new Color(0.45f, 0.3f, 0.18f, 1f);
+            var sellBtn = sellGo.AddComponent<Button>();
+            sellBtn.targetGraphic = sellImg;
+            var sellTxtGo = new GameObject("Text");
+            sellTxtGo.transform.SetParent(sellGo.transform, false);
+            var sellTxtRt = sellTxtGo.AddComponent<RectTransform>();
+            sellTxtRt.anchorMin = Vector2.zero; sellTxtRt.anchorMax = Vector2.one; sellTxtRt.sizeDelta = Vector2.zero;
+            var sellTxt = sellTxtGo.AddComponent<Text>();
+            sellTxt.font = Font;
+            sellTxt.fontSize = 15;
+            sellTxt.alignment = TextAnchor.MiddleCenter;
+            sellTxt.color = Color.white;
+            sellTxt.text = "回收背包物品（基础价 · 当天即时到账）";
+            sellTxt.raycastTarget = false;
+            sellBtn.onClick.AddListener(SellAllFromBag);
 
             // 列表容器（带滚动）
             var scrollGo = new GameObject("Scroll");

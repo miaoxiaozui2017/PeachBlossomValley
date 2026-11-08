@@ -19,7 +19,10 @@ namespace PBV.Systems
         private Text _promptText;
         private Canvas _canvas;
 
-        public string GetInteractPrompt() => _isFishing ? "钓鱼中..." : "钓鱼 (E)";
+        /// <summary>全局：有任一钓鱼 QTE 进行中时，禁用鼠标左键农事操作</summary>
+        public static bool IsFishingActive { get; private set; }
+
+        public string GetInteractPrompt() => _isFishing ? "钓鱼中（Space 收竿）" : "钓鱼 (E)";
 
         private void Start()
         {
@@ -41,6 +44,7 @@ namespace PBV.Systems
         private IEnumerator FishRoutine()
         {
             _isFishing = true;
+            IsFishingActive = true;
             PlayerStats.Instance?.TrySpend(5);
 
             // 阶段1：等待鱼上钩
@@ -94,6 +98,13 @@ namespace PBV.Systems
             yield return new WaitForSeconds(2f);
             HidePrompt();
             _isFishing = false;
+            IsFishingActive = false;
+        }
+
+        private void OnDestroy()
+        {
+            // 场景卸载/退出 Play 时清掉全局标志，避免卡住左键
+            if (_isFishing) IsFishingActive = false;
         }
 
         private void CreatePromptUI()

@@ -6,9 +6,11 @@ namespace PBV.Systems
     public enum Weather { Sunny, Cloudy, Rainy }
 
     /// <summary>
-    /// 天气系统：每日随机天气（晴/阴/雨），雨天自动浇灌全部已耕地。
+    /// 天气系统：每日随机天气（晴/阴/雨）。雨天视为全自动浇灌。
+    /// 执行顺序调到最前，保证跨日时先定当天天气，CropManager 再做生长结算。
     /// 订阅 TimeManager.OnDayChanged；HUD 显示当前天气。
     /// </summary>
+    [DefaultExecutionOrder(-100)]
     public class WeatherSystem : MonoBehaviour
     {
         public static WeatherSystem Instance { get; private set; }
@@ -43,12 +45,9 @@ namespace PBV.Systems
             OnWeatherChanged?.Invoke(CurrentWeather);
             Debug.Log($"[Weather] 第{day}天天气: {CurrentWeather}");
 
-            if (CurrentWeather == Weather.Rainy)
-            {
-                // 雨天自动浇水所有已耕地
-                var farmGrid = FindObjectOfType<PBV.Farming.FarmGrid>();
-                if (farmGrid != null) farmGrid.AutoWaterAll();
-            }
+            // 雨天浇灌由 CropManager.OnNewDay 在同一轮结算里统一处理：
+            // 先按「雨天=已浇水」推进生长，再把地块置为湿润视觉，
+            // 避免两个系统抢 OnDayChanged 顺序导致生长被跳过或水状态被覆盖。
         }
 
         public void Restore(int weather) { CurrentWeather = (Weather)weather; }

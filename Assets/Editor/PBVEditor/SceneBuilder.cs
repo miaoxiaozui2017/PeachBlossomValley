@@ -78,6 +78,25 @@ namespace PBVEditor
             ("金矿", "item_ore_gold", new Color(0.85f, 0.7f, 0.2f), 80, 4),
         };
 
+        // 13 种料理定义：(名称, id, 色块色, 售价, 好感值, 食用恢复体力)
+        // 厨房产出后进入背包，可按 F 吃、送 NPC、或卖给商店/出货箱。
+        private static readonly (string, string, Color, int, int, int)[] DishDefs =
+        {
+            ("萝卜汤",     "item_dish_radish_soup",     new Color(0.9f, 0.85f, 0.7f), 35, 3, 30),
+            ("白菜汤",     "item_dish_cabbage_soup",    new Color(0.8f, 0.9f, 0.7f), 35, 3, 30),
+            ("蔬菜沙拉",   "item_dish_salad",           new Color(0.6f, 0.85f, 0.5f), 30, 2, 20),
+            ("烤番茄",     "item_dish_tomato",          new Color(0.9f, 0.45f, 0.3f), 50, 3, 40),
+            ("烤红薯",     "item_dish_sweetpotato",     new Color(0.85f, 0.6f, 0.35f), 30, 2, 25),
+            ("蘑菇汤",     "item_dish_mushroom_soup",   new Color(0.75f, 0.65f, 0.5f), 45, 3, 35),
+            ("南瓜饼",     "item_dish_pumpkin",         new Color(0.95f, 0.65f, 0.25f), 45, 3, 35),
+            ("烤玉米",     "item_dish_corn",            new Color(0.95f, 0.85f, 0.35f), 25, 2, 20),
+            ("蔬菜炖菜",   "item_dish_stew",            new Color(0.7f, 0.55f, 0.35f), 70, 5, 50),
+            ("宣纸包菜",   "item_dish_xuan_chicken",    new Color(0.95f, 0.9f, 0.8f), 90, 6, 60),
+            ("清蒸鱼",     "item_dish_steamed_fish",    new Color(0.85f, 0.9f, 0.9f), 60, 4, 45),
+            ("鱼头萝卜汤", "item_dish_fish_soup",       new Color(0.9f, 0.9f, 0.75f), 85, 5, 60),
+            ("红烧鱼",     "item_dish_braised_fish",    new Color(0.75f, 0.4f, 0.25f), 120, 7, 80),
+        };
+
         [MenuItem("PBV/构建灰盒场景 v0.1.0")]
         public static void BuildAll()
         {
@@ -205,6 +224,7 @@ namespace PBVEditor
             systemsGo.AddComponent<BuildSystem>();
             systemsGo.AddComponent<BuildUI>();
             systemsGo.AddComponent<HelpUI>();
+            systemsGo.AddComponent<AchievementUI>();
             systemsGo.AddComponent<StarterKit>();
 
             // 玩家
@@ -685,6 +705,24 @@ namespace PBVEditor
                 data.OreItems[i] = item;
             }
 
+            // 13 种料理物品（厨房产出）
+            data.Dishes = new ItemData[DishDefs.Length];
+            for (int i = 0; i < DishDefs.Length; i++)
+            {
+                var def = DishDefs[i];
+                var item = GetOrCreateAsset<ItemData>($"{DataDir}/{def.Item2}.asset");
+                item.id = def.Item2;
+                item.itemName = def.Item1;
+                item.description = $"{def.Item1}，按 F 食用恢复 {def.Item6} 体力，也可送礼或出售。";
+                item.type = ItemType.Consumable;
+                item.icon = GetSprite($"icon_{def.Item2}", CreateIconTexture(def.Item3));
+                item.sellPrice = def.Item4;
+                item.affectionValue = def.Item5;
+                item.staminaRestore = def.Item6;
+                EditorUtility.SetDirty(item);
+                data.Dishes[i] = item;
+            }
+
             data.PlayerSprite = sprites.PlayerSprite;
             data.NpcSprite = sprites.NpcSprite;
             data.NpcSprite2 = sprites.NpcSprite2;
@@ -813,11 +851,12 @@ namespace PBVEditor
             public ItemData[] Materials;   // 5
             public ItemData[] FishItems;   // 5
             public ItemData[] OreItems;    // 3
+            public ItemData[] Dishes;      // 13
             public Sprite PlayerSprite, NpcSprite, NpcSprite2, NpcSprite3, BinSprite;
 
             public ItemData GetSeed(string cropId) { for (int i = 0; i < CropDefs.Length; i++) if (CropDefs[i].Item2 == cropId) return Seeds[i]; return null; }
             public ItemData GetItem(string itemId) { if (Materials != null) foreach (var m in Materials) if (m.id == itemId) return m; if (FishItems != null) foreach (var f in FishItems) if (f.id == itemId) return f; return null; }
-            public Object[] AllItems { get { var list = new System.Collections.Generic.List<Object>(); if (Seeds != null) list.AddRange(Seeds); if (HarvestItems != null) list.AddRange(HarvestItems); if (Materials != null) list.AddRange(Materials); if (FishItems != null) list.AddRange(FishItems); if (OreItems != null) list.AddRange(OreItems); return list.ToArray(); } }
+            public Object[] AllItems { get { var list = new System.Collections.Generic.List<Object>(); if (Seeds != null) list.AddRange(Seeds); if (HarvestItems != null) list.AddRange(HarvestItems); if (Materials != null) list.AddRange(Materials); if (FishItems != null) list.AddRange(FishItems); if (OreItems != null) list.AddRange(OreItems); if (Dishes != null) list.AddRange(Dishes); return list.ToArray(); } }
             public Object[] AllCrops { get { return Crops ?? System.Array.Empty<Object>(); } }
         }
     }

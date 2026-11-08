@@ -39,8 +39,15 @@ namespace PBV.Player
         // 种子包等级 -> 一次播种覆盖格数
         private static readonly int[] _seedPlots = { 1, 3, 5 };
 
+        /// <summary>指定工具的体力消耗（等级越高消耗越低）</summary>
+        public int GetStaminaCost(ToolType tool)
+        {
+            int idx = Array.IndexOf(_cycle, tool);
+            return idx < 0 ? 0 : Mathf.Max(0, _staminaCosts[idx] - (_toolLevels[idx] - 1));
+        }
+
         /// <summary>当前工具体力消耗（等级越高消耗越低）</summary>
-        public int CurrentStaminaCost => Mathf.Max(0, _staminaCosts[_index] - (_toolLevels[_index] - 1));
+        public int CurrentStaminaCost => GetStaminaCost(CurrentTool);
 
         public int CurrentLevel => _toolLevels[_index];
 
@@ -127,13 +134,28 @@ namespace PBV.Player
 
             // 查找矿石物品
             var ore = FindItemById(cost.Value.oreId);
-            if (ore == null || InventorySystem.Instance == null) return false;
-            if (InventorySystem.Instance.CountItem(ore) < cost.Value.oreCount) return false;
-            if (PlayerWallet.Instance == null || !PlayerWallet.Instance.TrySpend(cost.Value.money)) return false;
+            if (ore == null || InventorySystem.Instance == null)
+            {
+                PBV.UI.HUD.Instance?.ShowNotice($"升级{_toolNames[toolIndex]}缺材料：{cost.Value.oreId} 资产未找到");
+                return false;
+            }
+            if (InventorySystem.Instance.CountItem(ore) < cost.Value.oreCount)
+            {
+                PBV.UI.HUD.Instance?.ShowNotice($"升级{_toolNames[toolIndex]}缺 {ore.itemName} ×{cost.Value.oreCount}（去矿洞 M 挖矿）");
+                return false;
+            }
+            if (PlayerWallet.Instance == null || !PlayerWallet.Instance.TrySpend(cost.Value.money))
+            {
+                PBV.UI.HUD.Instance?.ShowNotice($"升级{_toolNames[toolIndex]}金钱不足，需 ¥{cost.Value.money}");
+                return false;
+            }
 
             InventorySystem.Instance.RemoveItem(ore, cost.Value.oreCount);
             _toolLevels[toolIndex]++;
             OnToolUpgraded?.Invoke(_cycle[toolIndex], _toolLevels[toolIndex]);
+            // 升级会改变体力消耗，通知 HUD 立刻刷新「耗 N 体力」提示
+            OnToolChanged?.Invoke(_cycle[toolIndex]);
+            PBV.UI.HUD.Instance?.ShowNotice($"{_toolNames[toolIndex]} 升级到 Lv{_toolLevels[toolIndex]}：{DescribeEffect(toolIndex, _toolLevels[toolIndex])}");
             Debug.Log($"[Tool] {_toolNames[toolIndex]} 升级到 Lv{_toolLevels[toolIndex]}");
             return true;
         }

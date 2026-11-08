@@ -25,16 +25,25 @@ namespace PBV.UI
         /// <summary>静态访问：当前选中槽位（供 NPCController 送礼等外部系统读取）</summary>
         public static int SelectedSlotIndex = 0;
 
+        // 最大可扩容到 48 格；实际可见格子数由 InventorySystem.Capacity 决定
+        private const int MaxSlots = 48;
+        private const int Columns = 6;
+
         private GameObject _panel;
         private readonly Image[] _hotbarIcons = new Image[10];
         private readonly Text[] _hotbarCounts = new Text[10];
-        private readonly Image[] _slotIcons = new Image[24];
-        private readonly Text[] _slotCounts = new Text[24];
-        private readonly Image[] _slotBorders = new Image[24];
-        private readonly Button[] _slotButtons = new Button[24];
+        private readonly Image[] _slotIcons = new Image[MaxSlots];
+        private readonly Text[] _slotCounts = new Text[MaxSlots];
+        private readonly Image[] _slotBorders = new Image[MaxSlots];
+        private readonly Button[] _slotButtons = new Button[MaxSlots];
+        private readonly GameObject[] _slotGos = new GameObject[MaxSlots];
 
+        private RectTransform _gridRect;
+        private RectTransform _panelRect;
+        private Text _titleText;
         private Text _moneyText;
         private Text _infoText;
+        private int _lastCapacity = -1;
 
         private static Font _font;
 
@@ -57,6 +66,8 @@ namespace PBV.UI
                 PlayerWallet.Instance.OnMoneyChanged += RefreshMoney;
                 RefreshMoney(PlayerWallet.Instance.Money);
             }
+            // Awake 时 InventorySystem 可能还没初始化，这里再刷一次
+            RefreshAll();
         }
 
         private void OnDestroy()
@@ -77,6 +88,10 @@ namespace PBV.UI
             if (keyboard == null) return;
 
             if (keyboard.tabKey.wasPressedThisFrame) TogglePanel();
+
+            // 扩容不一定触发背包变更事件，这里兜底比对容量，保证格子立刻变多
+            var inv = InventorySystem.Instance;
+            if (inv != null && inv.Capacity != _lastCapacity) RefreshAll();
 
             // 数字键 1-0 选择快捷栏槽位
             SelectByKey(keyboard.digit1Key, 0);
@@ -158,10 +173,19 @@ namespace PBV.UI
                 ApplySlotVisual(inventory.GetSlot(i), _hotbarIcons[i], _hotbarCounts[i]);
             }
 
-            // 完整面板 24 格
-            for (int i = 0; i < _slotIcons.Length && i < inventory.Capacity; i++)
+            // 完整面板：只显示已解锁的格子，扩容后可见格子直接变多
+            int capacity = Mathf.Clamp(inventory.Capacity, 0, MaxSlots);
+            _lastCapacity = capacity;
+            int rows = Mathf.CeilToInt((float)capacity / Columns);
+            if (_gridRect != null) _gridRect.sizeDelta = new Vector2(0, rows * 70f + 8f);
+            if (_panelRect != null) _panelRect.sizeDelta = new Vector2(488f, rows * 70f + 130f);
+            if (_titleText != null) _titleText.text = $"背包 {capacity}/{MaxSlots} 格 (Tab 开关)";
+
+            for (int i = 0; i < _slotIcons.Length; i++)
             {
-                ApplySlotVisual(inventory.GetSlot(i), _slotIcons[i], _slotCounts[i]);
+                bool visible = i < capacity;
+                if (_slotGos[i] != null) _slotGos[i].SetActive(visible);
+                if (visible) ApplySlotVisual(inventory.GetSlot(i), _slotIcons[i], _slotCounts[i]);
             }
 
             UpdateInfoBar();
@@ -239,6 +263,7 @@ namespace PBV.UI
             _panel = new GameObject("InventoryPanel");
             _panel.transform.SetParent(canvasTransform, false);
             var panelRect = _panel.AddComponent<RectTransform>();
+            _panelRect = panelRect;
             panelRect.anchorMin = new Vector2(0.5f, 0.5f);
             panelRect.anchorMax = new Vector2(0.5f, 0.5f);
             panelRect.pivot = new Vector2(0.5f, 0.5f);
@@ -270,8 +295,8 @@ namespace PBV.UI
             titleHgroup.childForceExpandHeight = false;
             titleHgroup.childControlWidth = true;
 
-            var titleText = CreateTextObj("Title", titleBar.transform, "背包 (Tab 开关)", 22, FontStyle.Bold, new Color(1f, 0.93f, 0.75f));
-            titleText.alignment = TextAnchor.MiddleLeft;
+            _titleText = CreateTextObj("Title", titleBar.transform, "背包 (Tab 开关)", 22, FontStyle.Bold, new Color(1f, 0.93f, 0.75f));
+            _titleText.alignment = TextAnchor.MiddleLeft;
 
             _moneyText = CreateTextObj("Money", titleBar.transform, "¥ 0", 22, FontStyle.Bold, new Color(1f, 0.85f, 0.4f));
             _moneyText.alignment = TextAnchor.MiddleRight;
@@ -280,6 +305,7 @@ namespace PBV.UI
             var gridGo = new GameObject("Grid");
             gridGo.transform.SetParent(_panel.transform, false);
             var gridRect = gridGo.AddComponent<RectTransform>();
+            _gridRect = gridRect;
             gridRect.sizeDelta = new Vector2(0, 280f);
 
             var grid = gridGo.AddComponent<GridLayoutGroup>();
@@ -292,17 +318,19 @@ namespace PBV.UI
             grid.constraintCount = 6;
             grid.childAlignment = TextAnchor.UpperCenter;
 
-            // 创建 24 格，GridLayoutGroup 自动定位
-            for (int i = 0; i < 24; i++)
+            // 预建 48 格，按当前容量决定显示多少（升级后格子会真实变多）
+            for (int i = 0; i < MaxSlots; i++)
             {
                 int slotIndex = i;
                 CreateSlot(gridGo.transform, slotIndex, 64f, out _slotIcons[slotIndex], out _slotCounts[slotIndex], out _slotBorders[slotIndex]);
+                _slotGos[slotIndex] = _slotBorders[slotIndex].gameObject;
 
                 // Button 挂在 slot 主 Image(border) 所在 GameObject 上，拦截点击
-                var button = _slotBorders[slotIndex].gameObject.AddComponent<Button>();
+                var button = _slotGos[slotIndex].AddComponent<Button>();
                 button.transition = UnityEngine.UI.Selectable.Transition.None;
                 button.onClick.AddListener(() => SelectSlot(slotIndex));
                 _slotButtons[slotIndex] = button;
+                _slotGos[slotIndex].SetActive(false); // 由 RefreshAll 按容量启用
             }
 
             // ② 格子容器尺寸自适应内容（让格子区域填满，不被 force expand 压扁）

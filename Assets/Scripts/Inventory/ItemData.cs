@@ -29,5 +29,9 @@ namespace PBV.Inventory
         [Header("Gift Settings")]
         [Tooltip("送礼时增加的好感度（0=不适合送礼）")]
         public int affectionValue = 0;
+
+        [Header("Food Settings")]
+        [Tooltip("食用后恢复的体力（>0 表示这是可吃的料理，按 F 食用）")]
+        public int staminaRestore = 0;
     }
 }

@@ -35,9 +35,14 @@ namespace PBV.Systems
         {
             if (BagLevel >= 2) return false;
             int cost = BagCosts[BagLevel];
-            if (PlayerWallet.Instance == null || !PlayerWallet.Instance.TrySpend(cost)) return false;
+            if (PlayerWallet.Instance == null || !PlayerWallet.Instance.TrySpend(cost))
+            {
+                PBV.UI.HUD.Instance?.ShowNotice($"背包扩容需 ¥{cost}，金钱不足");
+                return false;
+            }
             BagLevel++;
             InventorySystem.Instance?.ExpandCapacity(BagCapacities[BagLevel]);
+            PBV.UI.HUD.Instance?.ShowNotice($"背包扩容到 {BagCapacities[BagLevel]} 格 · 按 Tab 查看新增格子");
             Debug.Log($"[Build] 背包扩容到 {BagCapacities[BagLevel]} 格");
             return true;
         }
@@ -46,9 +51,14 @@ namespace PBV.Systems
         {
             if (StaminaLevel >= 2) return false;
             int cost = StaminaCosts[StaminaLevel];
-            if (PlayerWallet.Instance == null || !PlayerWallet.Instance.TrySpend(cost)) return false;
+            if (PlayerWallet.Instance == null || !PlayerWallet.Instance.TrySpend(cost))
+            {
+                PBV.UI.HUD.Instance?.ShowNotice($"体力上限扩建需 ¥{cost}，金钱不足");
+                return false;
+            }
             StaminaLevel++;
             PlayerStats.Instance?.ExpandMaxStamina(StaminaMaxes[StaminaLevel]);
+            PBV.UI.HUD.Instance?.ShowNotice($"体力上限提升到 {StaminaMaxes[StaminaLevel]}");
             Debug.Log($"[Build] 体力上限提升到 {StaminaMaxes[StaminaLevel]}");
             return true;
         }

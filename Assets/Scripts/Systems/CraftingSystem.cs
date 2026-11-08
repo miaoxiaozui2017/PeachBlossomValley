@@ -106,9 +106,30 @@ namespace PBV.Systems
         }
 
         /// <summary>执行制作</summary>
+        /// <summary>材料不足的具体清单</summary>
+        public string GetMissingText(Recipe r)
+        {
+            if (r == null) return string.Empty;
+            var inv = InventorySystem.Instance;
+            if (inv == null) return "背包未就绪";
+            var missing = new List<string>();
+            for (int i = 0; i < r._inputs.Length; i++)
+            {
+                var item = r._inputs[i];
+                if (item == null) { missing.Add(r.inputItemIds[i]); continue; }
+                int have = inv.CountItem(item);
+                if (have < r.inputCounts[i]) missing.Add($"{item.itemName} {have}/{r.inputCounts[i]}");
+            }
+            return missing.Count == 0 ? string.Empty : "缺 " + string.Join("、", missing);
+        }
+
         public bool Craft(Recipe r)
         {
-            if (!CanCraft(r)) return false;
+            if (!CanCraft(r))
+            {
+                PBV.UI.HUD.Instance?.ShowNotice($"{r?.name} 材料不足 · {GetMissingText(r)}");
+                return false;
+            }
             // 消耗材料
             for (int i = 0; i < r._inputs.Length; i++)
             {
@@ -123,10 +144,12 @@ namespace PBV.Systems
                     // 背包满，退还材料
                     for (int i = 0; i < r._inputs.Length; i++)
                         InventorySystem.Instance.AddItem(r._inputs[i], r.inputCounts[i]);
+                    PBV.UI.HUD.Instance?.ShowNotice("背包已满，制作取消（材料已退还）");
                     Debug.Log("[Craft] 背包已满，制作取消");
                     return false;
                 }
             }
+            PBV.UI.HUD.Instance?.ShowNotice($"制作 {r.name} → {r._output?.itemName} ×{r.outputCount}");
             Debug.Log($"[Craft] 制作 {r.name} → {r._output?.itemName} x{r.outputCount}");
             return true;
         }

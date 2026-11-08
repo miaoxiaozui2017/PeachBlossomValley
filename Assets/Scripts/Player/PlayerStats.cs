@@ -52,10 +52,13 @@ namespace PBV.Player
 
         private void OnNewDay()
         {
-            if (_dailyRestore < 0) RestoreFull();
-            else Stamina = Mathf.Min(_maxStamina, Stamina + _dailyRestore);
+            // 睡觉恢复满；按 N 直接跳日只回一半，让「睡觉」真正有玩法价值
+            bool slept = TimeManager.Instance != null && TimeManager.Instance.LastAdvanceWasSleep;
+            int daily = _dailyRestore < 0 ? _maxStamina : _dailyRestore;
+            int amount = slept ? _maxStamina : Mathf.Max(1, daily / 2);
+            Stamina = Mathf.Min(_maxStamina, Stamina + amount);
             OnStaminaChanged?.Invoke(Stamina, _maxStamina);
-            Debug.Log($"[PlayerStats] 新一天，体力恢复至 {Stamina}/{_maxStamina}");
+            Debug.Log($"[PlayerStats] 新一天（{(slept ? "睡觉" : "直接跳日")}），体力 {Stamina}/{_maxStamina}");
         }
 
         /// <summary>体力是否足够（工具动作执行前先查询，避免"先做完再扣不动"）</summary>

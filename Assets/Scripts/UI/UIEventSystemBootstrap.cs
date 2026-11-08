@@ -13,6 +13,31 @@ namespace PBV.UI
     {
         private static bool _checked;
 
+        // ===== E 键「谁开的谁关」：当前最上层功能面板的关闭回调 =====
+        private static System.Action _closeTopPanel;
+
+        /// <summary>功能面板打开时登记自己为栈顶；E 键会优先关它而不是再次触发场景交互</summary>
+        public static void RegisterTopPanel(System.Action close) => _closeTopPanel = close;
+
+        /// <summary>面板关闭时注销（只注销自己，避免误清后打开的面板）</summary>
+        public static void UnregisterTopPanel(System.Action close)
+        {
+            if (_closeTopPanel == close) _closeTopPanel = null;
+        }
+
+        /// <summary>面板自行关闭时清空栈顶</summary>
+        public static void ClearTopPanel() => _closeTopPanel = null;
+
+        /// <summary>InputHandler 在 E 按下时先调用；返回 true 表示这次 E 已被 UI 消费</summary>
+        public static bool TryCloseTopPanel()
+        {
+            if (_closeTopPanel == null) return false;
+            var close = _closeTopPanel;
+            _closeTopPanel = null;
+            close();
+            return true;
+        }
+
         public static void Ensure()
         {
             if (_checked) return;
@@ -26,9 +51,11 @@ namespace PBV.UI
                 UnityEngine.Object.Destroy(intro);
             }
 
-            // 兼容「还没重建场景」：帮助页组件是后加的，运行时补挂，H 键立即可用
+            // 兼容「还没重建场景」：帮助页/成就页组件是后加的，运行时补挂，H / L 键立即可用
             if (UnityEngine.Object.FindObjectOfType<HelpUI>() == null)
                 new GameObject("HelpUI (Auto)").AddComponent<HelpUI>();
+            if (UnityEngine.Object.FindObjectOfType<AchievementUI>() == null)
+                new GameObject("AchievementUI (Auto)").AddComponent<AchievementUI>();
 
             if (UnityEngine.Object.FindObjectOfType<EventSystem>() != null) return;
 

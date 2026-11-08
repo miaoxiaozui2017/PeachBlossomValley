@@ -325,11 +325,19 @@ namespace PBV.Save
 
         private ItemData FindItem(string itemId)
         {
-            if (_itemCatalog == null) return null;
-            foreach (var item in _itemCatalog)
+            if (_itemCatalog != null)
             {
-                if (item == null) continue;
-                if (item.id == itemId || item.itemName == itemId) return item;
+                foreach (var item in _itemCatalog)
+                {
+                    if (item == null) continue;
+                    if (item.id == itemId || item.itemName == itemId) return item;
+                }
+            }
+            // 兜底：场景目录表是构建时序列化的，后加入的物品（如料理）不在表里，
+            // 直接从 Resources/Data 找，保证读档不会把它们丢掉。
+            foreach (var item in Resources.LoadAll<ItemData>("Data"))
+            {
+                if (item != null && (item.id == itemId || item.itemName == itemId)) return item;
             }
             return null;
         }

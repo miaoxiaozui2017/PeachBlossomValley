@@ -38,6 +38,7 @@ namespace PBV.UI
         private int _lastMaxStamina = -1;
         private string _lastQuestLine = "";
         private string _lastWorldLine = "";
+        private string _lastToolLine = "";
 
         private void Awake()
         {
@@ -125,6 +126,7 @@ namespace PBV.UI
             }
             RefreshQuestLine();
             RefreshWorldLine();
+            RefreshToolLine();
 
             if (_noticeTimer > 0f)
             {
@@ -152,6 +154,17 @@ namespace PBV.UI
             if (line == _lastQuestLine) return;
             _lastQuestLine = line;
             if (_questText != null) _questText.text = line;
+        }
+
+        /// <summary>工具消耗每帧比对：升级 / 读档后也能立刻显示正确数值</summary>
+        private void RefreshToolLine()
+        {
+            var tm = ToolManager.Instance;
+            if (tm == null || _toolText == null) return;
+            string line = $"工具：{tm.CurrentToolName}（耗 {tm.CurrentStaminaCost} 体力）  [左键使用 · Q 切换]";
+            if (line == _lastToolLine) return;
+            _lastToolLine = line;
+            _toolText.text = line;
         }
 
         private void RefreshWorldLine()
@@ -221,7 +234,7 @@ namespace PBV.UI
             if (_toolText != null && ToolManager.Instance != null)
             {
                 int cost = ToolManager.Instance.CurrentStaminaCost;
-                _toolText.text = $"工具：{ToolManager.Instance.CurrentToolName}（耗 {cost} 体力）  [Q 切换]";
+                _toolText.text = $"工具：{ToolManager.Instance.CurrentToolName}（耗 {cost} 体力）  [左键使用 · Q 切换]";
             }
         }
 

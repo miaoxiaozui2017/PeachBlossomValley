@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using PBV.Player;
 
@@ -43,7 +44,7 @@ namespace PBV.Core
         }
 
         /// <summary>
-        /// 灰盒模式：无 PlayerInput 资产时直读键盘（WASD/E/Space）
+        /// 灰盒模式：无 PlayerInput 资产时直读键盘 + 鼠标（工具用左键，Space 留给钓鱼）
         /// </summary>
         private void PollKeyboard()
         {
@@ -58,10 +59,29 @@ namespace PBV.Core
             _lastMoveInput = move;
             MoveEvent?.Invoke(move);
 
-            if (kb.eKey.wasPressedThisFrame) InteractEvent?.Invoke();
-            if (kb.spaceKey.wasPressedThisFrame) UseToolEvent?.Invoke();
+            if (kb.eKey.wasPressedThisFrame)
+            {
+                // 面板打开时 E 先关面板；没面板才走场景交互，避免"E 关掉又被 E 重新打开"
+                if (!PBV.UI.UIEventSystemBootstrap.TryCloseTopPanel()) InteractEvent?.Invoke();
+            }
+
+            // 工具 = 鼠标左键；Space 完全留给钓鱼 QTE，两者不再互相误触。
+            // 点在 UI 按钮上、或正在钓鱼时都不触发农事操作。
+            var mouse = Mouse.current;
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame
+                && !IsPointerOverUI() && !PBV.Systems.FishingSpot.IsFishingActive)
+            {
+                UseToolEvent?.Invoke();
+            }
+
             if (kb.qKey.wasPressedThisFrame) ToolCycleEvent?.Invoke();
             if (kb.gKey.wasPressedThisFrame) GiftEvent?.Invoke();
+            if (kb.fKey.wasPressedThisFrame) PBV.Systems.CookingSystem.TryEatSelected();
+        }
+
+        private static bool IsPointerOverUI()
+        {
+            return EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
         }
 
         private Vector2 _lastMoveInput;
@@ -79,11 +99,11 @@ namespace PBV.Core
         /// </summary>
         public void OnInteract()
         {
-            InteractEvent?.Invoke();
+            if (!PBV.UI.UIEventSystemBootstrap.TryCloseTopPanel()) InteractEvent?.Invoke();
         }
 
         /// <summary>
-        /// Input System "UseTool" (Space) 映射
+        /// 工具事件映射（现由鼠标左键触发）
         /// </summary>
         public void OnUseTool()
         {

@@ -32,6 +32,7 @@ namespace PBV.UI
         {
             _isOpen = !_isOpen;
             _canvasGo.SetActive(_isOpen);
+            if (_isOpen) UIEventSystemBootstrap.RegisterTopPanel(Toggle); else UIEventSystemBootstrap.ClearTopPanel();
             if (_isOpen) Refresh();
         }
 
@@ -45,8 +46,9 @@ namespace PBV.UI
             // 更新按钮状态
             var bagBtn = _root.transform.Find("BagRow/Btn")?.GetComponent<Button>();
             var stamBtn = _root.transform.Find("StamRow/Btn")?.GetComponent<Button>();
-            if (bagBtn != null) bagBtn.interactable = bs.BagUpgradeCost > 0 && money >= bs.BagUpgradeCost;
-            if (stamBtn != null) stamBtn.interactable = bs.StaminaUpgradeCost > 0 && money >= bs.StaminaUpgradeCost;
+            // 只有满级才禁用；钱不够时仍可点，由 BuildSystem 弹出具体提示
+            if (bagBtn != null) bagBtn.interactable = bs.BagUpgradeCost > 0;
+            if (stamBtn != null) stamBtn.interactable = bs.StaminaUpgradeCost > 0;
         }
 
         private void BuildUI_()

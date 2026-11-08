@@ -12,19 +12,25 @@ namespace PBV.Systems
     {
         public string id;
         public string name;
+        public string outputItemId;
         public string[] inputItemIds;
         public int[] inputCounts;
         public int staminaRestore;
         [NonSerialized] public ItemData[] _inputs;
+        [NonSerialized] public ItemData _output;
     }
 
     /// <summary>
-    /// 烹饪系统：消耗食材恢复体力。10道菜。
+    /// 烹饪系统：消耗食材「做出一道菜放进背包」，不再立刻回体力。
+    /// 菜可以之后按 F 吃、送给 NPC 加好感、或卖给商店/出货箱。
     /// 厨房台 E 键交互打开 CookingUI；K 键快捷开关。
     /// </summary>
     public class CookingSystem : MonoBehaviour
     {
         public static CookingSystem Instance { get; private set; }
+
+        /// <summary>配方里的通配材料：任意一条 item_fish_* 鱼都可以</summary>
+        public const string AnyFishId = "any_fish";
 
         public event Action OnRecipesResolved;
         private readonly List<CookingRecipe> _recipes = new List<CookingRecipe>();
@@ -43,21 +49,29 @@ namespace PBV.Systems
 
         private void DefineRecipes()
         {
-            Add("r_cook_radish_soup", "萝卜汤", new[] { "item_radish" }, new[] { 2 }, 30);
-            Add("r_cook_cabbage_soup", "白菜汤", new[] { "item_cabbage" }, new[] { 2 }, 30);
-            Add("r_cook_salad", "蔬菜沙拉", new[] { "item_radish", "item_cabbage" }, new[] { 1, 1 }, 20);
-            Add("r_cook_tomato", "烤番茄", new[] { "item_tomato" }, new[] { 2 }, 40);
-            Add("r_cook_sweetpotato", "烤红薯", new[] { "item_sweetpotato" }, new[] { 1 }, 25);
-            Add("r_cook_mushroom_soup", "蘑菇汤", new[] { "item_mushroom" }, new[] { 2 }, 35);
-            Add("r_cook_pumpkin", "南瓜饼", new[] { "item_pumpkin" }, new[] { 1 }, 35);
-            Add("r_cook_corn", "烤玉米", new[] { "item_corn" }, new[] { 1 }, 20);
-            Add("r_cook_stew", "蔬菜炖菜", new[] { "item_radish", "item_cabbage", "item_mushroom" }, new[] { 1, 1, 1 }, 50);
-            Add("r_cook_xuan_chicken", "宣纸包菜", new[] { "item_paper", "item_radish" }, new[] { 1, 2 }, 60);
+            Add("r_cook_radish_soup", "萝卜汤", "item_dish_radish_soup", new[] { "item_radish" }, new[] { 2 }, 30);
+            Add("r_cook_cabbage_soup", "白菜汤", "item_dish_cabbage_soup", new[] { "item_cabbage" }, new[] { 2 }, 30);
+            Add("r_cook_salad", "蔬菜沙拉", "item_dish_salad", new[] { "item_radish", "item_cabbage" }, new[] { 1, 1 }, 20);
+            Add("r_cook_tomato", "烤番茄", "item_dish_tomato", new[] { "item_tomato" }, new[] { 2 }, 40);
+            Add("r_cook_sweetpotato", "烤红薯", "item_dish_sweetpotato", new[] { "item_sweetpotato" }, new[] { 1 }, 25);
+            Add("r_cook_mushroom_soup", "蘑菇汤", "item_dish_mushroom_soup", new[] { "item_mushroom" }, new[] { 2 }, 35);
+            Add("r_cook_pumpkin", "南瓜饼", "item_dish_pumpkin", new[] { "item_pumpkin" }, new[] { 1 }, 35);
+            Add("r_cook_corn", "烤玉米", "item_dish_corn", new[] { "item_corn" }, new[] { 1 }, 20);
+            Add("r_cook_stew", "蔬菜炖菜", "item_dish_stew", new[] { "item_radish", "item_cabbage", "item_mushroom" }, new[] { 1, 1, 1 }, 50);
+            Add("r_cook_xuan_chicken", "宣纸包菜", "item_dish_xuan_chicken", new[] { "item_paper", "item_radish" }, new[] { 1, 2 }, 60);
+            // 鱼料理：任意鱼 1 条即可，钓到什么都能做
+            Add("r_cook_steamed_fish", "清蒸鱼", "item_dish_steamed_fish", new[] { AnyFishId }, new[] { 1 }, 45);
+            Add("r_cook_fish_soup", "鱼头萝卜汤", "item_dish_fish_soup", new[] { AnyFishId, "item_radish" }, new[] { 1, 1 }, 60);
+            Add("r_cook_braised_fish", "红烧鱼", "item_dish_braised_fish", new[] { AnyFishId, "item_cabbage" }, new[] { 1, 1 }, 80);
         }
 
-        private void Add(string id, string name, string[] inputs, int[] counts, int stamina)
+        private void Add(string id, string name, string output, string[] inputs, int[] counts, int stamina)
         {
-            _recipes.Add(new CookingRecipe { id = id, name = name, inputItemIds = inputs, inputCounts = counts, staminaRestore = stamina });
+            _recipes.Add(new CookingRecipe
+            {
+                id = id, name = name, outputItemId = output,
+                inputItemIds = inputs, inputCounts = counts, staminaRestore = stamina
+            });
         }
 
         public void ResolveReferences()
@@ -68,38 +82,153 @@ namespace PBV.Systems
             {
                 r._inputs = new ItemData[r.inputItemIds.Length];
                 for (int i = 0; i < r.inputItemIds.Length; i++)
+                {
+                    if (r.inputItemIds[i] == AnyFishId) continue; // 通配，运行时从背包找
                     foreach (var item in allItems)
                         if (item.id == r.inputItemIds[i]) { r._inputs[i] = item; break; }
+                }
+                foreach (var item in allItems)
+                    if (item.id == r.outputItemId) { r._output = item; break; }
+            }
+
+            // 有引用没解析到就不锁 _resolved，允许后续重试，避免配方永久灰掉
+            foreach (var r in _recipes)
+            {
+                if (r._output == null) return;
+                for (int i = 0; i < r._inputs.Length; i++)
+                    if (r.inputItemIds[i] != AnyFishId && r._inputs[i] == null) return;
             }
             _resolved = true;
             OnRecipesResolved?.Invoke();
         }
 
+        private static ItemData FindAnyFish()
+        {
+            var inv = InventorySystem.Instance;
+            if (inv == null) return null;
+            for (int i = 0; i < inv.Capacity; i++)
+            {
+                var s = inv.GetSlot(i);
+                if (s != null && !s.IsEmpty && s.item != null && s.item.id != null && s.item.id.StartsWith("item_fish_"))
+                    return s.item;
+            }
+            return null;
+        }
+
         public bool CanCook(CookingRecipe r)
         {
-            if (r == null || r._inputs == null || InventorySystem.Instance == null) return false;
-            for (int i = 0; i < r._inputs.Length; i++)
+            if (r == null || r._output == null || InventorySystem.Instance == null) return false;
+            var inv = InventorySystem.Instance;
+            for (int i = 0; i < r.inputItemIds.Length; i++)
             {
+                if (r.inputItemIds[i] == AnyFishId)
+                {
+                    if (FindAnyFish() == null) return false;
+                    continue;
+                }
                 if (r._inputs[i] == null) return false;
-                if (InventorySystem.Instance.CountItem(r._inputs[i]) < r.inputCounts[i]) return false;
+                if (inv.CountItem(r._inputs[i]) < r.inputCounts[i]) return false;
             }
             return true;
         }
 
+        /// <summary>材料不足的具体清单，供界面和提示复用</summary>
+        public string GetMissingText(CookingRecipe r)
+        {
+            if (r == null) return string.Empty;
+            var inv = InventorySystem.Instance;
+            if (inv == null) return "背包未就绪";
+            var missing = new List<string>();
+            for (int i = 0; i < r.inputItemIds.Length; i++)
+            {
+                if (r.inputItemIds[i] == AnyFishId)
+                {
+                    if (FindAnyFish() == null) missing.Add("任意鱼x1");
+                    continue;
+                }
+                var item = r._inputs[i];
+                if (item == null) { missing.Add(r.inputItemIds[i]); continue; }
+                int have = inv.CountItem(item);
+                if (have < r.inputCounts[i]) missing.Add($"{item.itemName} {have}/{r.inputCounts[i]}");
+            }
+            return missing.Count == 0 ? string.Empty : "缺 " + string.Join("、", missing);
+        }
+
+        /// <summary>做菜：材料进背包 → 产出菜品；不再自动恢复体力</summary>
         public bool Cook(CookingRecipe r)
         {
-            if (!CanCook(r)) return false;
-            for (int i = 0; i < r._inputs.Length; i++)
-                InventorySystem.Instance.RemoveItem(r._inputs[i], r.inputCounts[i]);
-            int restore = r.staminaRestore;
-            if (SkillSystem.Instance != null)
+            if (r == null) return false;
+            if (r._output == null)
             {
-                restore = Mathf.RoundToInt(restore * (1f + SkillSystem.Instance.CookingBonus));
-                SkillSystem.Instance.AddExp(SkillType.Cooking, 8);
+                PBV.UI.HUD.Instance?.ShowNotice("菜品资产还没加载好：退出 Play 等 Unity 导入完成，或重建灰盒场景");
+                return false;
             }
-            PlayerStats.Instance?.Restore(restore);
-            Debug.Log($"[Cooking] 烹饪 {r.name} → 恢复 {restore} 体力");
+            if (!CanCook(r))
+            {
+                PBV.UI.HUD.Instance?.ShowNotice($"{r?.name} 材料不足 · {GetMissingText(r)}");
+                return false;
+            }
+
+            var inv = InventorySystem.Instance;
+            bool usesFish = Array.IndexOf(r.inputItemIds, AnyFishId) >= 0;
+            ItemData fish = usesFish ? FindAnyFish() : null;
+
+            for (int i = 0; i < r.inputItemIds.Length; i++)
+            {
+                if (r.inputItemIds[i] == AnyFishId) inv.RemoveItem(fish, r.inputCounts[i]);
+                else inv.RemoveItem(r._inputs[i], r.inputCounts[i]);
+            }
+
+            SkillSystem.Instance?.AddExp(SkillType.Cooking, 8);
+
+            if (!inv.AddItem(r._output, 1))
+            {
+                // 背包满：退还全部材料
+                for (int i = 0; i < r.inputItemIds.Length; i++)
+                {
+                    if (r.inputItemIds[i] == AnyFishId) inv.AddItem(fish, r.inputCounts[i]);
+                    else inv.AddItem(r._inputs[i], r.inputCounts[i]);
+                }
+                PBV.UI.HUD.Instance?.ShowNotice("背包已满，菜放不下（材料已退还）");
+                return false;
+            }
+
+            PBV.UI.HUD.Instance?.ShowNotice($"做好 {r._output.itemName} ×1 · 按 F 食用 / 可送礼 / 可出售");
+            Debug.Log($"[Cooking] 做出 {r._output.itemName}");
             return true;
+        }
+
+        /// <summary>F 键：吃当前选中槽位的料理；若选中槽不是食物，自动找背包里第一份</summary>
+        public static void TryEatSelected()
+        {
+            var inv = InventorySystem.Instance;
+            if (inv == null) return;
+
+            int idx = PBV.UI.InventoryUI.SelectedSlotIndex;
+            var slot = idx >= 0 && idx < inv.Capacity ? inv.GetSlot(idx) : null;
+            if (slot == null || slot.IsEmpty || slot.item == null || slot.item.staminaRestore <= 0)
+            {
+                slot = null;
+                for (int i = 0; i < inv.Capacity; i++)
+                {
+                    var s = inv.GetSlot(i);
+                    if (s != null && !s.IsEmpty && s.item != null && s.item.staminaRestore > 0) { slot = s; break; }
+                }
+            }
+
+            if (slot == null)
+            {
+                PBV.UI.HUD.Instance?.ShowNotice("背包里没有可吃的料理 · 到厨房按 K 做菜");
+                return;
+            }
+
+            var food = slot.item;
+            inv.RemoveItem(food, 1);
+            int restore = food.staminaRestore;
+            if (SkillSystem.Instance != null) restore = Mathf.RoundToInt(restore * (1f + SkillSystem.Instance.CookingBonus));
+            PlayerStats.Instance?.Restore(restore);
+            PBV.UI.HUD.Instance?.ShowNotice($"吃掉 {food.itemName}，体力 +{restore}");
+            Debug.Log($"[Cooking] 食用 {food.itemName} → 恢复 {restore} 体力");
         }
     }
 }

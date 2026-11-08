@@ -102,15 +102,31 @@ namespace PBV.Economy
             PendingValue += totalValue;
             OnPendingChanged?.Invoke(PendingValue);
             PBV.Systems.QuestManager.Instance?.RecordShip(totalItems);
+            string bonus = "";
+            if (worldMult > 1f) bonus += "现代×2 ";
+            if (festMult > 1f) bonus += "节日×1.5 ";
+            PBV.UI.HUD.Instance?.ShowNotice($"出货 {totalItems} 件 → 待结算 ¥{totalValue}（{bonus}次日 06:00 入账）");
             Debug.Log($"[ShippingBin] 投入 {totalItems} 件物品，价值 {totalValue}（待结算总额 {PendingValue}，次日06:00入账）");
+        }
+
+        /// <summary>
+        /// 统一出售规则（出货箱与商店回收共用）：
+        /// 可卖 = 售价>0 的作物/鱼/矿石/纸品/料理；
+        /// 不可卖 = 工具、种子、售价为 0 的材料。
+        /// </summary>
+        public static bool CanSell(ItemData item)
+        {
+            if (item == null || item.sellPrice <= 0) return false;
+            if (item.type == ItemType.Tool) return false;
+            if (item.type == ItemType.Seed) return false;
+            return true;
         }
 
         private bool IsSellable(ItemData item)
         {
-            if (item == null || item.sellPrice <= 0) return false;
-            if (item.type == ItemType.Tool) return false;
-            if (item.type == ItemType.Seed && !_sellSeeds) return false;
-            return true;
+            if (item == null) return false;
+            if (item.type == ItemType.Seed) return _sellSeeds && item.sellPrice > 0;
+            return CanSell(item);
         }
 
         /// <summary>

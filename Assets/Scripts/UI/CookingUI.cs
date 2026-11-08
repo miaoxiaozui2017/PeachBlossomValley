@@ -39,12 +39,14 @@ namespace PBV.UI
         {
             _isOpen = !_isOpen;
             _canvasGo.SetActive(_isOpen);
+            if (_isOpen) UIEventSystemBootstrap.RegisterTopPanel(Toggle); else UIEventSystemBootstrap.ClearTopPanel();
             if (_isOpen) Refresh();
         }
 
         private void Refresh()
         {
             if (CookingSystem.Instance == null || _listContent == null) return;
+            CookingSystem.Instance.ResolveReferences(); // 新菜品资产可能晚到，打开面板时主动重试
             for (int i = _listContent.childCount - 1; i >= 0; i--) Destroy(_listContent.GetChild(i).gameObject);
             foreach (var r in CookingSystem.Instance.Recipes) CreateRow(r);
         }
@@ -80,12 +82,19 @@ namespace PBV.UI
             string mats = "";
             for (int i = 0; i < r.inputItemIds.Length; i++)
             {
+                if (r.inputItemIds[i] == CookingSystem.AnyFishId)
+                {
+                    bool hasFish = HasAnyFish();
+                    mats += hasFish ? "任意鱼 1/1  " : "<color=#cc6666>任意鱼 0/1</color>  ";
+                    continue;
+                }
                 string n = r._inputs != null && i < r._inputs.Length && r._inputs[i] != null ? r._inputs[i].itemName : r.inputItemIds[i];
                 int have = r._inputs != null && i < r._inputs.Length && r._inputs[i] != null && InventorySystem.Instance != null ? InventorySystem.Instance.CountItem(r._inputs[i]) : 0;
                 bool enough = have >= r.inputCounts[i];
                 mats += $"{(enough ? "" : "<color=#cc6666>")}{n} {have}/{r.inputCounts[i]}{(enough ? "" : "</color>")}  ";
             }
-            infoText.text = $"<b>{r.name}</b>\n{mats}\n→ 恢复{r.staminaRestore}体力";
+            string dishName = r._output != null ? r._output.itemName : r.name;
+            infoText.text = $"<b>{r.name}</b>\n{mats}\n→ {dishName}（按 F 吃 +{r.staminaRestore} 体力，可送礼/出售）";
             infoText.raycastTarget = false;
 
             // 按钮
@@ -97,7 +106,6 @@ namespace PBV.UI
             btnImg.color = canCook ? new Color(0.5f, 0.35f, 0.2f, 1f) : new Color(0.3f, 0.3f, 0.3f, 0.6f);
             var btn = btnGo.AddComponent<Button>();
             btn.targetGraphic = btnImg;
-            btn.interactable = canCook;
             var btnTextGo = new GameObject("Text");
             btnTextGo.transform.SetParent(btnGo.transform, false);
             var btnTextRt = btnTextGo.AddComponent<RectTransform>();
@@ -105,7 +113,23 @@ namespace PBV.UI
             var btnText = btnTextGo.AddComponent<Text>();
             btnText.font = _font; btnText.fontSize = 16; btnText.alignment = TextAnchor.MiddleCenter;
             btnText.color = Color.white; btnText.text = "烹饪"; btnText.raycastTarget = false;
-            if (canCook) { var c = r; btn.onClick.AddListener(() => { CookingSystem.Instance.Cook(c); Refresh(); }); }
+            // 按钮保持可点：材料不够时 CookingSystem.Cook 会弹出「缺 xxx」的具体提示
+            btn.interactable = true;
+            var c = r;
+            btn.onClick.AddListener(() => { CookingSystem.Instance.Cook(c); Refresh(); });
+        }
+
+        private static bool HasAnyFish()
+        {
+            var inv = InventorySystem.Instance;
+            if (inv == null) return false;
+            for (int i = 0; i < inv.Capacity; i++)
+            {
+                var s = inv.GetSlot(i);
+                if (s != null && !s.IsEmpty && s.item != null && s.item.id != null && s.item.id.StartsWith("item_fish_"))
+                    return true;
+            }
+            return false;
         }
 
         private void BuildUI()

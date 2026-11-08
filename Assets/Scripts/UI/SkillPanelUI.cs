@@ -20,9 +20,18 @@ namespace PBV.UI
                 if (_root != null)
                 {
                     _canvasGo.SetActive(_isOpen);
+                    if (_isOpen) UIEventSystemBootstrap.RegisterTopPanel(ClosePanel);
+                    else UIEventSystemBootstrap.ClearTopPanel();
                     if (_isOpen) Refresh();
                 }
             }
+        }
+
+        private void ClosePanel()
+        {
+            _isOpen = false;
+            if (_canvasGo != null) _canvasGo.SetActive(false);
+            UIEventSystemBootstrap.ClearTopPanel();
         }
 
         private void Refresh()

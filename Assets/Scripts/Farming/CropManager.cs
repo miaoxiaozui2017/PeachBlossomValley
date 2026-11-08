@@ -40,22 +40,22 @@ namespace PBV.Farming
         {
             if (_farmGrid == null) return;
 
+            // 雨天等价于全田已浇水，不需要手动浇（WeatherSystem 执行顺序在前，天气已是当天的）
+            bool rainy = WeatherSystem.Instance != null && WeatherSystem.Instance.CurrentWeather == Weather.Rainy;
+
             var plots = _farmGrid.GetAllPlots();
             foreach (var plot in plots.Values)
             {
-                if (plot.plantedCrop != null)
+                if (plot.plantedCrop != null && (plot.isWateredToday || rainy))
                 {
-                    // 只有浇过水才生长
-                    if (plot.isWateredToday)
-                    {
-                        plot.growthDays++;
-                        UpdateCropVisual(plot);
-                    }
+                    plot.growthDays++;
+                    UpdateCropVisual(plot);
                 }
             }
-            
-            // 通知 FarmGrid 重置浇水状态
+
+            // 先清当天浇水标记，再让雨天把地块显示为湿润（不额外计一次生长）
             _farmGrid.ResetWaterState();
+            if (rainy) _farmGrid.AutoWaterAll(false);
         }
 
         /// <summary>
@@ -95,7 +95,7 @@ namespace PBV.Farming
             // 检查是否成熟
             if (plot.growthDays >= plot.plantedCrop.daysToMature)
             {
-                Harvest(plot);
+                if (!Harvest(plot)) return false; // 背包满：不扣体力、不计任务进度
                 PBV.Systems.QuestManager.Instance?.RecordHarvest();
                 return true;
             }
@@ -103,7 +103,8 @@ namespace PBV.Farming
             return false;
         }
 
-        private void Harvest(PlotData plot)
+        /// <summary>返回是否真的收获成功（背包满时失败，作物保留在地里）</summary>
+        private bool Harvest(PlotData plot)
         {
             if (plot.plantedCrop.harvestItem != null)
             {
@@ -117,7 +118,7 @@ namespace PBV.Farming
                     if (!added)
                     {
                         Debug.LogWarning("Inventory Full! Cannot harvest.");
-                        return; // Backpack full, cancel harvest
+                        return false; // Backpack full, cancel harvest
                     }
                 }
                 
@@ -136,6 +137,7 @@ namespace PBV.Farming
             }
             
             // 土地状态保持 (或者变回 Tilled/Watered)
+            return true;
         }
 
         private void UpdateCropVisual(PlotData plot)

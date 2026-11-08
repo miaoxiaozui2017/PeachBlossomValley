@@ -51,6 +51,7 @@ namespace PBV.UI
         {
             _isOpen = !_isOpen;
             _canvasGo.SetActive(_isOpen);
+            if (_isOpen) UIEventSystemBootstrap.RegisterTopPanel(Toggle); else UIEventSystemBootstrap.ClearTopPanel();
             if (_isOpen) Refresh();
         }
 
@@ -125,7 +126,8 @@ namespace PBV.UI
             btnImg.color = canCraft ? new Color(0.25f, 0.5f, 0.3f, 1f) : new Color(0.3f, 0.3f, 0.3f, 0.6f);
             var btn = btnGo.AddComponent<Button>();
             btn.targetGraphic = btnImg;
-            btn.interactable = canCraft;
+            // 常可点：材料不足时 CraftingSystem.Craft 会弹出具体缺什么
+            btn.interactable = true;
 
             var btnTextGo = new GameObject("Text");
             btnTextGo.transform.SetParent(btnGo.transform, false);
@@ -140,11 +142,8 @@ namespace PBV.UI
             btnText.text = "制作";
             btnText.raycastTarget = false;
 
-            if (canCraft)
-            {
-                var captured = r;
-                btn.onClick.AddListener(() => { CraftingSystem.Instance.Craft(captured); Refresh(); });
-            }
+            var captured = r;
+            btn.onClick.AddListener(() => { CraftingSystem.Instance.Craft(captured); Refresh(); });
         }
 
         private void BuildUI()
