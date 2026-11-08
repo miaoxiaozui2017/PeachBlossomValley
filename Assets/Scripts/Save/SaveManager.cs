@@ -194,6 +194,15 @@ namespace PBV.Save
                 // 成就
                 if (PBV.Systems.AchievementSystem.Instance != null)
                     data.achievements = PBV.Systems.AchievementSystem.Instance.Export();
+                if (PBV.Systems.ReputationSystem.Instance != null)
+                    data.reputation = PBV.Systems.ReputationSystem.Instance.Reputation;
+                if (PBV.Systems.BuffSystem.Instance != null)
+                {
+                    data.buffType = PBV.Systems.BuffSystem.Instance.ExportType();
+                    data.buffDays = PBV.Systems.BuffSystem.Instance.DaysLeft;
+                }
+                if (PBV.Systems.TradeCarrySystem.Instance != null)
+                    data.tradeSlots = PBV.Systems.TradeCarrySystem.Instance.Export();
 
                 // 背包（只存非空槽位，含索引）
                 if (InventorySystem.Instance != null)
@@ -279,6 +288,12 @@ namespace PBV.Save
                 // 成就
                 if (PBV.Systems.AchievementSystem.Instance != null)
                     PBV.Systems.AchievementSystem.Instance.Import(data.achievements);
+                if (PBV.Systems.ReputationSystem.Instance != null)
+                    PBV.Systems.ReputationSystem.Instance.Restore(data.reputation);
+                if (PBV.Systems.BuffSystem.Instance != null)
+                    PBV.Systems.BuffSystem.Instance.Restore(data.buffType, data.buffDays);
+                if (PBV.Systems.TradeCarrySystem.Instance != null)
+                    PBV.Systems.TradeCarrySystem.Instance.Import(data.tradeSlots);
 
                 // 背包
                 if (InventorySystem.Instance != null)

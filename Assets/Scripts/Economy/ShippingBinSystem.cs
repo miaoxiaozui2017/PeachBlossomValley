@@ -71,6 +71,8 @@ namespace PBV.Economy
             // 不必等到次日 06:00 还得恰好人在现代，规则更直观。
             float worldMult = WorldState.Instance != null ? WorldState.Instance.SellMultiplier : 1f;
             float festMult = FestivalSystem.Instance != null ? FestivalSystem.Instance.PriceMultiplier : 1f;
+            float repMult = ReputationSystem.Instance != null ? ReputationSystem.Instance.SellMultiplier : 1f;
+            float buffMult = 1f + (BuffSystem.Instance != null ? BuffSystem.Instance.TradeBonus : 0f);
 
             // 收集后再移除，避免边遍历边修改
             for (int i = 0; i < _inventory.Capacity; i++)
@@ -79,7 +81,7 @@ namespace PBV.Economy
                 if (slot == null || slot.IsEmpty) continue;
                 if (!IsSellable(slot.item)) continue;
 
-                totalValue += Mathf.RoundToInt(slot.item.sellPrice * slot.count * worldMult * festMult);
+                totalValue += Mathf.RoundToInt(slot.item.sellPrice * slot.count * worldMult * festMult * repMult * buffMult);
                 totalItems += slot.count;
             }
 

@@ -48,6 +48,8 @@ namespace PBV.Systems
             if (Current == world) return;
             Current = world;
             OnWorldChanged?.Invoke(Current);
+            TradeCarrySystem.Instance?.Settle(Current); // 三出三进：穿越即刻结算携带货物
+            QuestManager.Instance?.RecordTrade();
             string tip = Current == WorldType.Modern
                 ? "已到【现代】：同一片农场，所有功能照常可用，出货 ×2 · 按 T 回桃花谷"
                 : "已回到【桃花谷】：出货恢复 ×1 · 想去现代到下方传送门按 E";

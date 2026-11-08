@@ -111,6 +111,7 @@ namespace PBV.Farming
                 int yield = Random.Range(plot.plantedCrop.minYield, plot.plantedCrop.maxYield + 1);
                 if (PBV.Systems.SkillSystem.Instance != null) yield += PBV.Systems.SkillSystem.Instance.FarmingYieldBonus;
                 if (PBV.Systems.SolarTermSystem.HasHarvestBonus) yield += 1;
+                if (PBV.Systems.BuffSystem.Instance != null) yield += PBV.Systems.BuffSystem.Instance.FarmingBonus;
                 
                 if (InventorySystem.Instance != null)
                 {

@@ -52,6 +52,8 @@ namespace PBV.Systems
             float rareChance = 0.3f + spot * 0.1f;
             if (SkillSystem.Instance != null) rareChance += SkillSystem.Instance.FishingRareBonus;
             if (FestivalSystem.Instance != null) rareChance += FestivalSystem.Instance.RareFishBonus;
+            if (BuffSystem.Instance != null) rareChance += BuffSystem.Instance.FishingBonus;
+            if (RandomEventSystem.Instance != null) rareChance += RandomEventSystem.Instance.FishBonus;
             bool rare = Random.value < rareChance;
             int idx = rare ? Random.Range(Mathf.Max(lo, hi - Mathf.Max(1, (hi - lo) / 2)), hi) : lo;
             return _fishTypes[Mathf.Clamp(idx, 0, n - 1)];

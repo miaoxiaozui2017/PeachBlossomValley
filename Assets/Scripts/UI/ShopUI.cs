@@ -207,6 +207,7 @@ namespace PBV.UI
             if (inv == null || wallet == null) return;
 
             var toSell = new List<KeyValuePair<ItemData, int>>();
+            float eventMult = 1f + (RandomEventSystem.Instance != null ? RandomEventSystem.Instance.ShopBonus : 0f);
             int total = 0;
             int count = 0;
             for (int i = 0; i < inv.Capacity; i++)
@@ -215,7 +216,7 @@ namespace PBV.UI
                 if (slot == null || slot.IsEmpty) continue;
                 if (!ShippingBinSystem.CanSell(slot.item)) continue;
                 toSell.Add(new KeyValuePair<ItemData, int>(slot.item, slot.count));
-                total += slot.item.sellPrice * slot.count;
+                total += Mathf.RoundToInt(slot.item.sellPrice * slot.count * eventMult);
                 count += slot.count;
             }
 

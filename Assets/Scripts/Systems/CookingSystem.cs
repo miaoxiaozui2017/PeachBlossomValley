@@ -194,6 +194,7 @@ namespace PBV.Systems
             }
 
             PBV.UI.HUD.Instance?.ShowNotice($"做好 {r._output.itemName} ×1 · 按 F 食用 / 可送礼 / 可出售");
+            QuestManager.Instance?.RecordCook();
             Debug.Log($"[Cooking] 做出 {r._output.itemName}");
             return true;
         }
@@ -228,8 +229,22 @@ namespace PBV.Systems
             if (SkillSystem.Instance != null) restore = Mathf.RoundToInt(restore * (1f + SkillSystem.Instance.CookingBonus));
             if (FestivalSystem.Instance != null) restore = Mathf.RoundToInt(restore * FestivalSystem.Instance.FoodMultiplier);
             PlayerStats.Instance?.Restore(restore);
-            PBV.UI.HUD.Instance?.ShowNotice($"吃掉 {food.itemName}，体力 +{restore}");
+            var buff = BuffOf(food);
+            if (buff != BuffType.None) BuffSystem.Instance?.Apply(buff);
+            PBV.UI.HUD.Instance?.ShowNotice($"吃掉 {food.itemName}，体力 +{restore}" +
+                (buff != BuffType.None ? $" · 获得「{BuffSystem.BuffName(buff)}」" : ""));
             Debug.Log($"[Cooking] 食用 {food.itemName} → 恢复 {restore} 体力");
+        }
+
+        /// <summary>八大菜系效果（按菜品 id 归类，避免改动已有资产文件）</summary>
+        private static BuffType BuffOf(ItemData food)
+        {
+            string id = food != null ? food.id : "";
+            if (id.Contains("fish") || id == "item_dish_salad") return BuffType.Fishing;
+            if (id == "item_dish_cabbage_soup" || id == "item_dish_mushroom_soup" || id == "item_dish_corn") return BuffType.Mining;
+            if (id == "item_dish_radish_soup" || id == "item_dish_tomato" || id == "item_dish_pumpkin") return BuffType.Farming;
+            if (id == "item_dish_stew" || id == "item_dish_xuan_chicken" || id == "item_dish_sweetpotato") return BuffType.Trade;
+            return BuffType.None;
         }
     }
 }

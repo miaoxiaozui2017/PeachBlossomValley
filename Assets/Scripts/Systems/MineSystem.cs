@@ -68,8 +68,11 @@ namespace PBV.Systems
             else idx = Random.Range(0, _ores.Count);
 
             int count = 1 + (SkillSystem.Instance != null ? SkillSystem.Instance.MiningYieldBonus : 0)
-                          + (FestivalSystem.Instance != null ? FestivalSystem.Instance.ExtraOre : 0);
+                          + (FestivalSystem.Instance != null ? FestivalSystem.Instance.ExtraOre : 0)
+                          + (BuffSystem.Instance != null ? BuffSystem.Instance.MiningBonus : 0)
+                          + (RandomEventSystem.Instance != null ? RandomEventSystem.Instance.OreBonus : 0);
             var ore = _ores[idx];
+            QuestManager.Instance?.RecordMine();
             PBV.UI.HUD.Instance?.ShowNotice($"第 {CurrentFloor} 层：挖到 {ore.itemName} ×{count}");
             Debug.Log($"[Mine] 第{CurrentFloor}层 挖到 {ore.itemName} x{count}");
             return (ore, count);

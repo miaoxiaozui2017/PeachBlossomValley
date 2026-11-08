@@ -26,6 +26,10 @@ namespace PBV.Save
         public int world;               // 当前世界（WorldType 枚举值）
         public int hasPet;              // 是否有宠物（0/1）
         public int achievements;        // 成就位掩码
+        public int reputation;          // 宗族声望
+        public int buffType;            // 当前菜品增益
+        public int buffDays;            // 增益剩余天数
+        public string[] tradeSlots;     // 穿梭贸易 3 个携带槽位（物品 id）
 
         public List<SlotDTO> inventory = new List<SlotDTO>();
         public List<PlotDTO> plots = new List<PlotDTO>(); // 稀疏存储：只保存改变过的地块

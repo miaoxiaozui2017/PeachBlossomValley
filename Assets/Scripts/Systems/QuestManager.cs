@@ -53,6 +53,12 @@ namespace PBV.Systems
             _quests.Add(new Quest { id = "q_harvest", title = "初次收获", description = "收获 1 个成熟作物。", targetCount = 1, rewardMoney = 80 });
             _quests.Add(new Quest { id = "q_ship", title = "第一桶金", description = "往出货箱投入 1 件可出售物品。", targetCount = 1, rewardMoney = 30 });
             _quests.Add(new Quest { id = "q_gift", title = "礼尚往来", description = "给任意 NPC 送 1 次礼。", targetCount = 1, rewardMoney = 60 });
+            // v0.4.0 主线：把玩家引向全部系统
+            _quests.Add(new Quest { id = "q_cook", title = "灶台烟火", description = "在厨房做出 1 道菜（按 K）。", targetCount = 1, rewardMoney = 80 });
+            _quests.Add(new Quest { id = "q_fish", title = "溪边垂钓", description = "在任一钓点钓到 1 条鱼。", targetCount = 1, rewardMoney = 80 });
+            _quests.Add(new Quest { id = "q_mine", title = "入山采石", description = "在矿洞挖到 1 次矿石。", targetCount = 1, rewardMoney = 100 });
+            _quests.Add(new Quest { id = "q_trade", title = "两界商旅", description = "通过传送门穿梭 1 次。", targetCount = 1, rewardMoney = 120 });
+            _quests.Add(new Quest { id = "q_order", title = "食客登门", description = "完成 1 份餐厅订单（按 O 交付）。", targetCount = 1, rewardMoney = 150 });
             // 第一个任务激活
             ActivateNext();
         }
@@ -119,6 +125,11 @@ namespace PBV.Systems
         public void RecordHarvest(int n = 1) => UpdateCount("q_harvest", n);
         public void RecordShip(int n = 1) => UpdateCount("q_ship", n);
         public void RecordGift(int n = 1) => UpdateCount("q_gift", n);
+        public void RecordCook(int n = 1) => UpdateCount("q_cook", n);
+        public void RecordFish(int n = 1) => UpdateCount("q_fish", n);
+        public void RecordMine(int n = 1) => UpdateCount("q_mine", n);
+        public void RecordTrade(int n = 1) => UpdateCount("q_trade", n);
+        public void RecordOrder(int n = 1) => UpdateCount("q_order", n);
 
         // ===== 存档支持 =====
         public List<QuestDTO> ExportAll()

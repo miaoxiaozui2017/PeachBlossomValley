@@ -91,6 +91,7 @@ namespace PBV.Systems
                         ShowPrompt($"钓到了 {fish.itemName}！");
                         Debug.Log($"[Fishing] 钓到 {fish.itemName}");
                         PBV.Systems.SkillSystem.Instance?.AddExp(PBV.Systems.SkillType.Fishing, 15);
+                        PBV.Systems.QuestManager.Instance?.RecordFish();
                     }
                     else
                     {
