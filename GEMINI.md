@@ -1,4 +1,4 @@
-# Gemini CLI Project Rules: 🍑 Peach Blossom Valley
+# Gemini CLI Project Rules: 🍑 谷中仙
 
 This file serves as the foundational mandate for the Gemini CLI agent in this project. All instructions here and in the referenced files take absolute precedence over general workflows.
 

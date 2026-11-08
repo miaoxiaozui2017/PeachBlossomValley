@@ -1,8 +1,8 @@
-# 桃花谷 v0.2.0 试玩指南
+# 谷中仙 v0.2.0 试玩指南
 
 ## 一、打开方式
 
-1. 用 Unity 2022.3.57f1c1 打开项目（`Peach Blossom Valley`）。
+1. 用 Unity 2022.3.57f1c1 打开项目（磁盘目录仍为 `Peach Blossom Valley`，产品名已正式改为《谷中仙》）。
 2. 打开场景：`Assets/Scenes/01_FarmGreyBox.unity`。
 3. 点击 Play。
 

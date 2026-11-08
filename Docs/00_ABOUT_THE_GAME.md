@@ -1,4 +1,6 @@
-开发说明
+# 谷中仙 · 开发说明
+
+> 产品名：《谷中仙》。磁盘目录与代码仓库沿用旧名 `PeachBlossomValley`；「桃花谷」为游戏内古代世界地名，保留不变。
 
 使用本套文档的指南：
 
@@ -46,7 +48,7 @@
 
 项目结构建议：
 
-PeachBlossomValley/
+PeachBlossomValley/        # 目录沿用旧名，产品名为《谷中仙》
 ├── Assets/
 │   ├── Art/                # 美术资源
 │   │   ├── Sprites/         # 游戏内像素资源

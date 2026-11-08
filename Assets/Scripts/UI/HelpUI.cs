@@ -83,8 +83,9 @@ namespace PBV.UI
             if (_font == null) _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
             // 标题
-            CreateText(content.transform, 24, FontStyle.Bold, new Color(1f, 0.85f, 0.4f), "帮助 — 桃花谷 (H 关闭)");
-            CreateText(content.transform, 14, FontStyle.Normal, new Color(0.6f, 0.55f, 0.5f), "");
+            CreateText(content.transform, 24, FontStyle.Bold, new Color(1f, 0.85f, 0.4f), "帮助 — 谷中仙 (H 关闭)");
+            CreateText(content.transform, 14, FontStyle.Normal, new Color(0.6f, 0.55f, 0.5f),
+                "《谷中仙》：在桃花谷种田造纸，穿梭现代做贸易");
 
             CreateText(content.transform, 18, FontStyle.Bold, new Color(0.8f, 0.9f, 1f), "【快捷键】");
             CreateText(content.transform, 14, FontStyle.Normal, new Color(0.85f, 0.82f, 0.75f),

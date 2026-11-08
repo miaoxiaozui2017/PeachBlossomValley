@@ -330,7 +330,7 @@ namespace PBV.UI
             // 操作条移到左下角，避开屏幕中央的 [E] 交互提示，也不压住任何面板
             var hint = CreateText(canvasGo.transform, "HintText", new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(0f, 0f),
                 new Vector2(24f, 8f), new Vector2(900f, 24f), 14, FontStyle.Normal, new Color(1f, 1f, 1f, 0.55f));
-            hint.text = "H 帮助（全部快捷键与玩法）    F5 存档    F9 读档    N 次日";
+            hint.text = "《谷中仙》   H 帮助（全部快捷键与玩法）    F5 存档    F9 读档    N 次日";
             hint.alignment = TextAnchor.MiddleLeft;
         }
 

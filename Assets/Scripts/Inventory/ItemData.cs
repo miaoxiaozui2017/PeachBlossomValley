@@ -11,7 +11,7 @@ namespace PBV.Inventory
         Seed
     }
 
-    [CreateAssetMenu(fileName = "New Item", menuName = "PeachBlossom/Inventory/ItemData")]
+    [CreateAssetMenu(fileName = "New Item", menuName = "谷中仙/Inventory/ItemData")]
     public class ItemData : ScriptableObject
     {
         public string id;

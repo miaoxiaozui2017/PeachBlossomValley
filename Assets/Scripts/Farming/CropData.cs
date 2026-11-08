@@ -7,7 +7,7 @@ namespace PBV.Farming
     /// 作物数据定义
     /// 包含生长周期、不同阶段的Sprite等
     /// </summary>
-    [CreateAssetMenu(fileName = "New Crop", menuName = "PeachBlossom/Farming/CropData")]
+    [CreateAssetMenu(fileName = "New Crop", menuName = "谷中仙/Farming/CropData")]
     public class CropData : ScriptableObject
     {
         [Header("Basic Info")]

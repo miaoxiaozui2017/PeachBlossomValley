@@ -34,6 +34,38 @@ namespace PBV.Save
         public string SavePath => Path.Combine(Application.persistentDataPath, "pbv_save.json");
         public bool HasSaveFile => File.Exists(SavePath);
 
+        /// <summary>
+        /// 更名前的旧存档路径。productName 由 "Peach Blossom Valley" 改为《谷中仙》后，
+        /// Application.persistentDataPath 的末级目录随之改变，旧档会读不到。
+        /// companyName 仍是 DefaultCompany，所以旧目录就是当前路径的同级目录。
+        /// </summary>
+        private static string LegacySavePath
+        {
+            get
+            {
+                var parent = Directory.GetParent(Application.persistentDataPath);
+                return parent == null ? null : Path.Combine(parent.FullName, "Peach Blossom Valley", "pbv_save.json");
+            }
+        }
+
+        /// <summary>一次性迁移旧存档：只复制、不删除原文件；失败也不影响新档。</summary>
+        private void MigrateLegacySave()
+        {
+            try
+            {
+                if (File.Exists(SavePath)) return;
+                string legacy = LegacySavePath;
+                if (string.IsNullOrEmpty(legacy) || !File.Exists(legacy)) return;
+                Directory.CreateDirectory(Path.GetDirectoryName(SavePath));
+                File.Copy(legacy, SavePath, false);
+                Debug.Log($"[Save] 已从旧项目目录迁移存档 -> {SavePath}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[Save] 旧存档迁移失败（不影响新档）: {e.Message}");
+            }
+        }
+
         public event Action OnSaved;
         public event Action OnLoaded;
 
@@ -51,6 +83,8 @@ namespace PBV.Save
             {
                 _cropCatalog = Resources.LoadAll<CropData>("Data");
             }
+
+            MigrateLegacySave();
         }
 
         private void Start()
