@@ -182,9 +182,10 @@ namespace PBV.Save
                 // 建造等级
                 if (PBV.Systems.BuildSystem.Instance != null)
                 {
-                    var (bag, stam) = PBV.Systems.BuildSystem.Instance.Export();
+                    var (bag, stam, house) = PBV.Systems.BuildSystem.Instance.Export();
                     data.bagLevel = bag;
                     data.staminaLevel = stam;
+                    data.houseLevel = house;
                 }
 
                 // 世界状态
@@ -205,6 +206,12 @@ namespace PBV.Save
                     data.buffType = PBV.Systems.BuffSystem.Instance.ExportType();
                     data.buffDays = PBV.Systems.BuffSystem.Instance.DaysLeft;
                 }
+                if (PBV.Systems.HealthSystem.Instance != null)
+                    data.health = PBV.Systems.HealthSystem.Instance.Export();
+                if (PBV.Systems.TrapSystem.Instance != null)
+                    data.trap = PBV.Systems.TrapSystem.Instance.Export();
+                if (PBV.Systems.WardrobeSystem.Instance != null)
+                    data.outfit = PBV.Systems.WardrobeSystem.Instance.Export();
                 if (PBV.Systems.TradeCarrySystem.Instance != null)
                     data.tradeSlots = PBV.Systems.TradeCarrySystem.Instance.Export();
 
@@ -278,7 +285,7 @@ namespace PBV.Save
 
                 // 建造等级
                 if (PBV.Systems.BuildSystem.Instance != null)
-                    PBV.Systems.BuildSystem.Instance.Import(data.bagLevel, data.staminaLevel);
+                    PBV.Systems.BuildSystem.Instance.Import(data.bagLevel, data.staminaLevel, data.houseLevel);
 
                 // 世界状态
                 if (PBV.Systems.WorldState.Instance != null)
@@ -295,6 +302,12 @@ namespace PBV.Save
                     PBV.Systems.ReputationSystem.Instance.Restore(data.reputation);
                 if (PBV.Systems.BuffSystem.Instance != null)
                     PBV.Systems.BuffSystem.Instance.Restore(data.buffType, data.buffDays);
+                if (PBV.Systems.HealthSystem.Instance != null)
+                    PBV.Systems.HealthSystem.Instance.Restore(data.health);
+                if (PBV.Systems.TrapSystem.Instance != null)
+                    PBV.Systems.TrapSystem.Instance.Restore(data.trap);
+                if (PBV.Systems.WardrobeSystem.Instance != null)
+                    PBV.Systems.WardrobeSystem.Instance.Restore(data.outfit);
                 if (PBV.Systems.TradeCarrySystem.Instance != null)
                     PBV.Systems.TradeCarrySystem.Instance.Import(data.tradeSlots);
 

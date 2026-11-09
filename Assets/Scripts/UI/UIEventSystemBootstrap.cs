@@ -77,6 +77,19 @@ namespace PBV.UI
             // 人物属性面板（V）——时间/荷包/状态/技艺/非遗进度/好感总览
             if (UnityEngine.Object.FindObjectOfType<CharacterPanelUI>() == null)
                 new GameObject("CharacterPanelUI (Auto)").AddComponent<CharacterPanelUI>();
+            // 健康系统（疾病/吃药）+ 采山 + 陷阱 + 衣柜（运行时补建单例）
+            if (UnityEngine.Object.FindObjectOfType<PBV.Systems.HealthSystem>() == null)
+                new GameObject("HealthSystem (Auto)").AddComponent<PBV.Systems.HealthSystem>();
+            if (UnityEngine.Object.FindObjectOfType<PBV.Systems.ForageMountainSystem>() == null)
+                new GameObject("ForageMountainSystem (Auto)").AddComponent<PBV.Systems.ForageMountainSystem>();
+            if (UnityEngine.Object.FindObjectOfType<PBV.Systems.TrapSystem>() == null)
+                new GameObject("TrapSystem (Auto)").AddComponent<PBV.Systems.TrapSystem>();
+            if (UnityEngine.Object.FindObjectOfType<PBV.Systems.WardrobeSystem>() == null)
+                new GameObject("WardrobeSystem (Auto)").AddComponent<PBV.Systems.WardrobeSystem>();
+            if (UnityEngine.Object.FindObjectOfType<MountainUI>() == null)
+                new GameObject("MountainUI (Auto)").AddComponent<MountainUI>();
+            if (UnityEngine.Object.FindObjectOfType<WardrobeUI>() == null)
+                new GameObject("WardrobeUI (Auto)").AddComponent<WardrobeUI>();
 
             if (UnityEngine.Object.FindObjectOfType<EventSystem>() != null) return;
 

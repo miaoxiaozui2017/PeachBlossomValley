@@ -75,7 +75,7 @@ namespace PBV.UI
             _root.transform.SetParent(canvasGo.transform, false);
             var rt = _root.AddComponent<RectTransform>();
             rt.anchorMin = new Vector2(0.5f, 0.5f); rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(440, 260); rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(440, 340); rt.anchoredPosition = Vector2.zero;
             _root.AddComponent<Image>().color = new Color(0.1f, 0.09f, 0.07f, 0.96f);
 
             var vlg = _root.AddComponent<VerticalLayoutGroup>();
@@ -105,6 +105,11 @@ namespace PBV.UI
             var stamRow = CreateUpgradeRow("StamRow", "体力上限", "100→150→200", 800);
             var stamBtn = stamRow.transform.Find("Btn").GetComponent<Button>();
             stamBtn.onClick.AddListener(() => { if (BuildSystem.Instance != null) BuildSystem.Instance.TryUpgradeStamina(); Refresh(); });
+
+            // 房屋扩建行（住：用木梁/木家具，不用钱）
+            var houseRow = CreateUpgradeRow("HouseRow", "房屋扩建", "木梁×2→木家具×2（+体力上限）", 0);
+            var houseBtn = houseRow.transform.Find("Btn").GetComponent<Button>();
+            houseBtn.onClick.AddListener(() => { if (BuildSystem.Instance != null) BuildSystem.Instance.TryUpgradeHouse(); Refresh(); });
         }
 
         private GameObject CreateUpgradeRow(string rowName, string title, string desc, int cost)
@@ -126,7 +131,9 @@ namespace PBV.UI
             var info = infoGo.AddComponent<Text>();
             info.font = _font; info.fontSize = 15; info.alignment = TextAnchor.MiddleLeft;
             info.color = new Color(1f, 0.92f, 0.75f); info.supportRichText = true;
-            info.text = $"<b>{title}</b>\n{desc}  需要: {cost} 文";
+            info.text = cost > 0
+                ? $"<b>{title}</b>\n{desc}  需要: {cost} 文"
+                : $"<b>{title}</b>\n{desc}";
             info.raycastTarget = false;
 
             var btnGo = new GameObject("Btn");

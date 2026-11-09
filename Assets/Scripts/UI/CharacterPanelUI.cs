@@ -115,6 +115,11 @@ namespace PBV.UI
             else
                 sb.AppendLine("增益　无");
 
+            var health = HealthSystem.Instance;
+            sb.AppendLine(health != null && health.CurrentIllness != IllnessType.None
+                ? $"健康　{health.IllnessName}（剩 {health.IllnessDaysLeft} 天，吃药可愈）"
+                : "健康　无恙");
+
             return sb.ToString();
         }
 

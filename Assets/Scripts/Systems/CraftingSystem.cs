@@ -72,6 +72,15 @@ namespace PBV.Systems
             _recipes.Add(new Recipe { id = "r_herb_to_wine", name = "浸酿药酒", inputItemIds = new[] { "item_herb", "item_wild_fruit" }, inputCounts = new[] { 2, 2 }, outputItemId = "item_medicine_wine", outputCount = 1 });
             _recipes.Add(new Recipe { id = "r_herb_to_plaster", name = "熬制膏药", inputItemIds = new[] { "item_herb" }, inputCounts = new[] { 2 }, outputItemId = "item_plaster", outputCount = 2 });
 
+            // 制药·制毒（药婆药庐）：药材/姜/酒/毒草 → 各类药与毒
+            _recipes.Add(new Recipe { id = "r_brew_ricewine", name = "酿米酒", inputItemIds = new[] { "item_rice", "item_wild_fruit" }, inputCounts = new[] { 3, 1 }, outputItemId = "item_ricewine", outputCount = 1 });
+            _recipes.Add(new Recipe { id = "r_med_cold", name = "煎风寒药", inputItemIds = new[] { "item_herb", "item_ginger" }, inputCounts = new[] { 2, 1 }, outputItemId = "item_med_cold", outputCount = 1 });
+            _recipes.Add(new Recipe { id = "r_med_diarrhea", name = "配止泻药", inputItemIds = new[] { "item_herb", "item_wild_fruit" }, inputCounts = new[] { 2, 1 }, outputItemId = "item_med_diarrhea", outputCount = 1 });
+            _recipes.Add(new Recipe { id = "r_med_trauma", name = "调跌打膏", inputItemIds = new[] { "item_herb", "item_clay" }, inputCounts = new[] { 2, 1 }, outputItemId = "item_med_trauma", outputCount = 1 });
+            _recipes.Add(new Recipe { id = "r_hangover", name = "煮醒酒汤", inputItemIds = new[] { "item_ricewine", "item_herb" }, inputCounts = new[] { 1, 1 }, outputItemId = "item_hangover_soup", outputCount = 1 });
+            _recipes.Add(new Recipe { id = "r_poison_bait", name = "拌毒饵", inputItemIds = new[] { "item_poison_herb", "item_wild_fruit" }, inputCounts = new[] { 1, 2 }, outputItemId = "item_poison_bait", outputCount = 2 });
+            _recipes.Add(new Recipe { id = "r_poison_powder", name = "磨迷药", inputItemIds = new[] { "item_poison_herb" }, inputCounts = new[] { 3 }, outputItemId = "item_poison_powder", outputCount = 1 });
+
             // 住：木工坊（木材 → 木梁 → 木家具）
             _recipes.Add(new Recipe { id = "r_wood_to_beam", name = "刨木成梁", inputItemIds = new[] { "item_wood" }, inputCounts = new[] { 3 }, outputItemId = "item_wood_beam", outputCount = 1 });
             _recipes.Add(new Recipe { id = "r_beam_to_furniture", name = "打制家具", inputItemIds = new[] { "item_wood_beam", "item_wood" }, inputCounts = new[] { 1, 2 }, outputItemId = "item_furniture", outputCount = 1 });

@@ -66,6 +66,12 @@ namespace PBV.Systems
             // 采集食材做的家常菜（不依赖种子，开局就能上手）
             Add("r_cook_veg_soup", "野菜汤", "item_dish_veg_soup", new[] { "item_wild_veg" }, new[] { 2 }, 30);
             Add("r_cook_fruit_tea", "野果茶", "item_dish_fruit_tea", new[] { "item_wild_fruit" }, new[] { 2 }, 25);
+            // 野味菜（陷阱/采山捕获的野兔野鸡野鹿）
+            Add("r_cook_hare_stew", "红烧野兔", "item_dish_hare_stew", new[] { "item_game_hare" }, new[] { 1 }, 50);
+            Add("r_cook_pheasant_soup", "野鸡菌汤", "item_dish_pheasant_soup", new[] { "item_game_pheasant", "item_mountain_fungus" }, new[] { 1, 1 }, 65);
+            Add("r_cook_deer_roast", "烤鹿肉", "item_dish_deer_roast", new[] { "item_game_deer" }, new[] { 1 }, 80);
+            // 药膳：姜汤（生姜熬制，治风寒）
+            Add("r_cook_ginger_soup", "熬姜汤", "item_ginger_soup", new[] { "item_ginger" }, new[] { 2 }, 10);
         }
 
         private void Add(string id, string name, string output, string[] inputs, int[] counts, int stamina)
@@ -228,6 +234,35 @@ namespace PBV.Systems
 
             var food = slot.item;
             inv.RemoveItem(food, 1);
+
+            // 药品优先：按 F 吃药治疗对应疾病（不恢复体力）
+            if (food.id != null && HealthSystem.Instance != null &&
+                HealthSystem.Instance.TryCure(food.id))
+            {
+                Debug.Log($"[Cooking] 用药 {food.itemName} 治愈疾病");
+                return;
+            }
+
+            // 饮酒：过量会醉酒
+            if (food.id == "item_ricewine" || food.id == "item_medicine_wine")
+            {
+                HealthSystem.Instance?.OnDrink();
+                int wineRestore = food.staminaRestore;
+                PlayerStats.Instance?.Restore(wineRestore);
+                PBV.UI.HUD.Instance?.ShowNotice($"饮下 {food.itemName}，体力 +{wineRestore}");
+                return;
+            }
+
+            // 生野味直接吃 → 腹泻（野味应做熟了吃）
+            if (food.id != null && food.id.StartsWith("item_game_"))
+            {
+                HealthSystem.Instance?.OnEatRaw();
+                int rawRestore = Mathf.Max(5, food.staminaRestore / 3);
+                PlayerStats.Instance?.Restore(rawRestore);
+                PBV.UI.HUD.Instance?.ShowNotice($"生吃 {food.itemName}（体力 +{rawRestore}，但闹肚子了！）");
+                return;
+            }
+
             int restore = food.staminaRestore;
             if (SkillSystem.Instance != null) restore = Mathf.RoundToInt(restore * (1f + SkillSystem.Instance.CookingBonus));
             if (FestivalSystem.Instance != null) restore = Mathf.RoundToInt(restore * FestivalSystem.Instance.FoodMultiplier);
@@ -264,6 +299,8 @@ namespace PBV.Systems
             if (id == "item_plaster") return BuffType.Mining;       // 膏药：松筋活络，下矿更耐
             if (id == "item_dish_veg_soup") return BuffType.Farming;
             if (id == "item_dish_fruit_tea") return BuffType.Fishing;
+            // 野味菜：大补，给挖矿加成
+            if (id == "item_dish_hare_stew" || id == "item_dish_pheasant_soup" || id == "item_dish_deer_roast") return BuffType.Mining;
             if (id.Contains("fish") || id == "item_dish_salad") return BuffType.Fishing;
             if (id == "item_dish_cabbage_soup" || id == "item_dish_mushroom_soup" || id == "item_dish_corn") return BuffType.Mining;
             if (id == "item_dish_radish_soup" || id == "item_dish_tomato" || id == "item_dish_pumpkin") return BuffType.Farming;

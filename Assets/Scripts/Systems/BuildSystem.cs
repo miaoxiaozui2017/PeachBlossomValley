@@ -5,7 +5,8 @@ using PBV.Player;
 namespace PBV.Systems
 {
     /// <summary>
-    /// 建造系统：花钱扩建背包容量(24→36→48)和体力上限(100→150→200)。
+    /// 建造系统：花钱扩建背包容量(24→36→48)、体力上限(100→150→200)，
+    /// 并用「木家具」扩建房屋（房屋等级提升增加体力上限加成）。
     /// 存档支持。
     /// </summary>
     public class BuildSystem : MonoBehaviour
@@ -14,6 +15,7 @@ namespace PBV.Systems
 
         public int BagLevel { get; private set; } = 0;       // 0=24格, 1=36格, 2=48格
         public int StaminaLevel { get; private set; } = 0;    // 0=100, 1=150, 2=200
+        public int HouseLevel { get; private set; } = 0;      // 0=无家具, 1=木梁, 2=木家具（+体力上限）
 
         private static readonly int[] BagCapacities = { 24, 36, 48 };
         private static readonly int[] BagCosts = { 500, 1000 };
@@ -24,6 +26,7 @@ namespace PBV.Systems
         public int CurrentMaxStamina => StaminaMaxes[StaminaLevel];
         public int BagUpgradeCost => BagLevel < 2 ? BagCosts[BagLevel] : -1;
         public int StaminaUpgradeCost => StaminaLevel < 2 ? StaminaCosts[StaminaLevel] : -1;
+        public int HouseLevelMax => 2;
 
         private void Awake()
         {
@@ -63,15 +66,71 @@ namespace PBV.Systems
             return true;
         }
 
+        /// <summary>用木家具/木梁扩建房屋（住）：HouseLevel 0→1 需木梁×2，1→2 需木家具×2，+体力上限</summary>
+        public bool TryUpgradeHouse()
+        {
+            var inv = InventorySystem.Instance;
+            if (inv == null) return false;
+
+            if (HouseLevel >= 2)
+            {
+                PBV.UI.HUD.Instance?.ShowNotice("房屋已到最高级（2 级）");
+                return false;
+            }
+
+            if (HouseLevel == 0)
+            {
+                // 0→1：木梁×2
+                var beam = Find("item_wood_beam");
+                if (beam == null || inv.CountItem(beam) < 2)
+                {
+                    PBV.UI.HUD.Instance?.ShowNotice("房屋扩建需 木梁×2（木工坊制作）");
+                    return false;
+                }
+                inv.RemoveItem(beam, 2);
+                HouseLevel = 1;
+                PBV.UI.HUD.Instance?.ShowNotice("房屋扩建到 1 级（木梁）· 体力上限 +20");
+            }
+            else
+            {
+                // 1→2：木家具×2
+                var furn = Find("item_furniture");
+                if (furn == null || inv.CountItem(furn) < 2)
+                {
+                    PBV.UI.HUD.Instance?.ShowNotice("房屋扩建需 木家具×2（木工坊制作）");
+                    return false;
+                }
+                inv.RemoveItem(furn, 2);
+                HouseLevel = 2;
+                PBV.UI.HUD.Instance?.ShowNotice("房屋扩建到 2 级（精装）· 体力上限 +50");
+            }
+
+            // 应用体力上限加成
+            PlayerStats.Instance?.ExpandMaxStamina(StaminaMaxes[StaminaLevel] + HouseStaminaBonus);
+            Debug.Log($"[Build] 房屋扩建到 {HouseLevel} 级");
+            return true;
+        }
+
+        /// <summary>房屋提供的额外体力上限</summary>
+        public int HouseStaminaBonus => HouseLevel >= 2 ? 50 : HouseLevel == 1 ? 20 : 0;
+
+        private static PBV.Inventory.ItemData Find(string id)
+        {
+            foreach (var item in Resources.LoadAll<PBV.Inventory.ItemData>("Data"))
+                if (item != null && item.id == id) return item;
+            return null;
+        }
+
         // 存档
-        public (int, int) Export() => (BagLevel, StaminaLevel);
-        public void Import(int bag, int stamina)
+        public (int, int, int) Export() => (BagLevel, StaminaLevel, HouseLevel);
+        public void Import(int bag, int stamina, int house = 0)
         {
             BagLevel = Mathf.Clamp(bag, 0, 2);
             StaminaLevel = Mathf.Clamp(stamina, 0, 2);
+            HouseLevel = Mathf.Clamp(house, 0, 2);
             // 立即应用到系统
             InventorySystem.Instance?.ExpandCapacity(BagCapacities[BagLevel]);
-            PlayerStats.Instance?.ExpandMaxStamina(StaminaMaxes[StaminaLevel]);
+            PlayerStats.Instance?.ExpandMaxStamina(StaminaMaxes[StaminaLevel] + HouseStaminaBonus);
         }
     }
 }

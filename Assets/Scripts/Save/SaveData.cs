@@ -25,12 +25,16 @@ namespace PBV.Save
         public int weather;             // 天气（Weather 枚举值）
         public int bagLevel;            // 背包扩建等级
         public int staminaLevel;        // 体力上限扩建等级
+        public int houseLevel;          // 房屋扩建等级（0-2，家具扩建）
         public int world;               // 当前世界（WorldType 枚举值）
         public int hasPet;              // 是否有宠物（0/1）
         public int achievements;        // 成就位掩码
         public int reputation;          // 宗族声望
         public int buffType;            // 当前菜品增益
         public int buffDays;            // 增益剩余天数
+        public int health;              // 疾病状态（类型*10 + 剩余天数，0=无病）
+        public int trap;                // 陷阱已布饵天数（0=未布）
+        public int outfit;              // 衣柜当前服装索引
         public string[] tradeSlots;     // 穿梭贸易 3 个携带槽位（物品 id）
 
         public List<SlotDTO> inventory = new List<SlotDTO>();

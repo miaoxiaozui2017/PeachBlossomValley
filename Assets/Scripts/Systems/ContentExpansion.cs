@@ -52,6 +52,9 @@ namespace PBV.Systems
             ("CarpentryStation", "craft", "", null, new Color(0.60f, 0.45f, 0.30f), 0),
             ("ForageSpot_Wild", "forage", "", null, new Color(0.42f, 0.58f, 0.32f), 0),
             ("ForageSpot_Forest", "forage", "", null, new Color(0.30f, 0.45f, 0.28f), 1),
+            ("MountainEntrance", "mountain", "", null, new Color(0.25f, 0.50f, 0.40f), 0),
+            ("TrapSpot", "trap", "", null, new Color(0.55f, 0.50f, 0.30f), 0),
+            ("Wardrobe", "wardrobe", "", null, new Color(0.55f, 0.35f, 0.55f), 0),
         };
     }
 
@@ -80,6 +83,13 @@ namespace PBV.Systems
             if (shop != null && clay != null) shop.AddShopEntry(clay, 12);
             var herb = FindItem("item_herb");
             if (shop != null && herb != null) shop.AddShopEntry(herb, 10);
+            // 制药·制毒·酿酒入口原料
+            var ginger = FindItem("item_ginger");
+            if (shop != null && ginger != null) shop.AddShopEntry(ginger, 8);
+            var ricewine = FindItem("item_ricewine");
+            if (shop != null && ricewine != null) shop.AddShopEntry(ricewine, 25);
+            var poisonHerb = FindItem("item_poison_herb");
+            if (shop != null && poisonHerb != null) shop.AddShopEntry(poisonHerb, 10);
 
             // 现代货架：人民币计价的现代资源（活力饮料/能量胶/增产营养剂），去现代后可在杂货铺购买
             if (shop != null)
@@ -140,6 +150,15 @@ namespace PBV.Systems
                 case "forage":
                     var forage = go.AddComponent<ForageSpot>();
                     forage.SpotIndex = arg;
+                    break;
+                case "mountain":
+                    go.AddComponent<MountainEntrance>();
+                    break;
+                case "trap":
+                    go.AddComponent<TrapStation>();
+                    break;
+                case "wardrobe":
+                    go.AddComponent<WardrobeStation>();
                     break;
             }
         }
