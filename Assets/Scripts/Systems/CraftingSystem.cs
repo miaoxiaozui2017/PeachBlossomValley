@@ -60,6 +60,21 @@ namespace PBV.Systems
             _recipes.Add(new Recipe { id = "r_dye_indigo", name = "蓝草染布", inputItemIds = new[] { "item_indigo" }, inputCounts = new[] { 2 }, outputItemId = "item_cloth_plain", outputCount = 1 });
             _recipes.Add(new Recipe { id = "r_dye_pattern", name = "扎出纹样", inputItemIds = new[] { "item_cloth_plain" }, inputCounts = new[] { 2 }, outputItemId = "item_cloth_pattern", outputCount = 1 });
             _recipes.Add(new Recipe { id = "r_dye_garment", name = "缝制成衣", inputItemIds = new[] { "item_cloth_pattern", "item_bark" }, inputCounts = new[] { 1, 1 }, outputItemId = "item_garment", outputCount = 1 });
+
+            // 第三条非遗产业链：陶瓷（陶土 → 陶坯 → 青瓷盏 / 青花瓷瓶 / 陶罐）
+            _recipes.Add(new Recipe { id = "r_clay_to_pot", name = "淘土制坯", inputItemIds = new[] { "item_clay" }, inputCounts = new[] { 2 }, outputItemId = "item_clay_pot", outputCount = 1 });
+            _recipes.Add(new Recipe { id = "r_pot_to_jar", name = "拉坯成罐", inputItemIds = new[] { "item_clay_pot" }, inputCounts = new[] { 1 }, outputItemId = "item_pottery_jar", outputCount = 1 });
+            _recipes.Add(new Recipe { id = "r_pot_to_celadon", name = "烧青瓷盏", inputItemIds = new[] { "item_clay_pot" }, inputCounts = new[] { 2 }, outputItemId = "item_pottery_bowl", outputCount = 1 });
+            _recipes.Add(new Recipe { id = "r_pot_to_bluewhite", name = "烧青花瓷瓶", inputItemIds = new[] { "item_clay_pot" }, inputCounts = new[] { 3 }, outputItemId = "item_pottery_vase", outputCount = 1 });
+
+            // 第四条非遗产业链：药墨·药酒（药材 → 药墨 / 药酒 / 膏药）
+            _recipes.Add(new Recipe { id = "r_herb_to_ink", name = "和药制墨", inputItemIds = new[] { "item_herb" }, inputCounts = new[] { 3 }, outputItemId = "item_ink_medicine", outputCount = 1 });
+            _recipes.Add(new Recipe { id = "r_herb_to_wine", name = "浸酿药酒", inputItemIds = new[] { "item_herb", "item_wild_fruit" }, inputCounts = new[] { 2, 2 }, outputItemId = "item_medicine_wine", outputCount = 1 });
+            _recipes.Add(new Recipe { id = "r_herb_to_plaster", name = "熬制膏药", inputItemIds = new[] { "item_herb" }, inputCounts = new[] { 2 }, outputItemId = "item_plaster", outputCount = 2 });
+
+            // 住：木工坊（木材 → 木梁 → 木家具）
+            _recipes.Add(new Recipe { id = "r_wood_to_beam", name = "刨木成梁", inputItemIds = new[] { "item_wood" }, inputCounts = new[] { 3 }, outputItemId = "item_wood_beam", outputCount = 1 });
+            _recipes.Add(new Recipe { id = "r_beam_to_furniture", name = "打制家具", inputItemIds = new[] { "item_wood_beam", "item_wood" }, inputCounts = new[] { 1, 2 }, outputItemId = "item_furniture", outputCount = 1 });
         }
 
         /// <summary>解析物品引用（Resources 查找）</summary>

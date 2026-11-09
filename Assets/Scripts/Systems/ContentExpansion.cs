@@ -47,6 +47,11 @@ namespace PBV.Systems
             }, new Color(0.80f, 0.68f, 0.50f), 0),
 
             ("JewelryStation", "jewel", "", null, new Color(0.85f, 0.7f, 0.2f), 0),
+            ("PotteryStation", "craft", "", null, new Color(0.72f, 0.55f, 0.38f), 0),
+            ("MedicineStation", "craft", "", null, new Color(0.45f, 0.62f, 0.42f), 0),
+            ("CarpentryStation", "craft", "", null, new Color(0.60f, 0.45f, 0.30f), 0),
+            ("ForageSpot_Wild", "forage", "", null, new Color(0.42f, 0.58f, 0.32f), 0),
+            ("ForageSpot_Forest", "forage", "", null, new Color(0.30f, 0.45f, 0.28f), 1),
         };
     }
 
@@ -70,6 +75,11 @@ namespace PBV.Systems
             var shop = FindObjectOfType<ShopSystem>();
             var indigo = FindItem("item_indigo");
             if (shop != null && indigo != null) shop.AddShopEntry(indigo, 24);
+            // 陶瓷 / 药墨产业的入口原料：陶土、药材同样在杂货铺买到（也可去野地采集）
+            var clay = FindItem("item_clay");
+            if (shop != null && clay != null) shop.AddShopEntry(clay, 12);
+            var herb = FindItem("item_herb");
+            if (shop != null && herb != null) shop.AddShopEntry(herb, 10);
 
             // 现代货架：人民币计价的现代资源（活力饮料/能量胶/增产营养剂），去现代后可在杂货铺购买
             if (shop != null)
@@ -123,6 +133,13 @@ namespace PBV.Systems
                     break;
                 case "jewel":
                     go.AddComponent<JewelryStation>();
+                    break;
+                case "craft":
+                    go.AddComponent<CraftingStation>();
+                    break;
+                case "forage":
+                    var forage = go.AddComponent<ForageSpot>();
+                    forage.SpotIndex = arg;
                     break;
             }
         }

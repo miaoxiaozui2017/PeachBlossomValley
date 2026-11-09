@@ -74,6 +74,9 @@ namespace PBV.UI
             // 金银细工台面板（JewelryStation · E）
             if (UnityEngine.Object.FindObjectOfType<JewelryUI>() == null)
                 new GameObject("JewelryUI (Auto)").AddComponent<JewelryUI>();
+            // 人物属性面板（V）——时间/荷包/状态/技艺/非遗进度/好感总览
+            if (UnityEngine.Object.FindObjectOfType<CharacterPanelUI>() == null)
+                new GameObject("CharacterPanelUI (Auto)").AddComponent<CharacterPanelUI>();
 
             if (UnityEngine.Object.FindObjectOfType<EventSystem>() != null) return;
 

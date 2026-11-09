@@ -37,8 +37,13 @@ namespace PBV.Systems
             ("NPC_TieJiangNiang",  null,           4f, 3f),
             ("NPC_DaoShi",         null,           8f, 3f),
             ("NPC_TaoGong",        null,          12f, 3f),
-            // 第 4 排 y = 0：v0.7 非遗产业链（金银细工 / 花丝镶嵌）
+            // 第 4 排 y = 0：非遗产业链 + 采集（金银细工 / 陶坊 / 药庐 / 木工坊 / 野地采集）
             ("JewelryStation",      "金银细工台 E", -12f, 0f),
+            ("PotteryStation",      "陶坊 C/E",      -8f, 0f),
+            ("MedicineStation",     "药庐 C/E",      -4f, 0f),
+            ("CarpentryStation",    "木工坊 C/E",     0f, 0f),
+            ("ForageSpot_Wild",     "野地采集 E",     4f, 0f),
+            ("ForageSpot_Forest",   "林间采集 E",     8f, 0f),
         };
 
         public static Vector3 GetPosition(string goName)

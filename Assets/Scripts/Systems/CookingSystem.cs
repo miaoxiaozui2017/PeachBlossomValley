@@ -63,6 +63,9 @@ namespace PBV.Systems
             Add("r_cook_steamed_fish", "清蒸鱼", "item_dish_steamed_fish", new[] { AnyFishId }, new[] { 1 }, 45);
             Add("r_cook_fish_soup", "鱼头萝卜汤", "item_dish_fish_soup", new[] { AnyFishId, "item_radish" }, new[] { 1, 1 }, 60);
             Add("r_cook_braised_fish", "红烧鱼", "item_dish_braised_fish", new[] { AnyFishId, "item_cabbage" }, new[] { 1, 1 }, 80);
+            // 采集食材做的家常菜（不依赖种子，开局就能上手）
+            Add("r_cook_veg_soup", "野菜汤", "item_dish_veg_soup", new[] { "item_wild_veg" }, new[] { 2 }, 30);
+            Add("r_cook_fruit_tea", "野果茶", "item_dish_fruit_tea", new[] { "item_wild_fruit" }, new[] { 2 }, 25);
         }
 
         private void Add(string id, string name, string output, string[] inputs, int[] counts, int stamina)
@@ -256,6 +259,11 @@ namespace PBV.Systems
                 return BuffType.None;
             }
             if (id == "item_mod_boost") return BuffType.Farming; // 现代增产营养剂 → 收获产量+1
+            // 药庐制品与采集家常菜
+            if (id == "item_medicine_wine") return BuffType.Trade;  // 药酒：气血畅，行商有劲
+            if (id == "item_plaster") return BuffType.Mining;       // 膏药：松筋活络，下矿更耐
+            if (id == "item_dish_veg_soup") return BuffType.Farming;
+            if (id == "item_dish_fruit_tea") return BuffType.Fishing;
             if (id.Contains("fish") || id == "item_dish_salad") return BuffType.Fishing;
             if (id == "item_dish_cabbage_soup" || id == "item_dish_mushroom_soup" || id == "item_dish_corn") return BuffType.Mining;
             if (id == "item_dish_radish_soup" || id == "item_dish_tomato" || id == "item_dish_pumpkin") return BuffType.Farming;
