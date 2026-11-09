@@ -17,6 +17,7 @@ namespace PBV.Systems
         public int CurrentFloor { get; private set; } = 1;
 
         private readonly List<ItemData> _ores = new List<ItemData>();
+        private readonly List<ItemData> _relics = new List<ItemData>(); // 古董（item_antique_*），越深越珍贵
 
         private void Awake()
         {
@@ -29,11 +30,17 @@ namespace PBV.Systems
         public void ResolveOres()
         {
             _ores.Clear();
+            _relics.Clear();
             var allItems = Resources.LoadAll<ItemData>("Data");
             foreach (var item in allItems)
-                if (item.id != null && item.id.StartsWith("item_ore_")) _ores.Add(item);
+            {
+                if (item.id == null) continue;
+                if (item.id.StartsWith("item_ore_")) _ores.Add(item);
+                else if (item.id.StartsWith("item_antique_")) _relics.Add(item);
+            }
             _ores.Sort((a, b) => a.sellPrice.CompareTo(b.sellPrice));
-            Debug.Log($"[Mine] 已加载 {_ores.Count} 种矿石，当前第 {CurrentFloor}/{MaxFloor} 层");
+            _relics.Sort((a, b) => a.sellPrice.CompareTo(b.sellPrice));
+            Debug.Log($"[Mine] 已加载 {_ores.Count} 种矿石、{_relics.Count} 种古董，当前第 {CurrentFloor}/{MaxFloor} 层");
         }
 
         /// <summary>本层挖一次需要的体力：10 → 28</summary>
@@ -75,7 +82,32 @@ namespace PBV.Systems
             QuestManager.Instance?.RecordMine();
             PBV.UI.HUD.Instance?.ShowNotice($"第 {CurrentFloor} 层：挖到 {ore.itemName} ×{count}");
             Debug.Log($"[Mine] 第{CurrentFloor}层 挖到 {ore.itemName} x{count}");
+
+            // 古董掉落：越深概率越高（第1层 ~10% → 第10层 ~60%），且越深越可能出珍贵古董
+            TryDropRelic();
             return (ore, count);
+        }
+
+        /// <summary>按矿层深度概率掉落古董，越深越珍贵；直接入背包并弹提示。</summary>
+        private void TryDropRelic()
+        {
+            if (_relics.Count == 0) return;
+            float chance = Mathf.Clamp01(0.10f + CurrentFloor * 0.05f);
+            if (Random.value >= chance) return;
+
+            // 深度决定古董档次：浅层出普通，深层出珍贵
+            int rIdx;
+            if (CurrentFloor >= 7) rIdx = _relics.Count - 1;
+            else if (CurrentFloor >= 4) rIdx = Mathf.Min(_relics.Count - 1, 1);
+            else rIdx = 0;
+            var relic = _relics[rIdx];
+
+            var inv = PBV.Inventory.InventorySystem.Instance;
+            if (inv != null && inv.AddItem(relic, 1))
+                PBV.UI.HUD.Instance?.ShowNotice($"【古董】挖到 {relic.itemName}！可带去现代卖高价", 3.5f);
+            else
+                PBV.UI.HUD.Instance?.ShowNotice($"背包已满，{relic.itemName} 未能拾取", 3.5f);
+            Debug.Log($"[Mine] 第{CurrentFloor}层 掉落古董 {relic.itemName}");
         }
 
         /// <summary>下潜一层；顶层返回 false</summary>

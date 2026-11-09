@@ -230,7 +230,12 @@ namespace PBV.Systems
             if (FestivalSystem.Instance != null) restore = Mathf.RoundToInt(restore * FestivalSystem.Instance.FoodMultiplier);
             PlayerStats.Instance?.Restore(restore);
             var buff = BuffOf(food);
-            if (buff != BuffType.None) BuffSystem.Instance?.Apply(buff);
+            if (buff != BuffType.None)
+            {
+                // 黑科技图纸研究后增益持续 3 天，其余料理 1 天
+                int days = food.id != null && food.id.StartsWith("item_blueprint_") ? 3 : 1;
+                BuffSystem.Instance?.Apply(buff, days);
+            }
             string msg = restore > 0
                 ? $"吃掉 {food.itemName}，体力 +{restore}"
                 : $"使用 {food.itemName}";
@@ -243,6 +248,13 @@ namespace PBV.Systems
         private static BuffType BuffOf(ItemData food)
         {
             string id = food != null ? food.id : "";
+            if (id.StartsWith("item_blueprint_")) // 现代黑科技图纸 → 研究获得对应增益
+            {
+                if (id == "item_blueprint_farm") return BuffType.Farming;
+                if (id == "item_blueprint_mine") return BuffType.Mining;
+                if (id == "item_blueprint_trade") return BuffType.Trade;
+                return BuffType.None;
+            }
             if (id == "item_mod_boost") return BuffType.Farming; // 现代增产营养剂 → 收获产量+1
             if (id.Contains("fish") || id == "item_dish_salad") return BuffType.Fishing;
             if (id == "item_dish_cabbage_soup" || id == "item_dish_mushroom_soup" || id == "item_dish_corn") return BuffType.Mining;

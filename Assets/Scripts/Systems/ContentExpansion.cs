@@ -80,6 +80,14 @@ namespace PBV.Systems
                 if (drink != null) shop.AddModernEntry(drink, 5);
                 if (gel != null) shop.AddModernEntry(gel, 12);
                 if (boost != null) shop.AddModernEntry(boost, 8);
+
+                // 黑科技图纸：用挣来的人民币购买，按 F 研究获得强力增益（持续3天）
+                var bpFarm = FindItem("item_blueprint_farm");
+                var bpMine = FindItem("item_blueprint_mine");
+                var bpTrade = FindItem("item_blueprint_trade");
+                if (bpFarm != null) shop.AddModernEntry(bpFarm, 30);
+                if (bpMine != null) shop.AddModernEntry(bpMine, 35);
+                if (bpTrade != null) shop.AddModernEntry(bpTrade, 40);
             }
 
             Debug.Log($"[ContentExpansion] 补建 {created} 个交互点（共 {ContentExpansionData.Extra.Length} 个扩展点），蓝草与现代货架已上架");

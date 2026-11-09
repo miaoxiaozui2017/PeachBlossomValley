@@ -58,6 +58,7 @@ namespace PBV.Systems
             if (oldLevel != newLevel)
             {
                 Debug.Log($"[Relationship] {npcName} 好感度等级提升: {(AffectionLevel)oldLevel} -> {(AffectionLevel)newLevel}");
+                GrantAffinityGift(npcName, oldLevel, newLevel);
             }
             return _affections[npcName];
         }
@@ -84,6 +85,28 @@ namespace PBV.Systems
                 if (value >= LevelThresholds[i]) return i;
             }
             return 0;
+        }
+
+        /// <summary>好感度跨过「亲密 / 挚友」门槛时，NPC 赠予文玩字画（可带去现代卖高价）。</summary>
+        private void GrantAffinityGift(string npcName, int oldLevel, int newLevel)
+        {
+            string giftId = null, label = null;
+            if (oldLevel < 3 && newLevel >= 3) { giftId = "item_art_scroll"; label = "亲密馈赠·名家字画"; }
+            else if (oldLevel < 4 && newLevel >= 4) { giftId = "item_art_curio"; label = "挚友馈赠·古玉文玩"; }
+            if (giftId == null) return;
+
+            var inv = PBV.Inventory.InventorySystem.Instance;
+            if (inv == null) return;
+            PBV.Inventory.ItemData item = null;
+            foreach (var it in Resources.LoadAll<PBV.Inventory.ItemData>("Data"))
+                if (it != null && it.id == giftId) { item = it; break; }
+            if (item == null) return;
+
+            if (inv.AddItem(item, 1))
+                PBV.UI.HUD.Instance?.ShowNotice($"【{label}】{npcName} 赠你 {item.itemName}！可带去现代卖高价", 4f);
+            else
+                PBV.UI.HUD.Instance?.ShowNotice($"背包已满，{npcName} 的 {item.itemName} 未能领取", 4f);
+            Debug.Log($"[Relationship] {npcName} 赠 {item.itemName}");
         }
 
         public static string LevelToName(AffectionLevel level)

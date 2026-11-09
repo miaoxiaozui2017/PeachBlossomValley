@@ -250,6 +250,7 @@ namespace PBV.Systems
         {
             if (item == null) return EraTag.Common;
             string id = item.id;
+            if (id.StartsWith("item_antique_") || id.StartsWith("item_art_")) return EraTag.Relic;
             if (id == "item_ore_gold" || id == "item_fish_dragoncarp" || id == "item_garment") return EraTag.Relic;
             if (id == "item_xuanpaper" || id == "item_cloth_pattern" || id == "item_fish_koi") return EraTag.AncientCraft;
             if (id == "item_paper" || id == "item_pulp" || id == "item_cloth_plain") return EraTag.Contraband;
