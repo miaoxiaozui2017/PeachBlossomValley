@@ -118,6 +118,9 @@ namespace PBV.Systems
         /// <summary>当前天数（存档用）</summary>
         public int CurrentDay => _currentDay;
 
+        /// <summary>当前小时（0-23，NPC 作息用）</summary>
+        public int CurrentHour => _currentHour;
+
         /// <summary>读档恢复天数（不触发事件）</summary>
         public void RestoreDay(int day)
         {

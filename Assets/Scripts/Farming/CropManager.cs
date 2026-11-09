@@ -51,6 +51,17 @@ namespace PBV.Farming
                     plot.growthDays++;
                     UpdateCropVisual(plot);
                 }
+
+                // 污染祛毒：只有空置（无作物）的污染地块才会逐日恢复
+                if (plot.plantedCrop == null && plot.pollutedDays > 0)
+                {
+                    plot.pollutedDays--;
+                    if (plot.pollutedDays <= 0)
+                    {
+                        plot.pollutedDays = 0;
+                        PBV.UI.HUD.Instance?.ShowNotice($"地块 {plot.position.x},{plot.position.y} 已祛毒，可重新种植");
+                    }
+                }
             }
 
             // 先清当天浇水标记，再让雨天把地块显示为湿润（不额外计一次生长）
@@ -68,6 +79,14 @@ namespace PBV.Farming
             // 必须是已耕地且没有作物
             if (plot.status != TileStatus.Tilled && plot.status != TileStatus.Watered) return false;
             if (plot.plantedCrop != null) return false;
+
+            // 污染地块不可种植：需空置祛毒
+            if (plot.pollutedDays > 0)
+            {
+                PBV.UI.HUD.Instance?.ShowNotice($"这块地被现代肥料污染，需空置祛毒 {plot.pollutedDays} 天");
+                Debug.Log($"[Crop] {pos} 土地污染中（剩 {plot.pollutedDays} 天），不可种植");
+                return false;
+            }
 
             // 季节检查
             if (PBV.Systems.SeasonSystem.Instance != null && !PBV.Systems.SeasonSystem.Instance.CanPlant(crop))
@@ -112,6 +131,8 @@ namespace PBV.Farming
                 if (PBV.Systems.SkillSystem.Instance != null) yield += PBV.Systems.SkillSystem.Instance.FarmingYieldBonus;
                 if (PBV.Systems.SolarTermSystem.HasHarvestBonus) yield += 1;
                 if (PBV.Systems.BuffSystem.Instance != null) yield += PBV.Systems.BuffSystem.Instance.FarmingBonus;
+                // 施肥加成：堆肥+1，现代肥+6（产量×3）
+                yield += plot.fertilizedLevel;
                 
                 if (InventorySystem.Instance != null)
                 {
@@ -123,13 +144,20 @@ namespace PBV.Farming
                     }
                 }
                 
-                Debug.Log($"Harvested {plot.plantedCrop.cropName} x {yield}!");
+                Debug.Log($"Harvested {plot.plantedCrop.cropName} x {yield}!{(plot.fertilizedLevel > 0 ? $" (施肥+{plot.fertilizedLevel})" : "")}");
                 PBV.Systems.SkillSystem.Instance?.AddExp(PBV.Systems.SkillType.Farming, 10);
             }
 
             // 清除作物数据
             plot.plantedCrop = null;
             plot.growthDays = 0;
+            plot.fertilizedLevel = 0; // 肥料随收获消耗
+
+            // 现代肥料污染：收获后土地进入污染期，需空置祛毒
+            if (plot.pollutedDays > 0)
+            {
+                PBV.UI.HUD.Instance?.ShowNotice($"这块地因现代肥料被污染，需空置祛毒 {plot.pollutedDays} 天", 3.5f);
+            }
             
             // 清除视觉表现
             if (_cropTilemap != null)

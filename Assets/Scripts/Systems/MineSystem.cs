@@ -48,6 +48,14 @@ namespace PBV.Systems
         /// <summary>下潜消耗的体力</summary>
         public const int DescendStamina = 12;
 
+        /// <summary>盐石：特殊矿，矿洞挖矿概率产出，盐坊煮盐原料。</summary>
+        private static ItemData FindSaltOre()
+        {
+            foreach (var item in Resources.LoadAll<ItemData>("Data"))
+                if (item != null && item.id == "item_salt_ore") return item;
+            return null;
+        }
+
         public (ItemData ore, int count)? TryMine()
         {
             if (PlayerStats.Instance == null) return null;
@@ -85,7 +93,23 @@ namespace PBV.Systems
 
             // 古董掉落：越深概率越高（第1层 ~10% → 第10层 ~60%），且越深越可能出珍贵古董
             TryDropRelic();
+            // 盐石掉落：矿洞挖矿小概率出盐石（盐坊煮盐原料）
+            TryDropSaltOre();
+            // 遇怪：挖矿概率遭遇怪物（越深越容易），触发回合制战斗
+            CombatSystem.Instance?.TryEncounter(CurrentFloor);
             return (ore, count);
+        }
+
+        /// <summary>矿洞挖矿概率出盐石（约 18%），供盐坊煮盐。</summary>
+        private void TryDropSaltOre()
+        {
+            if (Random.value >= 0.18f) return;
+            var salt = FindSaltOre();
+            if (salt == null) return;
+            var inv = PBV.Inventory.InventorySystem.Instance;
+            if (inv != null && inv.AddItem(salt, 1))
+                PBV.UI.HUD.Instance?.ShowNotice($"【盐石】挖到 {salt.itemName}！可去盐坊煮盐", 2.5f);
+            Debug.Log($"[Mine] 第{CurrentFloor}层 掉落盐石");
         }
 
         /// <summary>按矿层深度概率掉落古董，越深越珍贵；直接入背包并弹提示。</summary>

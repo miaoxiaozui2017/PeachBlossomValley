@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7e0e37fc99f0264581c6e1adcf1bce8, type: 3}
+  m_Name: item_fertilizer_modern
+  m_EditorClassIdentifier: 
+  id: item_fertilizer_modern
+  itemName: "现代复合肥"
+  description: "现代科技肥料，施肥后产量大幅提升。"
+  icon: {fileID: 0}
+  type: 0
+  maxStack: 99
+  sellPrice: 12
+  cropToPlant: {fileID: 0}
+  affectionValue: 0
+  staminaRestore: 0

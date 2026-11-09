@@ -96,9 +96,12 @@ namespace PBV.UI
             var ps = PlayerStats.Instance;
             int st = ps != null ? ps.Stamina : 0;
             int stMax = ps != null ? ps.MaxStamina : 0;
+            int hp = ps != null ? ps.Hp : 0;
+            int hpMax = ps != null ? ps.MaxHp : 0;
             var rep = ReputationSystem.Instance;
             sb.AppendLine("<b>【状 态】</b>");
             sb.AppendLine($"体力　{st} / {stMax}");
+            sb.AppendLine($"血量　{hp} / {hpMax}");
             sb.AppendLine(rep != null
                 ? $"声望　{rep.Reputation}（出售价 ×{rep.SellMultiplier:0.00}）"
                 : "声望　未就绪");

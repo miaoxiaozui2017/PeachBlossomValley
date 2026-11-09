@@ -88,10 +88,26 @@ namespace PBV.UI
                 new GameObject("WardrobeSystem (Auto)").AddComponent<PBV.Systems.WardrobeSystem>();
             if (UnityEngine.Object.FindObjectOfType<PBV.Systems.CageSystem>() == null)
                 new GameObject("CageSystem (Auto)").AddComponent<PBV.Systems.CageSystem>();
+            if (UnityEngine.Object.FindObjectOfType<PBV.Systems.FertilizerSystem>() == null)
+                new GameObject("FertilizerSystem (Auto)").AddComponent<PBV.Systems.FertilizerSystem>();
+            if (UnityEngine.Object.FindObjectOfType<PBV.Systems.StorageSystem>() == null)
+                new GameObject("StorageSystem (Auto)").AddComponent<PBV.Systems.StorageSystem>();
+            if (UnityEngine.Object.FindObjectOfType<HouseInteriorUI>() == null)
+                new GameObject("HouseInteriorUI (Auto)").AddComponent<HouseInteriorUI>();
             if (UnityEngine.Object.FindObjectOfType<MountainUI>() == null)
                 new GameObject("MountainUI (Auto)").AddComponent<MountainUI>();
             if (UnityEngine.Object.FindObjectOfType<WardrobeUI>() == null)
                 new GameObject("WardrobeUI (Auto)").AddComponent<WardrobeUI>();
+            if (UnityEngine.Object.FindObjectOfType<PBV.Systems.LivestockSystem>() == null)
+                new GameObject("LivestockSystem (Auto)").AddComponent<PBV.Systems.LivestockSystem>();
+            if (UnityEngine.Object.FindObjectOfType<LivestockUI>() == null)
+                new GameObject("LivestockUI (Auto)").AddComponent<LivestockUI>();
+            if (UnityEngine.Object.FindObjectOfType<PBV.Systems.CombatSystem>() == null)
+                new GameObject("CombatSystem (Auto)").AddComponent<PBV.Systems.CombatSystem>();
+            if (UnityEngine.Object.FindObjectOfType<CombatUI>() == null)
+                new GameObject("CombatUI (Auto)").AddComponent<CombatUI>();
+            if (UnityEngine.Object.FindObjectOfType<PBV.Systems.FaintSystem>() == null)
+                new GameObject("FaintSystem (Auto)").AddComponent<PBV.Systems.FaintSystem>();
 
             if (UnityEngine.Object.FindObjectOfType<EventSystem>() != null) return;
 

@@ -28,6 +28,8 @@ namespace PBV.Farming
         public CropData plantedCrop;
         public int growthDays; // 当前生长时间
         public bool isWateredToday;
+        public int fertilizedLevel; // 施肥等级：0=无肥，1=堆肥(+1)，6=现代肥(+6，产量×3)
+        public int pollutedDays;    // 土地污染剩余天数（现代肥料所致）：>0 时不可种植，需空置祛毒
 
         public PlotData(Vector3Int pos)
         {
@@ -36,6 +38,8 @@ namespace PBV.Farming
             plantedCrop = null;
             growthDays = 0;
             isWateredToday = false;
+            fertilizedLevel = 0;
+            pollutedDays = 0;
         }
     }
 
@@ -71,6 +75,31 @@ namespace PBV.Farming
             {
                 InputHandler.Instance.UseToolEvent += OnUseTool;
             }
+
+            // 订阅季节变化，刷新草地颜色
+            if (PBV.Systems.SeasonSystem.Instance != null)
+            {
+                PBV.Systems.SeasonSystem.Instance.OnSeasonChanged += OnSeasonChanged;
+                ApplySeasonGroundColor(PBV.Systems.SeasonSystem.Instance.CurrentSeason);
+            }
+        }
+
+        private void OnSeasonChanged(PBV.Systems.Season season)
+        {
+            ApplySeasonGroundColor(season);
+        }
+
+        /// <summary>四季草地染色：春绿/夏深绿/秋金黄/冬枯黄</summary>
+        private void ApplySeasonGroundColor(PBV.Systems.Season season)
+        {
+            if (_groundTilemap == null) return;
+            switch (season)
+            {
+                case PBV.Systems.Season.Spring: _groundTilemap.color = new Color(0.45f, 0.62f, 0.35f); break;
+                case PBV.Systems.Season.Summer: _groundTilemap.color = new Color(0.32f, 0.55f, 0.28f); break;
+                case PBV.Systems.Season.Autumn: _groundTilemap.color = new Color(0.62f, 0.52f, 0.28f); break;
+                case PBV.Systems.Season.Winter: _groundTilemap.color = new Color(0.72f, 0.70f, 0.62f); break;
+            }
         }
 
         private void OnDestroy()
@@ -79,40 +108,113 @@ namespace PBV.Farming
             {
                 InputHandler.Instance.UseToolEvent -= OnUseTool;
             }
+            if (PBV.Systems.SeasonSystem.Instance != null)
+            {
+                PBV.Systems.SeasonSystem.Instance.OnSeasonChanged -= OnSeasonChanged;
+            }
         }
 
         private void OnUseTool()
         {
             Vector3Int targetPos = InputHandler.Instance.SelectedGridPosition;
 
-            // 区域限制：只能在已铺设的地面（草地）上耕种，绿地外不响应
-            if (!IsTillable(targetPos)) return;
+            // 左键统一分派：优先识别「选中快捷栏格子」里的物品
+            var inv = PBV.Inventory.InventorySystem.Instance;
+            var selectedItem = GetSelectedItem();
 
-            PlotData plot = GetOrCreatePlot(targetPos);
-
-            // 按 ToolManager 当前工具执行（v0.2.0：取代上下文智能单键，消除歧义）
-            var toolManager = PBV.Player.ToolManager.Instance;
-            var tool = toolManager != null ? toolManager.CurrentTool : PBV.Player.ToolType.Hoe;
-
-            // 成熟作物：左键直接收获，不必先切镰刀；体力按镰刀等级消耗计。
-            bool mature = plot.plantedCrop != null && plot.growthDays >= plot.plantedCrop.daysToMature;
-            bool directHarvest = mature && tool != PBV.Player.ToolType.Sickle;
-            int cost = directHarvest
-                ? (toolManager != null ? toolManager.GetStaminaCost(PBV.Player.ToolType.Sickle) : 1)
-                : (toolManager != null ? toolManager.CurrentStaminaCost : 0);
-
-            // 关键：先查体力再执行动作。以前是"先干完活再 TrySpend 且忽略返回值"，
-            // 导致体力为 0 时依旧能锄地/浇水/收获。
-            var stats = PBV.Player.PlayerStats.Instance;
-            if (stats != null && !stats.HasEnough(cost))
+            // 1) 选中肥料 → 施肥
+            if (selectedItem != null && PBV.Systems.FertilizerSystem.IsFertilizer(selectedItem))
             {
-                PBV.UI.HUD.Instance?.ShowNotice(
-                    $"体力不足（需要 {cost}，当前 {stats.Stamina}/{stats.MaxStamina}）· 吃料理 / 睡觉 / 按 N 跳日可恢复");
+                if (PBV.Systems.FertilizerSystem.Instance != null)
+                    PBV.Systems.FertilizerSystem.Instance.TryFertilize(targetPos, selectedItem);
                 return;
             }
 
-            bool success = directHarvest ? TryHarvestDirect(targetPos) : TryUseTool(tool, targetPos, plot);
-            if (success) stats?.TrySpend(cost);
+            // 2) 选中种子 → 播种
+            if (selectedItem != null && selectedItem.type == PBV.Inventory.ItemType.Seed && selectedItem.cropToPlant != null)
+            {
+                if (IsTillable(targetPos))
+                {
+                    var plot = GetOrCreatePlot(targetPos);
+                    if ((plot.status == TileStatus.Tilled || plot.status == TileStatus.Watered) && plot.plantedCrop == null)
+                        TryPlantSelected(targetPos, selectedItem);
+                    else
+                        PBV.UI.HUD.Instance?.ShowNotice("这里不能播种（需先锄地，或已种作物）");
+                }
+                return;
+            }
+
+            // 3) 选中工具 → 用该工具执行
+            var toolFromItem = PBV.Player.ToolManager.ToolTypeFromItemId(selectedItem != null ? selectedItem.id : null);
+            if (toolFromItem.HasValue)
+            {
+                // 区域限制：只能在已铺设的地面（草地）上耕种
+                if (!IsTillable(targetPos)) return;
+                PlotData plot = GetOrCreatePlot(targetPos);
+                int cost = toolFromItem.Value == PBV.Player.ToolType.Sickle
+                    ? (PBV.Player.ToolManager.Instance != null ? PBV.Player.ToolManager.Instance.GetStaminaCost(PBV.Player.ToolType.Sickle) : 1)
+                    : (PBV.Player.ToolManager.Instance != null ? PBV.Player.ToolManager.Instance.GetStaminaCost(toolFromItem.Value) : 1);
+                var stats = PBV.Player.PlayerStats.Instance;
+                if (stats != null && !stats.HasEnough(cost))
+                {
+                    PBV.UI.HUD.Instance?.ShowNotice($"体力不足（需要 {cost}，当前 {stats.Stamina}/{stats.MaxStamina}）· 吃料理 / 睡觉 / 按 N 跳日可恢复");
+                    return;
+                }
+                bool ok = TryUseTool(toolFromItem.Value, targetPos, plot);
+                if (ok) stats?.TrySpend(cost);
+                return;
+            }
+
+            // 4) 未选中物品：用当前 Q 工具兜底
+            if (!IsTillable(targetPos)) return;
+
+            PlotData fallbackPlot = GetOrCreatePlot(targetPos);
+            var toolManager = PBV.Player.ToolManager.Instance;
+            var tool = toolManager != null ? toolManager.CurrentTool : PBV.Player.ToolType.Hoe;
+
+            bool mature = fallbackPlot.plantedCrop != null && fallbackPlot.growthDays >= fallbackPlot.plantedCrop.daysToMature;
+            bool directHarvest = mature && tool != PBV.Player.ToolType.Sickle;
+            int fallbackCost = directHarvest
+                ? (toolManager != null ? toolManager.GetStaminaCost(PBV.Player.ToolType.Sickle) : 1)
+                : (toolManager != null ? toolManager.CurrentStaminaCost : 0);
+
+            var fallbackStats = PBV.Player.PlayerStats.Instance;
+            if (fallbackStats != null && !fallbackStats.HasEnough(fallbackCost))
+            {
+                PBV.UI.HUD.Instance?.ShowNotice($"体力不足（需要 {fallbackCost}，当前 {fallbackStats.Stamina}/{fallbackStats.MaxStamina}）· 吃料理 / 睡觉 / 按 N 跳日可恢复");
+                return;
+            }
+
+            bool success = directHarvest ? TryHarvestDirect(targetPos) : TryUseTool(tool, targetPos, fallbackPlot);
+            if (success) fallbackStats?.TrySpend(fallbackCost);
+        }
+
+        /// <summary>获取当前选中快捷栏槽位的物品，空槽返回 null</summary>
+        private PBV.Inventory.ItemData GetSelectedItem()
+        {
+            var inv = PBV.Inventory.InventorySystem.Instance;
+            if (inv == null) return null;
+            int idx = PBV.UI.InventoryUI.SelectedSlotIndex;
+            var slot = idx >= 0 && idx < inv.Capacity ? inv.GetSlot(idx) : null;
+            if (slot == null || slot.IsEmpty || slot.item == null) return null;
+            return slot.item;
+        }
+
+        /// <summary>用选中格子的种子播种（一次 1 格、扣 1 颗种子）</summary>
+        private bool TryPlantSelected(Vector3Int gridPos, PBV.Inventory.ItemData seed)
+        {
+            var inventory = PBV.Inventory.InventorySystem.Instance;
+            if (inventory == null || _cropManager == null || seed == null) return false;
+            CropData crop = seed.cropToPlant;
+            if (crop == null) return false;
+
+            if (_cropManager.TryPlantCrop(gridPos, crop))
+            {
+                inventory.RemoveItem(seed, 1);
+                PBV.Systems.QuestManager.Instance?.RecordPlant();
+                return true;
+            }
+            return false;
         }
 
         /// <summary>左键直收成熟作物（不需要切换到镰刀）</summary>
@@ -149,64 +251,13 @@ namespace PBV.Farming
                 case PBV.Player.ToolType.Sickle:
                     // 用真实返回值：背包满时收获失败，不应扣体力也不应记任务进度
                     return _cropManager != null && _cropManager.TryHarvestCrop(pos);
-
-                case PBV.Player.ToolType.Seed:
-                    if ((plot.status == TileStatus.Tilled || plot.status == TileStatus.Watered) && plot.plantedCrop == null)
-                    {
-                        return TryPlantFromInventory(pos);
-                    }
-                    return false;
             }
             return false;
         }
 
         /// <summary>
-        /// 从背包取种子播种。种子包等级决定一次可覆盖几格（Lv1=1 / Lv2=3 / Lv3=5），
-        /// 每格消耗 1 颗种子，整个动作只扣 1 次体力。
+        /// 从选中格子的种子播种（已由 TryPlantSelected 统一处理）。
         /// </summary>
-        private bool TryPlantFromInventory(Vector3Int gridPos)
-        {
-            var inventory = PBV.Inventory.InventorySystem.Instance;
-            if (inventory == null || _cropManager == null) return false;
-
-            var tm = PBV.Player.ToolManager.Instance;
-            int maxPlots = tm != null ? tm.SeedPlotsPerUse : 1;
-
-            // 顺序：脚下 → 右 → 左 → 上 → 下；只挑已耕且空着的地块
-            Vector3Int[] offsets =
-            {
-                new Vector3Int(0, 0, 0), new Vector3Int(1, 0, 0), new Vector3Int(-1, 0, 0),
-                new Vector3Int(0, 1, 0), new Vector3Int(0, -1, 0)
-            };
-
-            int planted = 0;
-            for (int i = 0; i < offsets.Length && planted < maxPlots; i++)
-            {
-                Vector3Int p = gridPos + offsets[i];
-                if (!IsTillable(p)) continue;
-
-                PlotData plot = GetPlot(p);
-                if (plot == null) continue;
-                if (plot.status != TileStatus.Tilled && plot.status != TileStatus.Watered) continue;
-                if (plot.plantedCrop != null) continue;
-
-                var seedSlot = inventory.FindSeedSlot();
-                if (seedSlot == null) break;
-                CropData crop = seedSlot.item.cropToPlant;
-                if (crop == null) continue;
-
-                if (_cropManager.TryPlantCrop(p, crop))
-                {
-                    inventory.RemoveItem(seedSlot.item, 1);
-                    PBV.Systems.QuestManager.Instance?.RecordPlant();
-                    planted++;
-                }
-            }
-
-            if (planted > 1)
-                PBV.UI.HUD.Instance?.ShowNotice($"种子包 Lv{tm?.CurrentLevel ?? 1}：一次播种 {planted} 格");
-            return planted > 0;
-        }
 
         public void HandleToolAction(Vector3Int gridPos, string toolType)
         {
@@ -231,9 +282,6 @@ namespace PBV.Farming
                         UpdateTileVisual(gridPos, _wateredTile);
                         Debug.Log($"Watered ground at {gridPos}");
                     }
-                    break;
-                case "Seed": // 统一走背包播种（含种子包多格效果），避免两套逻辑不一致
-                    TryPlantFromInventory(gridPos);
                     break;
                 case "Sickle": // 镰刀：收获成熟作物
                     if (plot.plantedCrop != null && plot.growthDays >= plot.plantedCrop.daysToMature)
@@ -329,6 +377,8 @@ namespace PBV.Farming
                     status = (int)plot.status,
                     growthDays = plot.growthDays,
                     wateredToday = plot.isWateredToday,
+                    fertilized = plot.fertilizedLevel,
+                    polluted = plot.pollutedDays,
                     cropName = plot.plantedCrop != null ? plot.plantedCrop.cropName : string.Empty
                 });
             }
@@ -352,6 +402,8 @@ namespace PBV.Farming
                         status = (TileStatus)dto.status,
                         growthDays = dto.growthDays,
                         isWateredToday = dto.wateredToday,
+                        fertilizedLevel = dto.fertilized,
+                        pollutedDays = dto.polluted,
                         plantedCrop = cropResolver != null ? cropResolver(dto.cropName) : null
                     };
                     _plots[pos] = plot;

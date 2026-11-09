@@ -40,6 +40,34 @@ namespace PBV.NPC
             _nameTagColor = tagColor;
         }
 
+        /// <summary>作息字段：工作位/家位（灰盒用，NPC 白天上班、晚上回家）</summary>
+        [Header("Schedule")]
+        [SerializeField] private bool _hasSchedule = false;
+        private Vector2 _workPos;
+        private Vector2 _homePos;
+        private float _moveSpeed = 2.5f;
+
+        /// <summary>启用作息：NPC 白天在 workPos 上班，晚上回 homePos 休息。</summary>
+        public void EnableSchedule(Vector2 workPos, Vector2 homePos)
+        {
+            _hasSchedule = true;
+            _workPos = workPos;
+            _homePos = homePos;
+        }
+
+        private void Update()
+        {
+            if (!_hasSchedule) return;
+            var tm = PBV.Systems.TimeManager.Instance;
+            if (tm == null) return;
+            bool working = tm.CurrentHour >= 6 && tm.CurrentHour < 18;
+            Vector2 target = working ? _workPos : _homePos;
+            if ((Vector2)transform.position != target)
+            {
+                transform.position = Vector2.MoveTowards(transform.position, target, _moveSpeed * Time.deltaTime);
+            }
+        }
+
         // 名牌引用（供好感更新刷新）
         private Text _nameTagText;
 

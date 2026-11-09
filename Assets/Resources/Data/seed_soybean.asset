@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7e0e37fc99f0264581c6e1adcf1bce8, type: 3}
+  m_Name: seed_soybean
+  m_EditorClassIdentifier: 
+  id: seed_soybean
+  itemName: "大豆种子"
+  description: "种下去，浇点水，等6天。"
+  icon: {fileID: 0}
+  type: 3
+  maxStack: 99
+  sellPrice: 14
+  cropToPlant: {fileID: 11400000, guid: 012aa281d1cf4dec88b618e52ba04f57, type: 2}
+  affectionValue: 0
+  staminaRestore: 0

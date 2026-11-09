@@ -37,6 +37,8 @@ namespace PBV.Systems
             ("NPC_TieJiangNiang",  null,           4f, 3f),
             ("NPC_DaoShi",         null,           8f, 3f),
             ("NPC_TaoGong",        null,          12f, 3f),
+            ("NPC_BaoBao",         null,          16f, 3f),
+            ("TavernStation",      "酒楼 E",      20f, 3f),
             // 第 4 排 y = 0：非遗产业链 + 采集（金银细工 / 陶坊 / 药庐 / 木工坊 / 野地采集）
             ("JewelryStation",      "金银细工台 E", -12f, 0f),
             ("PotteryStation",      "陶坊 C/E",      -8f, 0f),
@@ -48,13 +50,21 @@ namespace PBV.Systems
             ("MountainEntrance",    "采山入口 E",   -12f, -3f),
             ("TrapSpot",            "布陷阱 E",      -8f, -3f),
             ("Wardrobe",            "衣柜 E",        -4f, -3f),
-            // 第 6 排 y = -6：磨坊 / 酱园 / 茶坊 / 砍树 / 笼箱（食/水产补充）
+            // 第 6 排 y = -6：磨坊 / 酱园 / 茶坊 / 砍树 / 笼箱 / 堆肥桶（食/水产/肥料补充）
             ("MillStation",         "磨坊 C/E",     -12f, -6f),
             ("SauceStation",        "酱园 C/E",      -8f, -6f),
             ("TeaStation",          "茶坊 C/E",      -4f, -6f),
             ("TreeSpot_A",          "砍树 E",         0f, -6f),
             ("TreeSpot_B",          "砍树 E",         4f, -6f),
             ("CageSpot",            "放笼箱 E",       8f, -6f),
+            ("CompostStation",      "堆肥桶 E",      12f, -6f),
+            // 第 7 排 y = -9：房屋入口 / 畜栏 / 制糖坊 / 盐坊
+            ("HouseStation",        "房屋入口 E",   -12f, -9f),
+            ("LivestockStation",    "畜栏 E",        -8f, -9f),
+            ("SugarStation",        "制糖坊 C/E",    -4f, -9f),
+            ("SaltStation",         "盐坊 C/E",       0f, -9f),
+            // 第 8 排 y = -12：老农小摊（卖种子+堆肥）
+            ("FarmVendorStation",   "老农小摊 E",   -12f, -12f),
         };
 
         public static Vector3 GetPosition(string goName)

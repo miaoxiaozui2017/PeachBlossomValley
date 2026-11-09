@@ -16,6 +16,10 @@ namespace PBV.Core
         [Header("初始物资（物品名:数量，物品需位于 Resources/Data）")]
         [SerializeField] private string[] _startingItems = new string[]
         {
+            "item_tool_hoe:1",
+            "item_tool_wateringcan:1",
+            "item_tool_sickle:1",
+            "item_tool_axe:1",
             "seed_radish:10",
             "seed_cabbage:8",
             "seed_spinach:5",

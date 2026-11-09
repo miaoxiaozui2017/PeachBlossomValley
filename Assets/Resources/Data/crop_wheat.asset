@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 167ec4a3516132e4b83c7a699d16dbf6, type: 3}
+  m_Name: crop_wheat
+  m_EditorClassIdentifier: 
+  cropName: "小麦"
+  description: "小麦，5天成成熟。"
+  daysToMature: 5
+  growthSprites:
+  - {fileID: 21300000, guid: 6371e7e36ddbd864c880ac07408f2244, type: 3}
+  - {fileID: 21300000, guid: 0fd5c19380c3bad40824c670afcc5560, type: 3}
+  - {fileID: 21300000, guid: 0bf92111d92b62e44bbf257caa3713ca, type: 3}
+  - {fileID: 21300000, guid: 5e7445fe21a590745bde976933e8e3d3, type: 3}
+  harvestItem: {fileID: 11400000, guid: 5e295814ee3a4885ad34469c4546286f, type: 2}
+  minYield: 1
+  maxYield: 2
+  seasons: 02000000

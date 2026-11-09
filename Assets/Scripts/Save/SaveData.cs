@@ -19,6 +19,8 @@ namespace PBV.Save
         public int rmb;                 // 人民币（元）
         public int shippingPending;     // 出货箱待结算金额
         public int stamina;             // 玩家体力
+        public int hp;                  // 玩家血量（战斗用）
+        public int debt;                // 晕倒欠药婆的诊费（背债）
         public int currentSeason;       // 当前季节（0春1夏2秋3冬）
         public int dayOfSeason;         // 当季第几天
         public int currentTool;         // 当前工具（ToolType 枚举值）
@@ -39,10 +41,21 @@ namespace PBV.Save
         public string[] tradeSlots;     // 穿梭贸易 3 个携带槽位（物品 id）
 
         public List<SlotDTO> inventory = new List<SlotDTO>();
+        public List<SlotDTO> storage = new List<SlotDTO>(); // 储物箱（房屋扩建解锁）
         public List<PlotDTO> plots = new List<PlotDTO>(); // 稀疏存储：只保存改变过的地块
         public List<QuestDTO> quests = new List<QuestDTO>();
         public List<AffectionDTO> affections = new List<AffectionDTO>();
         public List<SkillDTO> skills = new List<SkillDTO>();
+        public List<LivestockDTO> livestock = new List<LivestockDTO>(); // 养殖牲畜
+    }
+
+    /// <summary>牲畜存档（type = LivestockType 枚举值）</summary>
+    [Serializable]
+    public class LivestockDTO
+    {
+        public int type;
+        public int count;
+        public int fedDays;
     }
 
     /// <summary>
@@ -67,6 +80,8 @@ namespace PBV.Save
         public int status;          // TileStatus 枚举值
         public int growthDays;
         public bool wateredToday;
+        public int fertilized;      // 施肥等级：0=无肥，1=堆肥，6=现代肥(+6，产量×3)
+        public int polluted;        // 土地污染剩余天数（现代肥料所致），0=无污染
         public string cropName;     // 空串 = 无作物
     }
 }

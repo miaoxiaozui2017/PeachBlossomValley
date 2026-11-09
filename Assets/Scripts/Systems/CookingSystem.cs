@@ -93,6 +93,15 @@ namespace PBV.Systems
             UnlockBy("r_cook_herbal_porridge", "药婆");
             UnlockBy("r_cook_herbal_chicken", "药婆");
             UnlockBy("r_cook_herbal_wine", "药婆");
+            // 养殖菜谱（鸡鸭牛羊猪 → 蛋奶肉）
+            Add("r_cook_scrambled_egg", "炒鸡蛋", "item_dish_scrambled_egg", new[] { "item_egg", "item_soyoil" }, new[] { 2, 1 }, 40);
+            Add("r_cook_steamed_egg", "蒸蛋羹", "item_dish_steamed_egg", new[] { "item_egg", "item_scallion" }, new[] { 2, 1 }, 45);
+            Add("r_cook_salted_duck_egg", "腌咸鸭蛋", "item_dish_salted_duck_egg", new[] { "item_duck_egg", "item_salt" }, new[] { 2, 1 }, 50);
+            Add("r_cook_milk_tea", "煮奶茶", "item_dish_milk_tea", new[] { "item_milk", "item_tea_leaf", "item_sugar" }, new[] { 1, 1, 1 }, 45);
+            Add("r_cook_braised_pork", "红烧肉", "item_dish_braised_pork", new[] { "item_pork", "item_soysauce", "item_sugar" }, new[] { 1, 1, 1 }, 70);
+            Add("r_cook_mutton_soup", "羊肉汤", "item_dish_mutton_soup", new[] { "item_mutton", "item_ginger" }, new[] { 1, 1 }, 75);
+            Add("r_cook_beef_noodle", "牛肉面", "item_dish_beef_noodle", new[] { "item_beef", "item_flour", "item_scallion" }, new[] { 1, 2, 1 }, 80);
+            Add("r_cook_roast_chicken", "烤鸡", "item_dish_roast_chicken", new[] { "item_chicken_meat", "item_hangover_soup" }, new[] { 1, 1 }, 65);
         }
 
         /// <summary>给指定食谱挂 NPC 好感锁（需好感达「亲密」才显示）</summary>
@@ -354,6 +363,10 @@ namespace PBV.Systems
             // 面点主食：温饱，给种植/恢复增益
             if (id == "item_dish_noodle" || id == "item_dish_dumpling" || id == "item_dish_pancake") return BuffType.Farming;
             if (id == "item_dish_mapotofu" || id == "item_dish_tea_egg") return BuffType.Trade;
+            // 养殖菜（肉蛋奶）：大补，给挖矿加成
+            if (id == "item_dish_scrambled_egg" || id == "item_dish_steamed_egg" || id == "item_dish_salted_duck_egg") return BuffType.Farming;
+            if (id == "item_dish_braised_pork" || id == "item_dish_mutton_soup" || id == "item_dish_beef_noodle" || id == "item_dish_roast_chicken") return BuffType.Mining;
+            if (id == "item_dish_milk_tea") return BuffType.Trade;
             if (id.Contains("fish") || id == "item_dish_salad") return BuffType.Fishing;
             if (id == "item_dish_cabbage_soup" || id == "item_dish_mushroom_soup" || id == "item_dish_corn") return BuffType.Mining;
             if (id == "item_dish_radish_soup" || id == "item_dish_tomato" || id == "item_dish_pumpkin") return BuffType.Farming;

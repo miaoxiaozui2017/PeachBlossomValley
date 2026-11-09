@@ -20,8 +20,15 @@ namespace PBV.Player
         public int MaxStamina => _maxStamina;
         public int Stamina { get; private set; }
 
+        [Header("HP Settings")]
+        [SerializeField] private int _maxHp = 100;
+        public int MaxHp => _maxHp;
+        public int Hp { get; private set; }
+
         /// <summary>体力变化事件（current, max）</summary>
         public event Action<int, int> OnStaminaChanged;
+        /// <summary>血量变化事件（current, max）</summary>
+        public event Action<int, int> OnHpChanged;
 
         private void Awake()
         {
@@ -29,6 +36,7 @@ namespace PBV.Player
             {
                 Instance = this;
                 Stamina = _maxStamina;
+                Hp = _maxHp;
             }
             else { Destroy(gameObject); return; }
         }
@@ -58,7 +66,10 @@ namespace PBV.Player
             int amount = slept ? _maxStamina : Mathf.Max(1, daily / 2);
             Stamina = Mathf.Min(_maxStamina, Stamina + amount);
             OnStaminaChanged?.Invoke(Stamina, _maxStamina);
-            Debug.Log($"[PlayerStats] 新一天（{(slept ? "睡觉" : "直接跳日")}），体力 {Stamina}/{_maxStamina}");
+            // 睡觉回满血，跳日回一半血
+            Hp = Mathf.Min(_maxHp, Hp + (slept ? _maxHp : Mathf.Max(1, _maxHp / 2)));
+            OnHpChanged?.Invoke(Hp, _maxHp);
+            Debug.Log($"[PlayerStats] 新一天（{(slept ? "睡觉" : "直接跳日")}），体力 {Stamina}/{_maxStamina}，血量 {Hp}/{_maxHp}");
         }
 
         /// <summary>体力是否足够（工具动作执行前先查询，避免"先做完再扣不动"）</summary>
@@ -75,6 +86,11 @@ namespace PBV.Player
             }
             Stamina -= cost;
             OnStaminaChanged?.Invoke(Stamina, _maxStamina);
+            // 体力归零 → 晕倒送医婆
+            if (Stamina <= 0)
+            {
+                PBV.Systems.FaintSystem.Instance?.OnExhausted();
+            }
             return true;
         }
 
@@ -104,6 +120,40 @@ namespace PBV.Player
         {
             Stamina = Mathf.Clamp(value, 0, _maxStamina);
             OnStaminaChanged?.Invoke(Stamina, _maxStamina);
+        }
+
+        // ---- 血量 HP（战斗用，独立于体力） ----
+
+        /// <summary>扣血，返回是否死亡（Hp 归零）</summary>
+        public bool TakeDamage(int amount)
+        {
+            if (amount <= 0) return Hp <= 0;
+            Hp = Mathf.Max(0, Hp - amount);
+            OnHpChanged?.Invoke(Hp, _maxHp);
+            Debug.Log($"[PlayerStats] 受到 {amount} 伤害，HP {Hp}/{_maxHp}");
+            return Hp <= 0;
+        }
+
+        /// <summary>回血（吃药/睡觉），不超过上限</summary>
+        public void Heal(int amount)
+        {
+            if (amount <= 0) return;
+            Hp = Mathf.Min(_maxHp, Hp + amount);
+            OnHpChanged?.Invoke(Hp, _maxHp);
+        }
+
+        /// <summary>回满血（睡觉）</summary>
+        public void RestoreFullHp()
+        {
+            Hp = _maxHp;
+            OnHpChanged?.Invoke(Hp, _maxHp);
+        }
+
+        /// <summary>存档恢复血量</summary>
+        public void SetHp(int value)
+        {
+            Hp = Mathf.Clamp(value, 0, _maxHp);
+            OnHpChanged?.Invoke(Hp, _maxHp);
         }
     }
 }

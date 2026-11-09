@@ -85,13 +85,7 @@ namespace PBV.UI
 
         private void CreateRow(ShopEntry entry)
         {
-            // 种子包升级的实际收益：杂货铺种子打折（Lv2 九折 / Lv3 八折）
-            var toolMgr = ToolManager.Instance;
-            bool isSeed = entry.item.type == ItemType.Seed && entry.item.cropToPlant != null;
-            float discount = (isSeed && toolMgr != null) ? toolMgr.SeedShopDiscount : 1f;
-            int price = discount < 1f
-                ? Mathf.Max(1, Mathf.CeilToInt(entry.price * discount))
-                : entry.price;
+            int price = entry.price;
 
             var row = new GameObject($"Row_{entry.item.itemName}");
             row.transform.SetParent(_listContent.transform, false);
@@ -145,10 +139,10 @@ namespace PBV.UI
             priceText.font = Font;
             priceText.fontSize = 18;
             priceText.alignment = TextAnchor.MiddleRight;
-            priceText.color = discount < 1f ? new Color(0.5f, 0.95f, 0.6f) : new Color(1f, 0.85f, 0.4f);
+            priceText.color = new Color(1f, 0.85f, 0.4f);
             string sym = entry.currency == Currency.RMB ? "¥" : "";
             string unit = entry.currency == Currency.RMB ? "" : " 文";
-            priceText.text = discount < 1f ? $"{sym}{price}{unit}\n<size=10>种子包{discount * 10f:0.#}折</size>" : $"{sym}{price}{unit}";
+            priceText.text = $"{sym}{price}{unit}";
             priceText.supportRichText = true;
 
             // 购买按钮

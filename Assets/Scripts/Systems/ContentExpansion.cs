@@ -46,6 +46,15 @@ namespace PBV.Systems
                 "帮我重建窑，我教你烧瓷。"
             }, new Color(0.80f, 0.68f, 0.50f), 0),
 
+            ("NPC_BaoBao", "npc", "饱饱（酒楼大厨）", new[]
+            {
+                "民以食为天，我这酒楼啊，就缺个会种菜的主儿。",
+                "新鲜鸡蛋、好肉，到我这儿能卖个好价钱。",
+                "想学手艺？先把地里那几垄菜伺候明白喽。"
+            }, new Color(0.95f, 0.85f, 0.45f), 0),
+
+            ("TavernStation", "tavern", "", null, new Color(0.85f, 0.40f, 0.25f), 0),
+
             ("JewelryStation", "jewel", "", null, new Color(0.85f, 0.7f, 0.2f), 0),
             ("PotteryStation", "craft", "", null, new Color(0.72f, 0.55f, 0.38f), 0),
             ("MedicineStation", "craft", "", null, new Color(0.45f, 0.62f, 0.42f), 0),
@@ -61,6 +70,12 @@ namespace PBV.Systems
             ("TreeSpot_A", "tree", "", null, new Color(0.30f, 0.50f, 0.25f), 0),
             ("TreeSpot_B", "tree", "", null, new Color(0.30f, 0.50f, 0.25f), 1),
             ("CageSpot", "cage", "", null, new Color(0.30f, 0.55f, 0.75f), 0),
+            ("CompostStation", "compost", "", null, new Color(0.45f, 0.35f, 0.20f), 0),
+            ("HouseStation", "house", "", null, new Color(0.60f, 0.50f, 0.70f), 0),
+            ("LivestockStation", "livestock", "", null, new Color(0.72f, 0.52f, 0.28f), 0),
+            ("SugarStation", "craft", "", null, new Color(0.85f, 0.80f, 0.60f), 0),
+            ("SaltStation", "craft", "", null, new Color(0.85f, 0.85f, 0.90f), 0),
+            ("FarmVendorStation", "farmvendor", "", null, new Color(0.65f, 0.55f, 0.30f), 0),
         };
     }
 
@@ -96,13 +111,26 @@ namespace PBV.Systems
             if (shop != null && ricewine != null) shop.AddShopEntry(ricewine, 25);
             var poisonHerb = FindItem("item_poison_herb");
             if (shop != null && poisonHerb != null) shop.AddShopEntry(poisonHerb, 10);
-            // 磨坊/酱园/茶坊入口原料
+            // 磨坊/酱园/茶坊入口原料（收获物可买来应急，也可自己种）
             var wheat = FindItem("item_wheat");
             if (shop != null && wheat != null) shop.AddShopEntry(wheat, 15);
             var soybean = FindItem("item_soybean");
             if (shop != null && soybean != null) shop.AddShopEntry(soybean, 15);
             var teaLeaf = FindItem("item_tea_leaf");
             if (shop != null && teaLeaf != null) shop.AddShopEntry(teaLeaf, 20);
+
+            // 可种植作物种子：小麦/大豆/玉米（买了就能种，无需升级种子包）
+            var seedWheat = FindItem("seed_wheat");
+            if (shop != null && seedWheat != null) shop.AddShopEntry(seedWheat, 14);
+            var seedSoy = FindItem("seed_soybean");
+            if (shop != null && seedSoy != null) shop.AddShopEntry(seedSoy, 14);
+            var seedCorn = FindItem("seed_corn");
+            if (shop != null && seedCorn != null) shop.AddShopEntry(seedCorn, 16);
+            // 制糖作物种子：甘蔗/甜菜（制糖坊熬糖）
+            var seedSugarcane = FindItem("seed_sugarcane");
+            if (shop != null && seedSugarcane != null) shop.AddShopEntry(seedSugarcane, 18);
+            var seedSugarbeet = FindItem("seed_sugarbeet");
+            if (shop != null && seedSugarbeet != null) shop.AddShopEntry(seedSugarbeet, 16);
 
             // 现代货架：人民币计价的现代资源（活力饮料/能量胶/增产营养剂），去现代后可在杂货铺购买
             if (shop != null)
@@ -113,6 +141,10 @@ namespace PBV.Systems
                 if (drink != null) shop.AddModernEntry(drink, 5);
                 if (gel != null) shop.AddModernEntry(gel, 12);
                 if (boost != null) shop.AddModernEntry(boost, 8);
+
+                // 现代复合肥：用人民币购买的高效肥料（施肥产量 ×3，高风险高收益）
+                var fertModern = FindItem("item_fertilizer_modern");
+                if (fertModern != null) shop.AddModernEntry(fertModern, 15);
 
                 // 黑科技图纸：用挣来的人民币购买，按 F 研究获得强力增益（持续3天）
                 var bpFarm = FindItem("item_blueprint_farm");
@@ -153,6 +185,9 @@ namespace PBV.Systems
                 case "npc":
                     var npc = go.AddComponent<NPCController>();
                     npc.Configure(displayName, lines, color);
+                    // 作息：白天在 StationLayout 的工作位上班，晚上回家（地图南侧村舍区）
+                    Vector2 work = StationLayoutData.GetPosition(goName);
+                    npc.EnableSchedule(work, work + new Vector2(0f, -15f));
                     break;
                 case "jewel":
                     go.AddComponent<JewelryStation>();
@@ -179,6 +214,21 @@ namespace PBV.Systems
                     break;
                 case "cage":
                     go.AddComponent<CageSpot>();
+                    break;
+                case "compost":
+                    go.AddComponent<CompostStation>();
+                    break;
+                case "house":
+                    go.AddComponent<HouseStation>();
+                    break;
+                case "livestock":
+                    go.AddComponent<LivestockStation>();
+                    break;
+                case "tavern":
+                    go.AddComponent<TavernStation>();
+                    break;
+                case "farmvendor":
+                    go.AddComponent<FarmVendorStation>();
                     break;
             }
         }

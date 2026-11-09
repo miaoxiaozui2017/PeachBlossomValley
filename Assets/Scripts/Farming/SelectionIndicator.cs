@@ -72,9 +72,13 @@ namespace PBV.Farming
                 return _tillableColor;
             if (plot.plantedCrop == null)
             {
-                // 有种子优先显示播种色
+                // 选中格子的物品是种子时显示播种色（工具占格子：选中种子+左键播种）
                 var inv = PBV.Inventory.InventorySystem.Instance;
-                return (inv != null && inv.FindSeedSlot() != null) ? _plantableColor : _waterableColor;
+                int idx = PBV.UI.InventoryUI.SelectedSlotIndex;
+                var slot = inv != null && idx >= 0 && idx < inv.Capacity ? inv.GetSlot(idx) : null;
+                bool selectedSeed = slot != null && !slot.IsEmpty && slot.item != null
+                    && slot.item.type == PBV.Inventory.ItemType.Seed && slot.item.cropToPlant != null;
+                return selectedSeed ? _plantableColor : _waterableColor;
             }
             // 有作物未成熟
             return plot.status == TileStatus.Tilled ? _waterableColor : _idleColor;

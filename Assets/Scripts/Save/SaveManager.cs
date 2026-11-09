@@ -153,8 +153,12 @@ namespace PBV.Save
                 var bin = FindObjectOfType<ShippingBinSystem>();
                 if (bin != null) data.shippingPending = bin.PendingValue;
 
-                // 体力
-                if (PlayerStats.Instance != null) data.stamina = PlayerStats.Instance.Stamina;
+                // 体力 / 血量
+                if (PlayerStats.Instance != null)
+                {
+                    data.stamina = PlayerStats.Instance.Stamina;
+                    data.hp = PlayerStats.Instance.Hp;
+                }
 
                 // 季节
                 if (PBV.Systems.SeasonSystem.Instance != null)
@@ -216,6 +220,13 @@ namespace PBV.Save
                     data.outfit = PBV.Systems.WardrobeSystem.Instance.Export();
                 if (PBV.Systems.TradeCarrySystem.Instance != null)
                     data.tradeSlots = PBV.Systems.TradeCarrySystem.Instance.Export();
+                if (PBV.Systems.FaintSystem.Instance != null)
+                    data.debt = PBV.Systems.FaintSystem.Instance.Debt;
+                if (PBV.Systems.LivestockSystem.Instance != null)
+                {
+                    foreach (var l in PBV.Systems.LivestockSystem.Instance.Export())
+                        data.livestock.Add(new LivestockDTO { type = l.type, count = l.count, fedDays = l.fedDays });
+                }
 
                 // 背包（只存非空槽位，含索引）
                 if (InventorySystem.Instance != null)
@@ -225,6 +236,18 @@ namespace PBV.Save
                         var slot = InventorySystem.Instance.GetSlot(i);
                         if (slot == null || slot.IsEmpty) continue;
                         data.inventory.Add(new SlotDTO { index = i, itemId = GetItemId(slot.item), count = slot.count });
+                    }
+                }
+
+                // 储物箱（只存非空槽位）
+                if (PBV.Systems.StorageSystem.Instance != null)
+                {
+                    var storage = PBV.Systems.StorageSystem.Instance;
+                    for (int i = 0; i < storage.Capacity; i++)
+                    {
+                        var s = storage.GetSlot(i);
+                        if (s == null || s.IsEmpty) continue;
+                        data.storage.Add(new SlotDTO { index = i, itemId = GetItemId(s.item), count = s.count });
                     }
                 }
 
@@ -264,8 +287,12 @@ namespace PBV.Save
                 var bin = FindObjectOfType<ShippingBinSystem>();
                 if (bin != null) bin.SetPendingValue(data.shippingPending);
 
-                // 体力
-                if (PlayerStats.Instance != null) PlayerStats.Instance.SetStamina(data.stamina);
+                // 体力 / 血量
+                if (PlayerStats.Instance != null)
+                {
+                    PlayerStats.Instance.SetStamina(data.stamina);
+                    PlayerStats.Instance.SetHp(data.hp);
+                }
 
                 // 季节
                 if (PBV.Systems.SeasonSystem.Instance != null) PBV.Systems.SeasonSystem.Instance.Restore(data.currentSeason, data.dayOfSeason);
@@ -314,6 +341,15 @@ namespace PBV.Save
                     PBV.Systems.WardrobeSystem.Instance.Restore(data.outfit);
                 if (PBV.Systems.TradeCarrySystem.Instance != null)
                     PBV.Systems.TradeCarrySystem.Instance.Import(data.tradeSlots);
+                if (PBV.Systems.FaintSystem.Instance != null)
+                    PBV.Systems.FaintSystem.Instance.RestoreDebt(data.debt);
+                if (PBV.Systems.LivestockSystem.Instance != null && data.livestock != null)
+                {
+                    var list = new System.Collections.Generic.List<PBV.Systems.OwnedLivestock>();
+                    foreach (var l in data.livestock)
+                        list.Add(new PBV.Systems.OwnedLivestock { type = l.type, count = l.count, fedDays = l.fedDays });
+                    PBV.Systems.LivestockSystem.Instance.Import(list);
+                }
 
                 // 钱包（双币种，兼容旧档：旧 money 并入宋币）
                 if (PlayerWallet.Instance != null)
@@ -336,6 +372,22 @@ namespace PBV.Save
                             continue;
                         }
                         InventorySystem.Instance.SetSlot(slotDto.index, item, slotDto.count);
+                    }
+                }
+
+                // 储物箱
+                if (PBV.Systems.StorageSystem.Instance != null)
+                {
+                    var storage = PBV.Systems.StorageSystem.Instance;
+                    storage.ClearAll();
+                    if (data.storage != null)
+                    {
+                        foreach (var slotDto in data.storage)
+                        {
+                            var item = FindItem(slotDto.itemId);
+                            if (item == null) continue;
+                            storage.SetSlot(slotDto.index, item, slotDto.count);
+                        }
                     }
                 }
 

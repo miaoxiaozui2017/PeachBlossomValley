@@ -106,8 +106,8 @@ namespace PBV.UI
             var stamBtn = stamRow.transform.Find("Btn").GetComponent<Button>();
             stamBtn.onClick.AddListener(() => { if (BuildSystem.Instance != null) BuildSystem.Instance.TryUpgradeStamina(); Refresh(); });
 
-            // 房屋扩建行（住：用木梁/木家具，不用钱）
-            var houseRow = CreateUpgradeRow("HouseRow", "房屋扩建", "木梁×2→木家具×2（+体力上限）", 0);
+            // 房屋扩建行（住：用木梁/木家具，不用钱，解锁储物箱）
+            var houseRow = CreateUpgradeRow("HouseRow", "房屋扩建", "木梁×2→木家具×2（解锁储物箱+装修）", 0);
             var houseBtn = houseRow.transform.Find("Btn").GetComponent<Button>();
             houseBtn.onClick.AddListener(() => { if (BuildSystem.Instance != null) BuildSystem.Instance.TryUpgradeHouse(); Refresh(); });
         }
