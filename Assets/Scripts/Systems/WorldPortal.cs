@@ -20,17 +20,12 @@ namespace PBV.Systems
 
         public string GetInteractPrompt()
         {
-            var ws = WorldState.Instance;
-            if (ws == null) return "传送门 (E)";
-            return ws.Current == WorldType.Ancient
-                ? "传送门：前往现代（出货×2，农场功能不变） (E)"
-                : "传送门：回到桃花谷 (E)  /  也可直接按 T";
+            return "时空驿站：穿梭 / 兑换货币 (E)";
         }
 
         public void OnInteract()
         {
-            if (WorldState.Instance == null) return;
-            WorldState.Instance.Toggle();
+            if (PBV.UI.PortalUI.Instance != null) PBV.UI.PortalUI.Instance.Open();
         }
     }
 }

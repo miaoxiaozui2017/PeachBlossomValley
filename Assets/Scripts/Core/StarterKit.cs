@@ -39,7 +39,7 @@ namespace PBV.Core
 
             bool loadedFromSave = SaveManager.Instance != null && SaveManager.Instance.LoadedFromSave;
             bool inventoryEmpty = IsInventoryEmpty(inventory);
-            int money = PlayerWallet.Instance != null ? PlayerWallet.Instance.Money : 0;
+            int money = PlayerWallet.Instance != null ? (PlayerWallet.Instance.SongCoins + PlayerWallet.Instance.RMB) : 0;
 
             // 读档且状态正常（有东西或有钱）-> 不发
             if (loadedFromSave && !(inventoryEmpty && money == 0))

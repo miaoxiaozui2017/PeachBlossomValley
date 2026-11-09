@@ -45,6 +45,8 @@ namespace PBV.Systems
                 "青瓷茶具能存食物不坏，可惜手艺断了。",
                 "帮我重建窑，我教你烧瓷。"
             }, new Color(0.80f, 0.68f, 0.50f), 0),
+
+            ("JewelryStation", "jewel", "", null, new Color(0.85f, 0.7f, 0.2f), 0),
         };
     }
 
@@ -69,7 +71,18 @@ namespace PBV.Systems
             var indigo = FindItem("item_indigo");
             if (shop != null && indigo != null) shop.AddShopEntry(indigo, 24);
 
-            Debug.Log($"[ContentExpansion] 补建 {created} 个交互点（共 {ContentExpansionData.Extra.Length} 个扩展点），蓝草已上架");
+            // 现代货架：人民币计价的现代资源（活力饮料/能量胶/增产营养剂），去现代后可在杂货铺购买
+            if (shop != null)
+            {
+                var drink = FindItem("item_mod_drink");
+                var gel = FindItem("item_mod_gel");
+                var boost = FindItem("item_mod_boost");
+                if (drink != null) shop.AddModernEntry(drink, 5);
+                if (gel != null) shop.AddModernEntry(gel, 12);
+                if (boost != null) shop.AddModernEntry(boost, 8);
+            }
+
+            Debug.Log($"[ContentExpansion] 补建 {created} 个交互点（共 {ContentExpansionData.Extra.Length} 个扩展点），蓝草与现代货架已上架");
         }
 
         private static void CreateStation(string goName, string kind, string displayName, string[] lines, Color color, int arg)
@@ -99,6 +112,9 @@ namespace PBV.Systems
                 case "npc":
                     var npc = go.AddComponent<NPCController>();
                     npc.Configure(displayName, lines, color);
+                    break;
+                case "jewel":
+                    go.AddComponent<JewelryStation>();
                     break;
             }
         }

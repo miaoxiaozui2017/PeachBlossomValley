@@ -144,8 +144,12 @@ namespace PBV.Save
                 }
                 data.day = TimeManager.Instance != null ? TimeManager.Instance.CurrentDay : 1;
 
-                // 金钱与出货箱
-                if (PlayerWallet.Instance != null) data.money = PlayerWallet.Instance.Money;
+                // 金钱与出货箱（双币种）
+                if (PlayerWallet.Instance != null)
+                {
+                    data.song = PlayerWallet.Instance.SongCoins;
+                    data.rmb = PlayerWallet.Instance.RMB;
+                }
                 var bin = FindObjectOfType<ShippingBinSystem>();
                 if (bin != null) data.shippingPending = bin.PendingValue;
 
@@ -247,8 +251,7 @@ namespace PBV.Save
                 var player = FindObjectOfType<PlayerController>();
                 if (player != null) player.transform.position = new Vector3(data.playerX, data.playerY, 0);
 
-                // 金钱与出货箱
-                if (PlayerWallet.Instance != null) PlayerWallet.Instance.SetMoney(data.money);
+                // 出货箱（钱包在下方双币种区块统一加载，兼容旧档）
                 var bin = FindObjectOfType<ShippingBinSystem>();
                 if (bin != null) bin.SetPendingValue(data.shippingPending);
 
@@ -294,6 +297,14 @@ namespace PBV.Save
                     PBV.Systems.BuffSystem.Instance.Restore(data.buffType, data.buffDays);
                 if (PBV.Systems.TradeCarrySystem.Instance != null)
                     PBV.Systems.TradeCarrySystem.Instance.Import(data.tradeSlots);
+
+                // 钱包（双币种，兼容旧档：旧 money 并入宋币）
+                if (PlayerWallet.Instance != null)
+                {
+                    int s = data.song != 0 ? data.song : data.money;
+                    PlayerWallet.Instance.SetSong(s);
+                    PlayerWallet.Instance.SetRMB(data.rmb);
+                }
 
                 // 背包
                 if (InventorySystem.Instance != null)

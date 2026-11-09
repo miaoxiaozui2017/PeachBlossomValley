@@ -74,7 +74,7 @@ namespace PBV.UI
             infoText.color = new Color(1f, 0.92f, 0.75f);
             infoText.supportRichText = true;
 
-            string costText = level >= 3 ? "<color=#888>已满级</color>" : $"升级: {cost.Value.oreCount}个{OreName(cost.Value.oreId)} + ¥{cost.Value.money}";
+            string costText = level >= 3 ? "<color=#888>已满级</color>" : $"升级: {cost.Value.oreCount}个{OreName(cost.Value.oreId)} + {cost.Value.money} 文";
             string effect = $"现在: {tm.GetToolEffect(toolIndex)}";
             if (level < 3) effect += $"\n<color=#8f8>下级: {ToolManager.DescribeEffect(toolIndex, level + 1)}</color>";
             infoText.text = $"<b>{tm.GetToolName(toolIndex)}</b>  Lv.{level}\n{costText}\n{effect}";

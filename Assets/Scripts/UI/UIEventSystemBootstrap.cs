@@ -68,6 +68,12 @@ namespace PBV.UI
             // v0.6.0：收集图鉴 / 鱼塘 / 隐藏彩蛋 与 Y 面板
             if (UnityEngine.Object.FindObjectOfType<PBV.Systems.V06Bootstrap>() == null)
                 new GameObject("V06Bootstrap (Auto)").AddComponent<PBV.Systems.V06Bootstrap>();
+            // 双币种：时空驿站面板（传送门 E 打开，含穿梭 + 宋币⇄人民币兑换）
+            if (UnityEngine.Object.FindObjectOfType<PortalUI>() == null)
+                new GameObject("PortalUI (Auto)").AddComponent<PortalUI>();
+            // 金银细工台面板（JewelryStation · E）
+            if (UnityEngine.Object.FindObjectOfType<JewelryUI>() == null)
+                new GameObject("JewelryUI (Auto)").AddComponent<JewelryUI>();
 
             if (UnityEngine.Object.FindObjectOfType<EventSystem>() != null) return;
 

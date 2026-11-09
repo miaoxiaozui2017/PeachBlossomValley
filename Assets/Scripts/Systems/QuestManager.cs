@@ -102,7 +102,7 @@ namespace PBV.Systems
 
         private void ClaimReward(Quest q)
         {
-            if (PlayerWallet.Instance != null) PlayerWallet.Instance.AddMoney(q.rewardMoney);
+            if (PlayerWallet.Instance != null) PlayerWallet.Instance.AddSong(q.rewardMoney);
             if (!string.IsNullOrEmpty(q.rewardItemId) && q.rewardItemCount > 0)
             {
                 var item = FindItemById(q.rewardItemId);

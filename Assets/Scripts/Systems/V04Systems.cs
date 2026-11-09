@@ -216,16 +216,16 @@ namespace PBV.Systems
                 return false;
             }
             inv.RemoveItem(dish, 1);
-            if (PlayerWallet.Instance != null) PlayerWallet.Instance.AddMoney(RewardMoney);
+            if (PlayerWallet.Instance != null) PlayerWallet.Instance.AddSong(RewardMoney);
             ReputationSystem.Instance?.Add(RewardRep);
             BuffSystem.Instance?.Apply(RewardBuff);
-            PBV.UI.HUD.Instance?.ShowNotice($"{Customer} 的订单完成：+¥{RewardMoney} · 声望 +{RewardRep}");
+            PBV.UI.HUD.Instance?.ShowNotice($"{Customer} 的订单完成：+{RewardMoney}文 · 声望 +{RewardRep}");
             QuestManager.Instance?.RecordOrder();
             NewOrder();
             return true;
         }
 
-        public string Summary => $"{Customer} 想要「{DishName}」 · ¥{RewardMoney} / 声望+{RewardRep} / {BuffSystem.BuffName(RewardBuff)}";
+        public string Summary => $"{Customer} 想要「{DishName}」 · {RewardMoney}文 / 声望+{RewardRep} / {BuffSystem.BuffName(RewardBuff)}";
     }
 
     /// <summary>时代价值标签</summary>
@@ -318,8 +318,11 @@ namespace PBV.Systems
             }
             if (count > 0 && PlayerWallet.Instance != null)
             {
-                PlayerWallet.Instance.AddMoney(total);
-                PBV.UI.HUD.Instance?.ShowNotice($"跨时空贸易结算 {count} 件 → +¥{total}（{(to == WorldType.Modern ? "现代" : "桃花谷")}）", 4f);
+                bool toModern = to == WorldType.Modern;
+                if (toModern) PlayerWallet.Instance.AddRMB(total); else PlayerWallet.Instance.AddSong(total);
+                string sym = toModern ? "¥" : "";
+                string unit = toModern ? "" : "文";
+                PBV.UI.HUD.Instance?.ShowNotice($"跨时空贸易结算 {count} 件 → +{sym}{total}{unit}（{(toModern ? "现代" : "桃花谷")}）", 4f);
                 ReputationSystem.Instance?.Add(count * 3);
             }
             return total;

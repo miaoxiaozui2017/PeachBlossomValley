@@ -21,6 +21,9 @@ namespace PBV.Economy
         /// <summary>已投入未结算的总价值</summary>
         public int PendingValue { get; private set; }
 
+        /// <summary>待结算金额对应的货币（投入那一刻按世界锁定）：true=人民币，false=宋币</summary>
+        public bool PendingIsRMB { get; private set; }
+
         /// <summary>待结算金额变化事件（参数为最新 PendingValue），HUD 订阅显示</summary>
         public event Action<int> OnPendingChanged;
 
@@ -69,6 +72,8 @@ namespace PBV.Economy
 
             // 价格倍率在"投入的这一刻"锁定：穿越到现代后投入即享 ×2，
             // 不必等到次日 06:00 还得恰好人在现代，规则更直观。
+            bool isModern = WorldState.Instance != null && WorldState.Instance.Current == WorldType.Modern;
+            PendingIsRMB = isModern; // 待结算币种也一并锁定
             float worldMult = WorldState.Instance != null ? WorldState.Instance.SellMultiplier : 1f;
             float festMult = FestivalSystem.Instance != null ? FestivalSystem.Instance.PriceMultiplier : 1f;
             float repMult = ReputationSystem.Instance != null ? ReputationSystem.Instance.SellMultiplier : 1f;
@@ -107,7 +112,9 @@ namespace PBV.Economy
             string bonus = "";
             if (worldMult > 1f) bonus += "现代×2 ";
             if (festMult > 1f) bonus += "节日×1.5 ";
-            PBV.UI.HUD.Instance?.ShowNotice($"出货 {totalItems} 件 → 待结算 ¥{totalValue}（{bonus}次日 06:00 入账）");
+            string sym = PendingIsRMB ? "¥" : "";
+            int display = PendingIsRMB ? Mathf.RoundToInt(totalValue / (float)PBV.Systems.ExchangeSystem.SONG_PER_RMB) : totalValue;
+            PBV.UI.HUD.Instance?.ShowNotice($"出货 {totalItems} 件 → 待结算 {sym}{display}（{bonus}次日 06:00 入账）");
             Debug.Log($"[ShippingBin] 投入 {totalItems} 件物品，价值 {totalValue}（待结算总额 {PendingValue}，次日06:00入账）");
         }
 
@@ -140,12 +147,15 @@ namespace PBV.Economy
 
             // 倍率已在投入时结算，次日只负责入账，避免重复乘算
             int earnings = PendingValue;
+            bool rmb = PendingIsRMB;
             if (PlayerWallet.Instance != null)
             {
-                PlayerWallet.Instance.AddMoney(earnings);
-                Debug.Log($"[ShippingBin] 昨日出货结算：+{earnings} 金钱");
+                if (rmb) PlayerWallet.Instance.AddRMB(Mathf.RoundToInt(earnings / (float)PBV.Systems.ExchangeSystem.SONG_PER_RMB));
+                else PlayerWallet.Instance.AddSong(earnings);
+                Debug.Log($"[ShippingBin] 昨日出货结算：+{(rmb ? "¥" : "")}{earnings}（{ (rmb ? "人民币" : "宋币") }）");
             }
             PendingValue = 0;
+            PendingIsRMB = false;
             OnPendingChanged?.Invoke(PendingValue);
         }
     }

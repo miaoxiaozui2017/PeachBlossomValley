@@ -75,17 +75,22 @@ namespace PBV.Systems
             OnFestivalStarted?.Invoke(FestivalName);
 
             int day = TimeManager.Instance != null ? TimeManager.Instance.CurrentDay : 0;
+            int gift = Bonus == FestivalBonus.Affection ? 88 : 66;
+            bool modern = WorldState.Instance != null && WorldState.Instance.Current == WorldType.Modern;
             if (day != _lastGiftDay)
             {
                 _lastGiftDay = day;
-                int gift = Bonus == FestivalBonus.Affection ? 88 : 66;
-                if (PlayerWallet.Instance != null) PlayerWallet.Instance.AddMoney(gift);
+                if (PlayerWallet.Instance != null)
+                {
+                    if (modern) PlayerWallet.Instance.AddRMB(gift); else PlayerWallet.Instance.AddSong(gift);
+                }
             }
 
             string bonusText = Bonus == FestivalBonus.Affection ? "送礼好感 ×2" :
                                Bonus == FestivalBonus.Fishing ? "稀有鱼概率 +25%" :
                                Bonus == FestivalBonus.Cooking ? "料理效果 ×1.5" : "挖矿产出 +1";
-            PBV.UI.HUD.Instance?.ShowNotice($"【{FestivalName}】出货 ×1.5 · {bonusText} · 节礼 ¥{(Bonus == FestivalBonus.Affection ? 88 : 66)}", 4f);
+            string sym = modern ? "¥" : "";
+            PBV.UI.HUD.Instance?.ShowNotice($"【{FestivalName}】出货 ×1.5 · {bonusText} · 节礼 {sym}{gift}", 4f);
             Debug.Log($"[Festival] {FestivalName}：{bonusText}");
         }
     }

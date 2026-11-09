@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7e0e37fc99f0264581c6e1adcf1bce8, type: 3}
+  m_Name: item_jewelry
+  m_EditorClassIdentifier: 
+  id: item_jewelry
+  itemName: "\u82B1\u4E1D\u73E0\u5B9D"
+  description: "\u91D1\u952D\u9576\u5D4C\u5B9D\u77F3\u800C\u6210\u7684\u975E\u9057\u73E0\u5B9D\uFF0C\u9AD8\u4EF7\u51FA\u552E\u6216\u9001\u793C\u6781\u4F73\u3002"
+  icon: {fileID: 0}
+  type: 0
+  maxStack: 99
+  sellPrice: 800
+  cropToPlant: {fileID: 0}
+  affectionValue: 15

@@ -63,7 +63,7 @@ namespace PBV.UI
             if (PlayerWallet.Instance != null)
             {
                 PlayerWallet.Instance.OnMoneyChanged += OnMoneyChanged;
-                OnMoneyChanged(PlayerWallet.Instance.Money);
+                OnMoneyChanged(PlayerWallet.Instance.SongCoins, PlayerWallet.Instance.RMB);
             }
 
             _shippingBin = FindObjectOfType<ShippingBinSystem>();
@@ -197,16 +197,18 @@ namespace PBV.UI
             RefreshTimeText(time, day);
         }
 
-        private void OnMoneyChanged(int money)
+        private void OnMoneyChanged(int song, int rmb)
         {
-            if (_moneyText != null) _moneyText.text = $"¥ {money}";
+            if (_moneyText != null) _moneyText.text = $"宋 {song}文   ¥{rmb}";
         }
 
         private void OnPendingChanged(int pending)
         {
             if (_pendingText != null)
             {
-                _pendingText.text = pending > 0 ? $"出货待结算 ¥ {pending}（次日06:00入账）" : string.Empty;
+                bool rmb = _shippingBin != null && _shippingBin.PendingIsRMB;
+                string sym = rmb ? "¥" : "";
+                _pendingText.text = pending > 0 ? $"出货待结算 {sym}{pending}（次日06:00入账）" : string.Empty;
             }
         }
 

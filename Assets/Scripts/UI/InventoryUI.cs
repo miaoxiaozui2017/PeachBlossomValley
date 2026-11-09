@@ -63,7 +63,7 @@ namespace PBV.UI
             if (PlayerWallet.Instance != null)
             {
                 PlayerWallet.Instance.OnMoneyChanged += RefreshMoney;
-                RefreshMoney(PlayerWallet.Instance.Money);
+                RefreshMoney(PlayerWallet.Instance.SongCoins, PlayerWallet.Instance.RMB);
             }
             EnsureSubscribed();
             RefreshAll();
@@ -177,9 +177,9 @@ namespace PBV.UI
             _infoText.text = $"{slot.item.itemName}  x{slot.count}\n{slot.item.description}";
         }
 
-        private void RefreshMoney(int money)
+        private void RefreshMoney(int song, int rmb)
         {
-            if (_moneyText != null) _moneyText.text = $"¥ {money}";
+            if (_moneyText != null) _moneyText.text = $"宋 {song}文   ¥{rmb}";
         }
 
         private void RefreshAll()
@@ -318,7 +318,7 @@ namespace PBV.UI
             _titleText = CreateTextObj("Title", titleBar.transform, "背包 (Tab 开关)", 22, FontStyle.Bold, new Color(1f, 0.93f, 0.75f));
             _titleText.alignment = TextAnchor.MiddleLeft;
 
-            _moneyText = CreateTextObj("Money", titleBar.transform, "¥ 0", 22, FontStyle.Bold, new Color(1f, 0.85f, 0.4f));
+            _moneyText = CreateTextObj("Money", titleBar.transform, "宋 0文   ¥0", 22, FontStyle.Bold, new Color(1f, 0.85f, 0.4f));
             _moneyText.alignment = TextAnchor.MiddleRight;
 
             // ② 格子网格（GridLayoutGroup 自动排列 6 列 x 4 行）

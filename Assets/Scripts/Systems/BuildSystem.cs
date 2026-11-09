@@ -35,9 +35,9 @@ namespace PBV.Systems
         {
             if (BagLevel >= 2) return false;
             int cost = BagCosts[BagLevel];
-            if (PlayerWallet.Instance == null || !PlayerWallet.Instance.TrySpend(cost))
+            if (PlayerWallet.Instance == null || !PlayerWallet.Instance.SpendSong(cost))
             {
-                PBV.UI.HUD.Instance?.ShowNotice($"背包扩容需 ¥{cost}，金钱不足");
+                PBV.UI.HUD.Instance?.ShowNotice($"背包扩容需 {cost} 文，宋币不足");
                 return false;
             }
             BagLevel++;
@@ -51,9 +51,9 @@ namespace PBV.Systems
         {
             if (StaminaLevel >= 2) return false;
             int cost = StaminaCosts[StaminaLevel];
-            if (PlayerWallet.Instance == null || !PlayerWallet.Instance.TrySpend(cost))
+            if (PlayerWallet.Instance == null || !PlayerWallet.Instance.SpendSong(cost))
             {
-                PBV.UI.HUD.Instance?.ShowNotice($"体力上限扩建需 ¥{cost}，金钱不足");
+                PBV.UI.HUD.Instance?.ShowNotice($"体力上限扩建需 {cost} 文，宋币不足");
                 return false;
             }
             StaminaLevel++;

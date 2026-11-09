@@ -169,8 +169,8 @@ namespace PBV.Systems
             if (r != null && r.Reputation < 200) return;
             if (a != null && a.UnlockedCount < 4) return;
             _triggered = true;
-            if (PlayerWallet.Instance != null) PlayerWallet.Instance.AddMoney(5000);
-            HUD.Instance?.ShowNotice("【隐藏彩蛋 · 谷中仙】古画重现光彩，赠 ¥5000", 6f);
+            if (PlayerWallet.Instance != null) PlayerWallet.Instance.AddSong(5000);
+            HUD.Instance?.ShowNotice("【隐藏彩蛋 · 谷中仙】古画重现光彩，赠 5000文", 6f);
             Debug.Log("[EasterEgg] 隐藏彩蛋触发");
         }
     }

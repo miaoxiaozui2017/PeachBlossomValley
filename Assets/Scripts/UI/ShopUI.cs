@@ -67,9 +67,10 @@ namespace PBV.UI
         {
             if (_currentShop == null) return;
 
-            if (_titleText != null) _titleText.text = _currentShop.ShopName;
-            int money = PlayerWallet.Instance != null ? PlayerWallet.Instance.Money : 0;
-            if (_moneyText != null) _moneyText.text = $"¥ {money}";
+            if (_titleText != null) _titleText.text = _currentShop.ShopName
+                + (WorldState.Instance != null && WorldState.Instance.Current == WorldType.Modern ? "（现代·人民币）" : "（桃花谷·宋币）");
+            var w = PlayerWallet.Instance;
+            if (_moneyText != null && w != null) _moneyText.text = $"宋 {w.SongCoins}文   ¥{w.RMB}";
 
             // 清空列表
             for (int i = _listContent.transform.childCount - 1; i >= 0; i--)
@@ -145,7 +146,9 @@ namespace PBV.UI
             priceText.fontSize = 18;
             priceText.alignment = TextAnchor.MiddleRight;
             priceText.color = discount < 1f ? new Color(0.5f, 0.95f, 0.6f) : new Color(1f, 0.85f, 0.4f);
-            priceText.text = discount < 1f ? $"¥{price}\n<size=10>种子包{discount * 10f:0.#}折</size>" : $"¥{price}";
+            string sym = entry.currency == Currency.RMB ? "¥" : "";
+            string unit = entry.currency == Currency.RMB ? "" : " 文";
+            priceText.text = discount < 1f ? $"{sym}{price}{unit}\n<size=10>种子包{discount * 10f:0.#}折</size>" : $"{sym}{price}{unit}";
             priceText.supportRichText = true;
 
             // 购买按钮
@@ -171,28 +174,36 @@ namespace PBV.UI
             btnText.raycastTarget = false;
 
             ItemData item = entry.item;
-            btn.onClick.AddListener(() => TryBuy(item, price));
+            btn.onClick.AddListener(() => TryBuy(item, price, entry.currency));
         }
 
-        private void TryBuy(ItemData item, int price)
+        private void TryBuy(ItemData item, int price, Currency currency)
         {
             if (PlayerWallet.Instance == null || InventorySystem.Instance == null) return;
-            if (!PlayerWallet.Instance.TrySpend(price))
+            bool isRMB = currency == Currency.RMB;
+            var wallet = PlayerWallet.Instance;
+            bool paid;
+            if (isRMB) paid = wallet.SpendRMB(price); else paid = wallet.SpendSong(price);
+            if (!paid)
             {
-                HUD.Instance?.ShowNotice($"金钱不足：{item.itemName} 需要 ¥{price}");
-                Debug.Log("[Shop] 金钱不足");
+                HUD.Instance?.ShowNotice(isRMB
+                    ? $"人民币不足：{item.itemName} 需要 ¥{price}"
+                    : $"宋币不足：{item.itemName} 需要 {price} 文");
+                Debug.Log("[Shop] 货币不足");
                 return;
             }
             if (!InventorySystem.Instance.AddItem(item, 1))
             {
                 // 背包满，退款
-                PlayerWallet.Instance.AddMoney(price);
+                if (isRMB) wallet.AddRMB(price); else wallet.AddSong(price);
                 HUD.Instance?.ShowNotice("背包已满，购买取消（已退款）");
                 Debug.Log("[Shop] 背包已满");
                 return;
             }
-            HUD.Instance?.ShowNotice($"购买 {item.itemName} ×1  -¥{price}");
-            Debug.Log($"[Shop] 购买 {item.itemName} -¥{price}");
+            HUD.Instance?.ShowNotice(isRMB
+                ? $"购买 {item.itemName} ×1  -¥{price}"
+                : $"购买 {item.itemName} ×1  -{price} 文");
+            Debug.Log($"[Shop] 购买 {item.itemName} -{(isRMB ? "¥" : "")}{price}");
             Refresh();
         }
 
@@ -227,9 +238,11 @@ namespace PBV.UI
             }
 
             foreach (var kv in toSell) inv.RemoveItem(kv.Key, kv.Value);
-            wallet.AddMoney(total);
-            HUD.Instance?.ShowNotice($"回收 {count} 件 → 即时到账 ¥{total}（出货箱才享现代×2 / 节日×1.5）");
-            Debug.Log($"[Shop] 回收 {count} 件 +¥{total}");
+            bool modern = WorldState.Instance != null && WorldState.Instance.Current == WorldType.Modern;
+            if (modern) wallet.AddRMB(total); else wallet.AddSong(total);
+            string sym = modern ? "¥" : "";
+            HUD.Instance?.ShowNotice($"回收 {count} 件 → 即时到账 {sym}{total}（出货箱才享现代×2 / 节日×1.5）");
+            Debug.Log($"[Shop] 回收 {count} 件 +{sym}{total}");
             Refresh();
         }
 

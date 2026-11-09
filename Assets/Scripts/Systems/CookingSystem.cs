@@ -207,13 +207,13 @@ namespace PBV.Systems
 
             int idx = PBV.UI.InventoryUI.SelectedSlotIndex;
             var slot = idx >= 0 && idx < inv.Capacity ? inv.GetSlot(idx) : null;
-            if (slot == null || slot.IsEmpty || slot.item == null || slot.item.staminaRestore <= 0)
+            if (slot == null || slot.IsEmpty || slot.item == null || slot.item.type != ItemType.Consumable)
             {
                 slot = null;
                 for (int i = 0; i < inv.Capacity; i++)
                 {
                     var s = inv.GetSlot(i);
-                    if (s != null && !s.IsEmpty && s.item != null && s.item.staminaRestore > 0) { slot = s; break; }
+                    if (s != null && !s.IsEmpty && s.item != null && s.item.type == ItemType.Consumable) { slot = s; break; }
                 }
             }
 
@@ -231,7 +231,10 @@ namespace PBV.Systems
             PlayerStats.Instance?.Restore(restore);
             var buff = BuffOf(food);
             if (buff != BuffType.None) BuffSystem.Instance?.Apply(buff);
-            PBV.UI.HUD.Instance?.ShowNotice($"吃掉 {food.itemName}，体力 +{restore}" +
+            string msg = restore > 0
+                ? $"吃掉 {food.itemName}，体力 +{restore}"
+                : $"使用 {food.itemName}";
+            PBV.UI.HUD.Instance?.ShowNotice(msg +
                 (buff != BuffType.None ? $" · 获得「{BuffSystem.BuffName(buff)}」" : ""));
             Debug.Log($"[Cooking] 食用 {food.itemName} → 恢复 {restore} 体力");
         }
@@ -240,6 +243,7 @@ namespace PBV.Systems
         private static BuffType BuffOf(ItemData food)
         {
             string id = food != null ? food.id : "";
+            if (id == "item_mod_boost") return BuffType.Farming; // 现代增产营养剂 → 收获产量+1
             if (id.Contains("fish") || id == "item_dish_salad") return BuffType.Fishing;
             if (id == "item_dish_cabbage_soup" || id == "item_dish_mushroom_soup" || id == "item_dish_corn") return BuffType.Mining;
             if (id == "item_dish_radish_soup" || id == "item_dish_tomato" || id == "item_dish_pumpkin") return BuffType.Farming;

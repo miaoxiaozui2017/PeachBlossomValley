@@ -40,8 +40,8 @@ namespace PBV.UI
         {
             var bs = BuildSystem.Instance;
             if (bs == null) return;
-            int money = PBV.Systems.PlayerWallet.Instance != null ? PBV.Systems.PlayerWallet.Instance.Money : 0;
-            if (_moneyText != null) _moneyText.text = $"¥ {money}";
+            int song = PBV.Systems.PlayerWallet.Instance != null ? PBV.Systems.PlayerWallet.Instance.SongCoins : 0;
+            if (_moneyText != null) _moneyText.text = $"宋 {song}文";
 
             // 更新按钮状态
             var bagBtn = _root.transform.Find("BagRow/Btn")?.GetComponent<Button>();
@@ -92,7 +92,7 @@ namespace PBV.UI
             hlg.childControlWidth = true; hlg.childForceExpandWidth = true;
             var title = CreateText(headerGo.transform, "Title", 20, FontStyle.Bold, new Color(0.8f, 0.9f, 1f), "房屋扩建 (B/Esc)");
             title.rectTransform.sizeDelta = new Vector2(0, 28);
-            _moneyText = CreateText(headerGo.transform, "Money", 18, FontStyle.Bold, new Color(1f, 0.85f, 0.4f), "¥ 0");
+            _moneyText = CreateText(headerGo.transform, "Money", 18, FontStyle.Bold, new Color(1f, 0.85f, 0.4f), "宋 0文");
             _moneyText.alignment = TextAnchor.MiddleRight;
             _moneyText.rectTransform.sizeDelta = new Vector2(100, 28);
 
@@ -126,7 +126,7 @@ namespace PBV.UI
             var info = infoGo.AddComponent<Text>();
             info.font = _font; info.fontSize = 15; info.alignment = TextAnchor.MiddleLeft;
             info.color = new Color(1f, 0.92f, 0.75f); info.supportRichText = true;
-            info.text = $"<b>{title}</b>\n{desc}  需要: ¥{cost}";
+            info.text = $"<b>{title}</b>\n{desc}  需要: {cost} 文";
             info.raycastTarget = false;
 
             var btnGo = new GameObject("Btn");

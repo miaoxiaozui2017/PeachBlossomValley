@@ -35,7 +35,7 @@ namespace PBV.Systems
             if (!_unlocked[3]) TryUnlock(3, HasItemPrefix("item_ore_"));
             if (!_unlocked[4]) TryUnlock(4, HasItem("item_paper") || HasItem("item_pulp"));
             if (!_unlocked[5]) TryUnlock(5, WorldState.Instance != null && WorldState.Instance.Current == WorldType.Modern);
-            if (!_unlocked[6]) TryUnlock(6, PlayerWallet.Instance != null && PlayerWallet.Instance.Money >= 10000);
+            if (!_unlocked[6]) TryUnlock(6, PlayerWallet.Instance != null && PlayerWallet.Instance.SongCoins >= 10000);
         }
 
         private bool AnyTilled() { var fg = FindObjectOfType<PBV.Farming.FarmGrid>(); return fg != null && fg.GetAllPlots().Count > 0; }

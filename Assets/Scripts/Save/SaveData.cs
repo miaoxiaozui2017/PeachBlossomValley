@@ -14,7 +14,9 @@ namespace PBV.Save
         public int day;                 // 当前天数
         public float playerX;
         public float playerY;
-        public int money;               // 玩家金钱
+        public int money;               // 兼容旧档：旧版单一货币（读档时并入宋币）
+        public int song;                // 宋币（文）
+        public int rmb;                 // 人民币（元）
         public int shippingPending;     // 出货箱待结算金额
         public int stamina;             // 玩家体力
         public int currentSeason;       // 当前季节（0春1夏2秋3冬）

@@ -97,7 +97,7 @@ namespace PBV.Systems
             if (allClose && hasXuanpaper)
                 return "归隐结局\n\n你与桃花谷众人结为至交，\n手制的宣纸名扬天下。\n你选择留在这片山谷，\n做一辈子的匠人。\n\n桃花灼灼，岁月静好。";
 
-            if (PlayerWallet.Instance != null && PlayerWallet.Instance.Money >= 10000)
+            if (PlayerWallet.Instance != null && PlayerWallet.Instance.SongCoins >= 10000)
                 return "富商结局\n\n你凭借穿梭贸易与勤劳耕作，\n积累了万贯家财。\n桃花谷因你而繁荣，\n你成为了远近闻名的富商。\n\n金银满仓，名动一方。";
 
             return "凡人结局\n\n一年时光转瞬即逝。\n你在桃花谷度过了平凡而充实的一年，\n种地、造纸、钓鱼、交友……\n没有惊天动地的成就，\n但每一天都过得踏实。\n\n平凡，也是一种幸福。";

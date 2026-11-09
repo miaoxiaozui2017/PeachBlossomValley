@@ -144,9 +144,9 @@ namespace PBV.Player
                 PBV.UI.HUD.Instance?.ShowNotice($"升级{_toolNames[toolIndex]}缺 {ore.itemName} ×{cost.Value.oreCount}（去矿洞 M 挖矿）");
                 return false;
             }
-            if (PlayerWallet.Instance == null || !PlayerWallet.Instance.TrySpend(cost.Value.money))
+            if (PlayerWallet.Instance == null || !PlayerWallet.Instance.SpendSong(cost.Value.money))
             {
-                PBV.UI.HUD.Instance?.ShowNotice($"升级{_toolNames[toolIndex]}金钱不足，需 ¥{cost.Value.money}");
+                PBV.UI.HUD.Instance?.ShowNotice($"升级{_toolNames[toolIndex]}宋币不足，需 {cost.Value.money} 文");
                 return false;
             }
 

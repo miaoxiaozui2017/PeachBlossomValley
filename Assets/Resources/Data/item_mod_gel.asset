@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled:1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7e0e37fc99f0264581c6e1adcf1bce8, type: 3}
+  m_Name: item_mod_gel
+  m_EditorClassIdentifier: 
+  id: item_mod_gel
+  itemName: "\u80FD\u91CF\u80F6"
+  description: "\u73B0\u4EE3\u9AD8\u80FD\u91CF\u8865\u7ED9\uFF0C\u6309 F \u996E\u7528\u7ACB\u5373\u6062\u590D 100 \u4F53\u529B\u3002"
+  icon: {fileID: 0}
+  type: 2
+  maxStack: 99
+  sellPrice: 0
+  cropToPlant: {fileID: 0}
+  affectionValue: 3
+  staminaRestore: 100
