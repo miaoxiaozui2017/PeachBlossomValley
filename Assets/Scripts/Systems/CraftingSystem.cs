@@ -84,6 +84,8 @@ namespace PBV.Systems
             // 住：木工坊（木材 → 木梁 → 木家具）
             _recipes.Add(new Recipe { id = "r_wood_to_beam", name = "刨木成梁", inputItemIds = new[] { "item_wood" }, inputCounts = new[] { 3 }, outputItemId = "item_wood_beam", outputCount = 1 });
             _recipes.Add(new Recipe { id = "r_beam_to_furniture", name = "打制家具", inputItemIds = new[] { "item_wood_beam", "item_wood" }, inputCounts = new[] { 1, 2 }, outputItemId = "item_furniture", outputCount = 1 });
+            // 住：木工坊（制作储物箱 → 手动放置，36 格可改名改色）
+            _recipes.Add(new Recipe { id = "r_wood_to_chest", name = "打制储物箱", inputItemIds = new[] { "item_wood", "item_wood" }, inputCounts = new[] { 3, 3 }, outputItemId = "item_storage_chest", outputCount = 1 });
 
             // 食：磨坊（小麦→面粉、大豆→豆油、玉米→玉米油）
             _recipes.Add(new Recipe { id = "r_wheat_to_flour", name = "磨小麦粉", inputItemIds = new[] { "item_wheat" }, inputCounts = new[] { 2 }, outputItemId = "item_flour", outputCount = 1 });

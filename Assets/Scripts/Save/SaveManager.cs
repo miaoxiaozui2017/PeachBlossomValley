@@ -239,16 +239,10 @@ namespace PBV.Save
                     }
                 }
 
-                // 储物箱（只存非空槽位）
+                // 储物箱（新版：多个可放置箱子）
                 if (PBV.Systems.StorageSystem.Instance != null)
                 {
-                    var storage = PBV.Systems.StorageSystem.Instance;
-                    for (int i = 0; i < storage.Capacity; i++)
-                    {
-                        var s = storage.GetSlot(i);
-                        if (s == null || s.IsEmpty) continue;
-                        data.storage.Add(new SlotDTO { index = i, itemId = GetItemId(s.item), count = s.count });
-                    }
+                    data.chests = PBV.Systems.StorageSystem.Instance.Export();
                 }
 
                 // 地块（稀疏：只存改变过的）
@@ -375,20 +369,30 @@ namespace PBV.Save
                     }
                 }
 
-                // 储物箱
+                // 储物箱（新版多实例；兼容旧档 storage 单箱迁移）
                 if (PBV.Systems.StorageSystem.Instance != null)
                 {
                     var storage = PBV.Systems.StorageSystem.Instance;
-                    storage.ClearAll();
-                    if (data.storage != null)
+                    storage.Import(data.chests, FindItem);
+                    // 旧档迁移：若旧 storage 有数据但新 chests 为空，把旧单箱转成一个储物箱放在房屋入口附近
+                    if ((data.chests == null || data.chests.Count == 0) && data.storage != null && data.storage.Count > 0)
                     {
+                        var migrated = storage.PlaceChest(new Vector2(-12f, -9f));
                         foreach (var slotDto in data.storage)
                         {
                             var item = FindItem(slotDto.itemId);
                             if (item == null) continue;
-                            storage.SetSlot(slotDto.index, item, slotDto.count);
+                            if (slotDto.index >= 0 && slotDto.index < StorageChest.Capacity)
+                            {
+                                migrated.slots[slotDto.index].item = item;
+                                migrated.slots[slotDto.index].count = slotDto.count;
+                            }
                         }
+                        PBV.UI.HUD.Instance?.ShowNotice("旧储物箱已迁移为可放置储物箱");
                     }
+                    // 重建箱子场景物体
+                    if (PBV.Systems.StoragePlacement.Instance != null)
+                        PBV.Systems.StoragePlacement.Instance.RebuildAll();
                 }
 
                 // 地块

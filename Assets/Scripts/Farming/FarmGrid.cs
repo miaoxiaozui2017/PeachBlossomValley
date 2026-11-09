@@ -122,6 +122,20 @@ namespace PBV.Farming
             var inv = PBV.Inventory.InventorySystem.Instance;
             var selectedItem = GetSelectedItem();
 
+            // 0) 选中储物箱 → 进入放置模式（放置由 StoragePlacement 处理点击）
+            if (selectedItem != null && PBV.Systems.StoragePlacement.IsChestItem(selectedItem))
+            {
+                if (PBV.Systems.StorageSystem.Instance != null &&
+                    !PBV.Systems.StorageSystem.Instance.IsPlacing)
+                    PBV.Systems.StorageSystem.Instance.BeginPlacement(null);
+                return;
+            }
+
+            // 0.5) 放置模式中：左键交给 StoragePlacement，不触发农事操作
+            if (PBV.Systems.StorageSystem.Instance != null &&
+                PBV.Systems.StorageSystem.Instance.IsPlacing)
+                return;
+
             // 1) 选中肥料 → 施肥
             if (selectedItem != null && PBV.Systems.FertilizerSystem.IsFertilizer(selectedItem))
             {

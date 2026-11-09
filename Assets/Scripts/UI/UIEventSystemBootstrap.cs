@@ -92,6 +92,10 @@ namespace PBV.UI
                 new GameObject("FertilizerSystem (Auto)").AddComponent<PBV.Systems.FertilizerSystem>();
             if (UnityEngine.Object.FindObjectOfType<PBV.Systems.StorageSystem>() == null)
                 new GameObject("StorageSystem (Auto)").AddComponent<PBV.Systems.StorageSystem>();
+            if (UnityEngine.Object.FindObjectOfType<PBV.Systems.StoragePlacement>() == null)
+                new GameObject("StoragePlacement (Auto)").AddComponent<PBV.Systems.StoragePlacement>();
+            if (UnityEngine.Object.FindObjectOfType<StorageChestUI>() == null)
+                new GameObject("StorageChestUI (Auto)").AddComponent<StorageChestUI>();
             if (UnityEngine.Object.FindObjectOfType<HouseInteriorUI>() == null)
                 new GameObject("HouseInteriorUI (Auto)").AddComponent<HouseInteriorUI>();
             if (UnityEngine.Object.FindObjectOfType<MountainUI>() == null)

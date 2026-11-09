@@ -6,7 +6,8 @@ namespace PBV.Systems
 {
     /// <summary>
     /// 建造系统：花钱扩建背包容量(24→36→48)、体力上限(100→150→200)，
-    /// 并用「木家具」扩建房屋（房屋等级决定储物箱容量与装修格子数，不与体力挂钩）。
+    /// 并用「木家具」扩建房屋（房屋等级只与装修格子数挂钩，不与储物/体力挂钩）。
+    /// 储物箱已独立：木工坊制作「储物箱」物品后手动放置（见 StorageSystem/StoragePlacement）。
     /// 存档支持。
     /// </summary>
     public class BuildSystem : MonoBehaviour
@@ -15,21 +16,18 @@ namespace PBV.Systems
 
         public int BagLevel { get; private set; } = 0;       // 0=24格, 1=36格, 2=48格
         public int StaminaLevel { get; private set; } = 0;    // 0=100, 1=150, 2=200
-        public int HouseLevel { get; private set; } = 0;      // 0=无家具, 1=木梁, 2=木家具（决定储物箱容量）
+        public int HouseLevel { get; private set; } = 0;      // 0=无家具, 1=木梁, 2=木家具（只决定装修格子）
 
         private static readonly int[] BagCapacities = { 24, 36, 48 };
         private static readonly int[] BagCosts = { 500, 1000 };
         private static readonly int[] StaminaMaxes = { 100, 150, 200 };
         private static readonly int[] StaminaCosts = { 800, 1500 };
-        // 房屋等级对应的储物箱容量（0级无储物箱，1级12格，2级24格）
-        private static readonly int[] StorageCapacities = { 0, 12, 24 };
 
         public int CurrentBagCapacity => BagCapacities[BagLevel];
         public int CurrentMaxStamina => StaminaMaxes[StaminaLevel];
         public int BagUpgradeCost => BagLevel < 2 ? BagCosts[BagLevel] : -1;
         public int StaminaUpgradeCost => StaminaLevel < 2 ? StaminaCosts[StaminaLevel] : -1;
         public int HouseLevelMax => 2;
-        public int StorageCapacity => StorageCapacities[HouseLevel];
 
         private void Awake()
         {
@@ -69,7 +67,7 @@ namespace PBV.Systems
             return true;
         }
 
-        /// <summary>用木家具/木梁扩建房屋（住）：HouseLevel 0→1 需木梁×2，1→2 需木家具×2，解锁更大储物箱</summary>
+        /// <summary>用木家具/木梁扩建房屋（住）：HouseLevel 0→1 需木梁×2，1→2 需木家具×2，解锁更多装修格子</summary>
         public bool TryUpgradeHouse()
         {
             var inv = InventorySystem.Instance;
@@ -92,7 +90,7 @@ namespace PBV.Systems
                 }
                 inv.RemoveItem(beam, 2);
                 HouseLevel = 1;
-                PBV.UI.HUD.Instance?.ShowNotice("房屋扩建到 1 级（木梁）· 解锁储物箱 12 格");
+                PBV.UI.HUD.Instance?.ShowNotice("房屋扩建到 1 级（木梁）· 解锁更多装修格子");
             }
             else
             {
@@ -105,11 +103,10 @@ namespace PBV.Systems
                 }
                 inv.RemoveItem(furn, 2);
                 HouseLevel = 2;
-                PBV.UI.HUD.Instance?.ShowNotice("房屋扩建到 2 级（精装）· 储物箱扩容到 24 格");
+                PBV.UI.HUD.Instance?.ShowNotice("房屋扩建到 2 级（精装）· 装修格子进一步扩充");
             }
 
-            StorageSystem.Instance?.ApplyCapacity(StorageCapacity);
-            Debug.Log($"[Build] 房屋扩建到 {HouseLevel} 级，储物箱 {StorageCapacity} 格");
+            Debug.Log($"[Build] 房屋扩建到 {HouseLevel} 级");
             return true;
         }
 
@@ -130,7 +127,6 @@ namespace PBV.Systems
             // 立即应用到系统
             InventorySystem.Instance?.ExpandCapacity(BagCapacities[BagLevel]);
             PlayerStats.Instance?.ExpandMaxStamina(StaminaMaxes[StaminaLevel]);
-            StorageSystem.Instance?.ApplyCapacity(StorageCapacity);
         }
     }
 }

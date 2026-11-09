@@ -41,7 +41,8 @@ namespace PBV.Save
         public string[] tradeSlots;     // 穿梭贸易 3 个携带槽位（物品 id）
 
         public List<SlotDTO> inventory = new List<SlotDTO>();
-        public List<SlotDTO> storage = new List<SlotDTO>(); // 储物箱（房屋扩建解锁）
+        public List<SlotDTO> storage = new List<SlotDTO>(); // 旧版：房屋扩建解锁的单一储物箱（迁移用）
+        public List<StorageChestDTO> chests = new List<StorageChestDTO>(); // 新版：可放置的多个储物箱
         public List<PlotDTO> plots = new List<PlotDTO>(); // 稀疏存储：只保存改变过的地块
         public List<QuestDTO> quests = new List<QuestDTO>();
         public List<AffectionDTO> affections = new List<AffectionDTO>();
@@ -56,6 +57,18 @@ namespace PBV.Save
         public int type;
         public int count;
         public int fedDays;
+    }
+
+    /// <summary>单个储物箱存档（新版多实例）</summary>
+    [Serializable]
+    public class StorageChestDTO
+    {
+        public string uid;
+        public float x;
+        public float y;
+        public string label;
+        public int colorIndex;
+        public List<SlotDTO> items = new List<SlotDTO>();
     }
 
     /// <summary>
