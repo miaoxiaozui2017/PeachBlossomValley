@@ -140,6 +140,7 @@ namespace PBV.UI
                 AppendSkill(sb, sk, SkillType.Mining, BonusText("挖矿 +1", sk.MiningYieldBonus));
                 AppendSkill(sb, sk, SkillType.Fishing, PercentText("稀有率", sk.FishingRareBonus));
                 AppendSkill(sb, sk, SkillType.Cooking, PercentText("菜品恢复", sk.CookingBonus));
+                AppendSkill(sb, sk, SkillType.Lumberjack, BonusText("砍树 +1", sk.LumberjackYieldBonus));
             }
             sb.AppendLine();
 

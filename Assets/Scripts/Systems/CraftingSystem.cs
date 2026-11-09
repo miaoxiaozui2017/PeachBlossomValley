@@ -84,6 +84,18 @@ namespace PBV.Systems
             // 住：木工坊（木材 → 木梁 → 木家具）
             _recipes.Add(new Recipe { id = "r_wood_to_beam", name = "刨木成梁", inputItemIds = new[] { "item_wood" }, inputCounts = new[] { 3 }, outputItemId = "item_wood_beam", outputCount = 1 });
             _recipes.Add(new Recipe { id = "r_beam_to_furniture", name = "打制家具", inputItemIds = new[] { "item_wood_beam", "item_wood" }, inputCounts = new[] { 1, 2 }, outputItemId = "item_furniture", outputCount = 1 });
+
+            // 食：磨坊（小麦→面粉、大豆→豆油）
+            _recipes.Add(new Recipe { id = "r_wheat_to_flour", name = "磨小麦粉", inputItemIds = new[] { "item_wheat" }, inputCounts = new[] { 2 }, outputItemId = "item_flour", outputCount = 1 });
+            _recipes.Add(new Recipe { id = "r_soy_to_oil", name = "榨大豆油", inputItemIds = new[] { "item_soybean" }, inputCounts = new[] { 3 }, outputItemId = "item_soyoil", outputCount = 1 });
+
+            // 食：酱园（大豆→酱油、陈醋）
+            _recipes.Add(new Recipe { id = "r_soy_to_sauce", name = "酿酱油", inputItemIds = new[] { "item_soybean", "item_wheat" }, inputCounts = new[] { 2, 1 }, outputItemId = "item_soysauce", outputCount = 1 });
+            _recipes.Add(new Recipe { id = "r_soy_to_vinegar", name = "酿陈醋", inputItemIds = new[] { "item_soybean", "item_rice" }, inputCounts = new[] { 2, 1 }, outputItemId = "item_vinegar", outputCount = 1 });
+
+            // 食：茶坊（茶叶→茶饼、沏茶饮）
+            _recipes.Add(new Recipe { id = "r_tea_to_cake", name = "压制茶饼", inputItemIds = new[] { "item_tea_leaf" }, inputCounts = new[] { 3 }, outputItemId = "item_tea_cake", outputCount = 1 });
+            _recipes.Add(new Recipe { id = "r_tea_to_drink", name = "沏茶饮", inputItemIds = new[] { "item_tea_leaf", "item_mountain_tea" }, inputCounts = new[] { 1, 1 }, outputItemId = "item_tea_drink", outputCount = 2 });
         }
 
         /// <summary>解析物品引用（Resources 查找）</summary>

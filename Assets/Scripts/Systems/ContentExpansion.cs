@@ -55,6 +55,12 @@ namespace PBV.Systems
             ("MountainEntrance", "mountain", "", null, new Color(0.25f, 0.50f, 0.40f), 0),
             ("TrapSpot", "trap", "", null, new Color(0.55f, 0.50f, 0.30f), 0),
             ("Wardrobe", "wardrobe", "", null, new Color(0.55f, 0.35f, 0.55f), 0),
+            ("MillStation", "craft", "", null, new Color(0.75f, 0.70f, 0.45f), 0),
+            ("SauceStation", "craft", "", null, new Color(0.55f, 0.40f, 0.20f), 0),
+            ("TeaStation", "craft", "", null, new Color(0.45f, 0.65f, 0.45f), 0),
+            ("TreeSpot_A", "tree", "", null, new Color(0.30f, 0.50f, 0.25f), 0),
+            ("TreeSpot_B", "tree", "", null, new Color(0.30f, 0.50f, 0.25f), 1),
+            ("CageSpot", "cage", "", null, new Color(0.30f, 0.55f, 0.75f), 0),
         };
     }
 
@@ -90,6 +96,13 @@ namespace PBV.Systems
             if (shop != null && ricewine != null) shop.AddShopEntry(ricewine, 25);
             var poisonHerb = FindItem("item_poison_herb");
             if (shop != null && poisonHerb != null) shop.AddShopEntry(poisonHerb, 10);
+            // 磨坊/酱园/茶坊入口原料
+            var wheat = FindItem("item_wheat");
+            if (shop != null && wheat != null) shop.AddShopEntry(wheat, 15);
+            var soybean = FindItem("item_soybean");
+            if (shop != null && soybean != null) shop.AddShopEntry(soybean, 15);
+            var teaLeaf = FindItem("item_tea_leaf");
+            if (shop != null && teaLeaf != null) shop.AddShopEntry(teaLeaf, 20);
 
             // 现代货架：人民币计价的现代资源（活力饮料/能量胶/增产营养剂），去现代后可在杂货铺购买
             if (shop != null)
@@ -159,6 +172,13 @@ namespace PBV.Systems
                     break;
                 case "wardrobe":
                     go.AddComponent<WardrobeStation>();
+                    break;
+                case "tree":
+                    var tree = go.AddComponent<TreeSpot>();
+                    tree.SpotIndex = arg;
+                    break;
+                case "cage":
+                    go.AddComponent<CageSpot>();
                     break;
             }
         }

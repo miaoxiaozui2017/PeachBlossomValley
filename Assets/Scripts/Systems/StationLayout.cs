@@ -48,6 +48,13 @@ namespace PBV.Systems
             ("MountainEntrance",    "采山入口 E",   -12f, -3f),
             ("TrapSpot",            "布陷阱 E",      -8f, -3f),
             ("Wardrobe",            "衣柜 E",        -4f, -3f),
+            // 第 6 排 y = -6：磨坊 / 酱园 / 茶坊 / 砍树 / 笼箱（食/水产补充）
+            ("MillStation",         "磨坊 C/E",     -12f, -6f),
+            ("SauceStation",        "酱园 C/E",      -8f, -6f),
+            ("TeaStation",          "茶坊 C/E",      -4f, -6f),
+            ("TreeSpot_A",          "砍树 E",         0f, -6f),
+            ("TreeSpot_B",          "砍树 E",         4f, -6f),
+            ("CageSpot",            "放笼箱 E",       8f, -6f),
         };
 
         public static Vector3 GetPosition(string goName)

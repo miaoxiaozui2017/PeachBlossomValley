@@ -11,7 +11,8 @@ namespace PBV.Player
         Hoe,           // 锄头：空地→已耕地
         WateringCan,   // 水壶：已耕地→浇水
         Sickle,        // 镰刀：收获成熟作物
-        Seed           // 种子包：已耕地→播种
+        Seed,          // 种子包：已耕地→播种
+        Axe            // 斧头：砍树得木材，也可采集浆果
     }
 
     /// <summary>
@@ -26,16 +27,16 @@ namespace PBV.Player
         public event Action<ToolType> OnToolChanged;
         public event Action<ToolType, int> OnToolUpgraded;
 
-        private readonly ToolType[] _cycle = { ToolType.Hoe, ToolType.WateringCan, ToolType.Sickle, ToolType.Seed };
+        private readonly ToolType[] _cycle = { ToolType.Hoe, ToolType.WateringCan, ToolType.Sickle, ToolType.Seed, ToolType.Axe };
         private int _index = 0;
 
-        private static readonly string[] _toolNames = { "锄头", "水壶", "镰刀", "种子包" };
+        private static readonly string[] _toolNames = { "锄头", "水壶", "镰刀", "种子包", "斧头" };
         public string CurrentToolName => _toolNames[_index];
 
         // 基础体力消耗
-        private static readonly int[] _staminaCosts = { 3, 2, 1, 1 };
+        private static readonly int[] _staminaCosts = { 3, 2, 1, 1, 4 };
         // 工具等级（1-3）
-        private readonly int[] _toolLevels = { 1, 1, 1, 1 };
+        private readonly int[] _toolLevels = { 1, 1, 1, 1, 1 };
         // 种子包等级 -> 一次播种覆盖格数
         private static readonly int[] _seedPlots = { 1, 3, 5 };
 
@@ -169,7 +170,7 @@ namespace PBV.Player
 
         public static string GetToolName(ToolType tool)
         {
-            int idx = Array.IndexOf(new[] { ToolType.Hoe, ToolType.WateringCan, ToolType.Sickle, ToolType.Seed }, tool);
+            int idx = Array.IndexOf(new[] { ToolType.Hoe, ToolType.WateringCan, ToolType.Sickle, ToolType.Seed, ToolType.Axe }, tool);
             return idx >= 0 ? _toolNames[idx] : tool.ToString();
         }
 
@@ -177,8 +178,9 @@ namespace PBV.Player
         public int[] ExportLevels() => (int[])_toolLevels.Clone();
         public void ImportLevels(int[] levels)
         {
-            if (levels == null || levels.Length != 4) return;
-            for (int i = 0; i < 4; i++) _toolLevels[i] = Mathf.Clamp(levels[i], 1, 3);
+            if (levels == null || levels.Length < 4) return;
+            // 兼容旧档：旧档只有 4 个工具，斧头默认 Lv1
+            for (int i = 0; i < _toolLevels.Length && i < levels.Length; i++) _toolLevels[i] = Mathf.Clamp(levels[i], 1, 3);
         }
     }
 }

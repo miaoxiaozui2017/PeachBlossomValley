@@ -133,7 +133,7 @@ namespace PBV.UI
             _root.transform.SetParent(canvasGo.transform, false);
             var panelRt = _root.AddComponent<RectTransform>();
             panelRt.anchorMin = new Vector2(0.5f, 0.5f); panelRt.anchorMax = new Vector2(0.5f, 0.5f);
-            panelRt.sizeDelta = new Vector2(480, 340); panelRt.anchoredPosition = Vector2.zero;
+            panelRt.sizeDelta = new Vector2(480, 440); panelRt.anchoredPosition = Vector2.zero;
             _root.AddComponent<Image>().color = new Color(0.1f, 0.09f, 0.07f, 0.96f);
 
             var vlg = _root.AddComponent<VerticalLayoutGroup>();

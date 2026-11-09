@@ -34,6 +34,7 @@ namespace PBV.Save
         public int buffDays;            // 增益剩余天数
         public int health;              // 疾病状态（类型*10 + 剩余天数，0=无病）
         public int trap;                // 陷阱已布饵天数（0=未布）
+        public int cage;                // 笼箱已布天数（0=未布）
         public int outfit;              // 衣柜当前服装索引
         public string[] tradeSlots;     // 穿梭贸易 3 个携带槽位（物品 id）
 

@@ -16,6 +16,7 @@ namespace PBV.Systems
         public string[] inputItemIds;
         public int[] inputCounts;
         public int staminaRestore;
+        public string unlockNpc;        // 非空 = 需该 NPC 好感达亲密(Close)才解锁
         [NonSerialized] public ItemData[] _inputs;
         [NonSerialized] public ItemData _output;
     }
@@ -72,6 +73,49 @@ namespace PBV.Systems
             Add("r_cook_deer_roast", "烤鹿肉", "item_dish_deer_roast", new[] { "item_game_deer" }, new[] { 1 }, 80);
             // 药膳：姜汤（生姜熬制，治风寒）
             Add("r_cook_ginger_soup", "熬姜汤", "item_ginger_soup", new[] { "item_ginger" }, new[] { 2 }, 10);
+            // 水产菜（笼箱捕获的虾蟹贝螺鳝）
+            Add("r_cook_shrimp", "油焖河虾", "item_dish_shrimp", new[] { "item_shell_shrimp", "item_soyoil" }, new[] { 1, 1 }, 55);
+            Add("r_cook_crab", "清蒸河蟹", "item_dish_crab", new[] { "item_shell_crab", "item_vinegar" }, new[] { 1, 1 }, 70);
+            Add("r_cook_clam_soup", "河蚌汤", "item_dish_clam_soup", new[] { "item_shell_clam", "item_scallion" }, new[] { 1, 1 }, 60);
+            Add("r_cook_snail", "爆炒田螺", "item_dish_snail", new[] { "item_shell_snail", "item_vinegar" }, new[] { 1, 1 }, 45);
+            Add("r_cook_eel", "红烧黄鳝", "item_dish_eel", new[] { "item_shell_eel", "item_soysauce" }, new[] { 1, 1 }, 80);
+            // 面点主食（磨坊面粉 + 酱园酱醋）
+            Add("r_cook_noodle", "阳春面", "item_dish_noodle", new[] { "item_flour", "item_scallion" }, new[] { 1, 1 }, 40);
+            Add("r_cook_dumpling", "白菜饺子", "item_dish_dumpling", new[] { "item_flour", "item_cabbage" }, new[] { 1, 1 }, 55);
+            Add("r_cook_pancake", "葱油饼", "item_dish_pancake", new[] { "item_flour", "item_soyoil", "item_scallion" }, new[] { 1, 1, 1 }, 45);
+            Add("r_cook_mapotofu", "麻婆豆腐", "item_dish_mapotofu", new[] { "item_soybean", "item_soysauce" }, new[] { 2, 1 }, 65);
+            Add("r_cook_tea_egg", "茶叶蛋", "item_dish_tea_egg", new[] { "item_tea_leaf", "item_soysauce" }, new[] { 1, 1 }, 30);
+            // 药婆药膳（好感度解锁的增益食物，见下方 unlock 逻辑）
+            Add("r_cook_herbal_porridge", "药膳粥", "item_dish_herbal_porridge", new[] { "item_herb", "item_rice" }, new[] { 2, 2 }, 60);
+            Add("r_cook_herbal_chicken", "药膳鸡汤", "item_dish_herbal_chicken", new[] { "item_herb", "item_game_pheasant" }, new[] { 2, 1 }, 90);
+            Add("r_cook_herbal_wine", "药酒酿鸭", "item_dish_herbal_wine_dish", new[] { "item_medicine_wine", "item_game_hare" }, new[] { 1, 1 }, 100);
+            // 给药婆药膳挂好感锁（药婆 = 隐世女医）
+            UnlockBy("r_cook_herbal_porridge", "药婆");
+            UnlockBy("r_cook_herbal_chicken", "药婆");
+            UnlockBy("r_cook_herbal_wine", "药婆");
+        }
+
+        /// <summary>给指定食谱挂 NPC 好感锁（需好感达「亲密」才显示）</summary>
+        private void UnlockBy(string recipeId, string npcName)
+        {
+            foreach (var r in _recipes)
+                if (r.id == recipeId) { r.unlockNpc = npcName; break; }
+        }
+
+        /// <summary>食谱是否已解锁（无锁或对应 NPC 好感达亲密）</summary>
+        public bool IsUnlocked(CookingRecipe r)
+        {
+            if (r == null || string.IsNullOrEmpty(r.unlockNpc)) return true;
+            var rel = RelationshipSystem.Instance;
+            if (rel == null) return false;
+            return rel.GetLevel(r.unlockNpc) >= AffectionLevel.Close;
+        }
+
+        /// <summary>食谱锁定提示文案（未解锁时用）</summary>
+        public string LockHint(CookingRecipe r)
+        {
+            if (r == null || string.IsNullOrEmpty(r.unlockNpc)) return "";
+            return $"需「{r.unlockNpc}」好感达亲密解锁";
         }
 
         private void Add(string id, string name, string output, string[] inputs, int[] counts, int stamina)
@@ -301,6 +345,15 @@ namespace PBV.Systems
             if (id == "item_dish_fruit_tea") return BuffType.Fishing;
             // 野味菜：大补，给挖矿加成
             if (id == "item_dish_hare_stew" || id == "item_dish_pheasant_soup" || id == "item_dish_deer_roast") return BuffType.Mining;
+            // 水产菜：给钓鱼加成（河鲜让人更懂水性）
+            if (id == "item_dish_shrimp" || id == "item_dish_crab" || id == "item_dish_clam_soup" || id == "item_dish_snail" || id == "item_dish_eel") return BuffType.Fishing;
+            // 药婆药膳：强增益（药膳粥=恢复、鸡汤=种植、药酒鸭=贸易）
+            if (id == "item_dish_herbal_porridge") return BuffType.Mining;
+            if (id == "item_dish_herbal_chicken") return BuffType.Farming;
+            if (id == "item_dish_herbal_wine_dish") return BuffType.Trade;
+            // 面点主食：温饱，给种植/恢复增益
+            if (id == "item_dish_noodle" || id == "item_dish_dumpling" || id == "item_dish_pancake") return BuffType.Farming;
+            if (id == "item_dish_mapotofu" || id == "item_dish_tea_egg") return BuffType.Trade;
             if (id.Contains("fish") || id == "item_dish_salad") return BuffType.Fishing;
             if (id == "item_dish_cabbage_soup" || id == "item_dish_mushroom_soup" || id == "item_dish_corn") return BuffType.Mining;
             if (id == "item_dish_radish_soup" || id == "item_dish_tomato" || id == "item_dish_pumpkin") return BuffType.Farming;

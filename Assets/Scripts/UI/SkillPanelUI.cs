@@ -85,6 +85,8 @@ namespace PBV.UI
                     return level >= 3 ? "<color=#88ff88>已解锁: 稀有鱼+20%</color>" : "Lv.3解锁: 稀有鱼+20%";
                 case SkillType.Cooking:
                     return level >= 3 ? "<color=#88ff88>已解锁: 体力恢复+20%</color>" : "Lv.3解锁: 恢复+20%";
+                case SkillType.Lumberjack:
+                    return level >= 3 ? "<color=#88ff88>已解锁: 砍树木材+1</color>" : "Lv.3解锁: 木材+1";
                 default: return "";
             }
         }

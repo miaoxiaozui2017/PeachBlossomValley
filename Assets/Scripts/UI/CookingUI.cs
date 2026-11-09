@@ -53,7 +53,8 @@ namespace PBV.UI
 
         private void CreateRow(CookingRecipe r)
         {
-            bool canCook = CookingSystem.Instance.CanCook(r);
+            bool unlocked = CookingSystem.Instance.IsUnlocked(r);
+            bool canCook = unlocked && CookingSystem.Instance.CanCook(r);
             var row = new GameObject($"Cook_{r.id}");
             row.transform.SetParent(_listContent, false);
             var rt = row.AddComponent<RectTransform>();
@@ -79,23 +80,33 @@ namespace PBV.UI
             infoText.alignment = TextAnchor.MiddleLeft;
             infoText.color = canCook ? new Color(1f, 0.92f, 0.75f) : new Color(0.6f, 0.55f, 0.5f);
             infoText.supportRichText = true;
-            string mats = "";
-            for (int i = 0; i < r.inputItemIds.Length; i++)
+
+            if (!unlocked)
             {
-                if (r.inputItemIds[i] == CookingSystem.AnyFishId)
-                {
-                    bool hasFish = HasAnyFish();
-                    mats += hasFish ? "任意鱼 1/1  " : "<color=#cc6666>任意鱼 0/1</color>  ";
-                    continue;
-                }
-                string n = r._inputs != null && i < r._inputs.Length && r._inputs[i] != null ? r._inputs[i].itemName : r.inputItemIds[i];
-                int have = r._inputs != null && i < r._inputs.Length && r._inputs[i] != null && InventorySystem.Instance != null ? InventorySystem.Instance.CountItem(r._inputs[i]) : 0;
-                bool enough = have >= r.inputCounts[i];
-                mats += $"{(enough ? "" : "<color=#cc6666>")}{n} {have}/{r.inputCounts[i]}{(enough ? "" : "</color>")}  ";
+                string lockHint = CookingSystem.Instance.LockHint(r);
+                infoText.text = $"<b>{r.name}</b>  <color=#cc8866>🔒 {lockHint}</color>\n<color=#888888>— 好感解锁的秘传食谱 —</color>";
+                infoText.raycastTarget = false;
             }
-            string dishName = r._output != null ? r._output.itemName : r.name;
-            infoText.text = $"<b>{r.name}</b>\n{mats}\n→ {dishName}（按 F 吃 +{r.staminaRestore} 体力，可送礼/出售）";
-            infoText.raycastTarget = false;
+            else
+            {
+                string mats = "";
+                for (int i = 0; i < r.inputItemIds.Length; i++)
+                {
+                    if (r.inputItemIds[i] == CookingSystem.AnyFishId)
+                    {
+                        bool hasFish = HasAnyFish();
+                        mats += hasFish ? "任意鱼 1/1  " : "<color=#cc6666>任意鱼 0/1</color>  ";
+                        continue;
+                    }
+                    string n = r._inputs != null && i < r._inputs.Length && r._inputs[i] != null ? r._inputs[i].itemName : r.inputItemIds[i];
+                    int have = r._inputs != null && i < r._inputs.Length && r._inputs[i] != null && InventorySystem.Instance != null ? InventorySystem.Instance.CountItem(r._inputs[i]) : 0;
+                    bool enough = have >= r.inputCounts[i];
+                    mats += $"{(enough ? "" : "<color=#cc6666>")}{n} {have}/{r.inputCounts[i]}{(enough ? "" : "</color>")}  ";
+                }
+                string dishName = r._output != null ? r._output.itemName : r.name;
+                infoText.text = $"<b>{r.name}</b>\n{mats}\n→ {dishName}（按 F 吃 +{r.staminaRestore} 体力，可送礼/出售）";
+                infoText.raycastTarget = false;
+            }
 
             // 按钮
             var btnGo = new GameObject("CookBtn");
@@ -112,9 +123,8 @@ namespace PBV.UI
             btnTextRt.anchorMin = Vector2.zero; btnTextRt.anchorMax = Vector2.one; btnTextRt.sizeDelta = Vector2.zero;
             var btnText = btnTextGo.AddComponent<Text>();
             btnText.font = _font; btnText.fontSize = 16; btnText.alignment = TextAnchor.MiddleCenter;
-            btnText.color = Color.white; btnText.text = "烹饪"; btnText.raycastTarget = false;
-            // 按钮保持可点：材料不够时 CookingSystem.Cook 会弹出「缺 xxx」的具体提示
-            btn.interactable = true;
+            btnText.color = Color.white; btnText.text = unlocked ? "烹饪" : "未解锁"; btnText.raycastTarget = false;
+            btn.interactable = unlocked;
             var c = r;
             btn.onClick.AddListener(() => { CookingSystem.Instance.Cook(c); Refresh(); });
         }

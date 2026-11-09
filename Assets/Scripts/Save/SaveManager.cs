@@ -210,6 +210,8 @@ namespace PBV.Save
                     data.health = PBV.Systems.HealthSystem.Instance.Export();
                 if (PBV.Systems.TrapSystem.Instance != null)
                     data.trap = PBV.Systems.TrapSystem.Instance.Export();
+                if (PBV.Systems.CageSystem.Instance != null)
+                    data.cage = PBV.Systems.CageSystem.Instance.Export();
                 if (PBV.Systems.WardrobeSystem.Instance != null)
                     data.outfit = PBV.Systems.WardrobeSystem.Instance.Export();
                 if (PBV.Systems.TradeCarrySystem.Instance != null)
@@ -306,6 +308,8 @@ namespace PBV.Save
                     PBV.Systems.HealthSystem.Instance.Restore(data.health);
                 if (PBV.Systems.TrapSystem.Instance != null)
                     PBV.Systems.TrapSystem.Instance.Restore(data.trap);
+                if (PBV.Systems.CageSystem.Instance != null)
+                    PBV.Systems.CageSystem.Instance.Restore(data.cage);
                 if (PBV.Systems.WardrobeSystem.Instance != null)
                     PBV.Systems.WardrobeSystem.Instance.Restore(data.outfit);
                 if (PBV.Systems.TradeCarrySystem.Instance != null)

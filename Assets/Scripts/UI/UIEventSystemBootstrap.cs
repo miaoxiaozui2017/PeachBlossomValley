@@ -86,6 +86,8 @@ namespace PBV.UI
                 new GameObject("TrapSystem (Auto)").AddComponent<PBV.Systems.TrapSystem>();
             if (UnityEngine.Object.FindObjectOfType<PBV.Systems.WardrobeSystem>() == null)
                 new GameObject("WardrobeSystem (Auto)").AddComponent<PBV.Systems.WardrobeSystem>();
+            if (UnityEngine.Object.FindObjectOfType<PBV.Systems.CageSystem>() == null)
+                new GameObject("CageSystem (Auto)").AddComponent<PBV.Systems.CageSystem>();
             if (UnityEngine.Object.FindObjectOfType<MountainUI>() == null)
                 new GameObject("MountainUI (Auto)").AddComponent<MountainUI>();
             if (UnityEngine.Object.FindObjectOfType<WardrobeUI>() == null)

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace PBV.Systems
 {
-    public enum SkillType { Farming, Mining, Fishing, Cooking }
+    public enum SkillType { Farming, Mining, Fishing, Cooking, Lumberjack }
 
     /// <summary>
     /// 技能系统：种植/采矿/钓鱼/烹饪四个技能，各10级。
@@ -60,6 +60,8 @@ namespace PBV.Systems
         public float CookingBonus => GetLevel(SkillType.Cooking) >= 3 ? 0.2f : 0f;
         /// <summary>采矿等级>=3时矿石产量+1</summary>
         public int MiningYieldBonus => GetLevel(SkillType.Mining) >= 3 ? 1 : 0;
+        /// <summary>伐木采摘等级>=3时砍树额外+1木材</summary>
+        public int LumberjackYieldBonus => GetLevel(SkillType.Lumberjack) >= 3 ? 1 : 0;
 
         // ===== 存档 =====
         public List<SkillDTO> ExportAll()
@@ -94,6 +96,7 @@ namespace PBV.Systems
                 case SkillType.Mining: return "采矿";
                 case SkillType.Fishing: return "钓鱼";
                 case SkillType.Cooking: return "烹饪";
+                case SkillType.Lumberjack: return "伐木采摘";
                 default: return "";
             }
         }
