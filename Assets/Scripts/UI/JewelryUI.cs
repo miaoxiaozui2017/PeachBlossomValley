@@ -181,7 +181,8 @@ namespace PBV.UI
             btn.targetGraphic = img;
             var tGo = new GameObject("Text");
             tGo.transform.SetParent(btnGo.transform, false);
-            tGo.AddComponent<RectTransform>().anchorMin = Vector2.zero; tGo.AddComponent<RectTransform>().anchorMax = Vector2.one;
+            var tRect = tGo.AddComponent<RectTransform>();
+            tRect.anchorMin = Vector2.zero; tRect.anchorMax = Vector2.one; tRect.sizeDelta = Vector2.zero;
             var t = tGo.AddComponent<Text>();
             t.font = _font; t.fontSize = 15; t.alignment = TextAnchor.MiddleCenter;
             t.color = Color.white; t.text = label; t.raycastTarget = false;

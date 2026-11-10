@@ -168,13 +168,17 @@ namespace PBV.UI
             ht.text = "买牲畜 → 每天喂食 → 明早收蛋奶；连续喂 2 天再屠宰多得 1 块肉";
             ht.raycastTarget = false;
 
-            _listRoot = new GameObject("List").transform;
-            _listRoot.SetParent(panel.transform, false);
-            var lrt = _listRoot.gameObject.AddComponent<RectTransform>();
+            // 注意：给带普通 Transform 的 GameObject 添加 RectTransform 时，
+            // Unity 会销毁原 Transform 并替换，故不能缓存旧 transform 后再访问。
+            // 用 GameObject 局部变量持有，等 RectTransform 加完再把 _listRoot 指向最终有效的 transform。
+            var listGo = new GameObject("List");
+            listGo.transform.SetParent(panel.transform, false);
+            var lrt = listGo.AddComponent<RectTransform>();
             lrt.sizeDelta = new Vector2(0, 300);
-            var lvg = _listRoot.gameObject.AddComponent<VerticalLayoutGroup>();
+            var lvg = listGo.AddComponent<VerticalLayoutGroup>();
             lvg.spacing = 6; lvg.childControlWidth = true; lvg.childForceExpandWidth = true;
             lvg.childControlHeight = true; lvg.childForceExpandHeight = true;
+            _listRoot = listGo.transform;
         }
     }
 }
