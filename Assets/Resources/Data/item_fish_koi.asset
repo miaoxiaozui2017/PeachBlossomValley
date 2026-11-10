@@ -15,9 +15,10 @@ MonoBehaviour:
   id: item_fish_koi
   itemName: "\u9526\u9CA4"
   description: "\u9526\u9CA4\uFF0C\u9493\u9C7C\u53EF\u5F97\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 3e7698713bea016459189deff38c66d6, type: 3}
   type: 0
   maxStack: 99
   sellPrice: 110
   cropToPlant: {fileID: 0}
   affectionValue: 6
+  staminaRestore: 0

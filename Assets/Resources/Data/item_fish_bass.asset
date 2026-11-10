@@ -15,9 +15,10 @@ MonoBehaviour:
   id: item_fish_bass
   itemName: "\u9C88\u9C7C"
   description: "\u9C88\u9C7C\uFF0C\u9493\u9C7C\u53EF\u5F97\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 3cc0b619b13b04045aa180aaf6c6cad0, type: 3}
   type: 0
   maxStack: 99
   sellPrice: 70
   cropToPlant: {fileID: 0}
   affectionValue: 4
+  staminaRestore: 0

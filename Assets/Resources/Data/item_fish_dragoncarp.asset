@@ -15,9 +15,10 @@ MonoBehaviour:
   id: item_fish_dragoncarp
   itemName: "\u9F99\u95E8\u9CA4"
   description: "\u9F99\u95E8\u9CA4\uFF0C\u9493\u9C7C\u53EF\u5F97\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 7b436697208dd264ea8ff163e5677982, type: 3}
   type: 0
   maxStack: 99
   sellPrice: 180
   cropToPlant: {fileID: 0}
   affectionValue: 9
+  staminaRestore: 0

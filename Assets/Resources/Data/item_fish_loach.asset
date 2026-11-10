@@ -15,9 +15,10 @@ MonoBehaviour:
   id: item_fish_loach
   itemName: "\u6CE5\u9CC5"
   description: "\u6CE5\u9CC5\uFF0C\u9493\u9C7C\u53EF\u5F97\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: b3f7c1e504f5b25409241c9bc10f3223, type: 3}
   type: 0
   maxStack: 99
   sellPrice: 22
   cropToPlant: {fileID: 0}
   affectionValue: 1
+  staminaRestore: 0

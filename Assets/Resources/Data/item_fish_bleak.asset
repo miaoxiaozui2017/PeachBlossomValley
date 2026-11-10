@@ -15,9 +15,10 @@ MonoBehaviour:
   id: item_fish_bleak
   itemName: "\u767D\u6761\u9C7C"
   description: "\u767D\u6761\u9C7C\uFF0C\u9493\u9C7C\u53EF\u5F97\u3002"
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: cc59e0f03bfc8df42995900c49b098c1, type: 3}
   type: 0
   maxStack: 99
   sellPrice: 15
   cropToPlant: {fileID: 0}
   affectionValue: 1
+  staminaRestore: 0
