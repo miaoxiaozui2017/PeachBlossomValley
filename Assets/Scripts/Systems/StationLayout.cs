@@ -16,7 +16,7 @@ namespace PBV.Systems
             // 第 1 排 y = 9：生产 / 交易 / 采集
             ("ShippingBin",        "出货箱 E",    -12f, 9f),
             ("NPC_ShopKeeper",     "杂货铺 E",     -8f, 9f),
-            ("CraftingStation",    "造纸台 C/E",   -4f, 9f),
+            ("CraftingStation",    "造纸台 E",   -4f, 9f),
             ("CookingStation",     "厨房 K/E",      0f, 9f),
             ("FishingSpot",        "溪钓点 E",     4f, 9f),
             ("MineEntrance",       "矿洞 M/E",      8f, 9f),
@@ -30,7 +30,7 @@ namespace PBV.Systems
             ("NPC_YaoPo",          null,            8f, 6f),
             ("NPC_ShuSheng",       null,           12f, 6f),
             // 第 3 排 y = 3：v0.3.0 内容扩展（运行时自动补建，无需重建场景）
-            ("DyeingStation",      "染坊 C/E",   -12f, 3f),
+            ("DyeingStation",      "染坊 E",   -12f, 3f),
             ("FishingSpot_River",  "河钓点 E",    -8f, 3f),
             ("FishingSpot_Lake",   "湖钓点 E",    -4f, 3f),
             ("NPC_RanFang",        null,           0f, 3f),
@@ -41,9 +41,9 @@ namespace PBV.Systems
             ("TavernStation",      "酒楼 E",      20f, 3f),
             // 第 4 排 y = 0：非遗产业链 + 采集（金银细工 / 陶坊 / 药庐 / 木工坊 / 野地采集）
             ("JewelryStation",      "金银细工台 E", -12f, 0f),
-            ("PotteryStation",      "陶坊 C/E",      -8f, 0f),
-            ("MedicineStation",     "药庐 C/E",      -4f, 0f),
-            ("CarpentryStation",    "木工坊 C/E",     0f, 0f),
+            ("PotteryStation",      "陶坊 E",      -8f, 0f),
+            ("MedicineStation",     "药庐 E",      -4f, 0f),
+            ("CarpentryStation",    "木工坊 E",     0f, 0f),
             ("ForageSpot_Wild",     "野地采集 E",     4f, 0f),
             ("ForageSpot_Forest",   "林间采集 E",     8f, 0f),
             // 第 5 排 y = -3：采山 / 陷阱 / 衣柜
@@ -51,9 +51,9 @@ namespace PBV.Systems
             ("TrapSpot",            "布陷阱 E",      -8f, -3f),
             ("Wardrobe",            "衣柜 E",        -4f, -3f),
             // 第 6 排 y = -6：磨坊 / 酱园 / 茶坊 / 砍树 / 笼箱 / 堆肥桶（食/水产/肥料补充）
-            ("MillStation",         "磨坊 C/E",     -12f, -6f),
-            ("SauceStation",        "酱园 C/E",      -8f, -6f),
-            ("TeaStation",          "茶坊 C/E",      -4f, -6f),
+            ("MillStation",         "磨坊 E",     -12f, -6f),
+            ("SauceStation",        "酱园 E",      -8f, -6f),
+            ("TeaStation",          "茶坊 E",      -4f, -6f),
             ("TreeSpot_A",          "砍树 E",         0f, -6f),
             ("TreeSpot_B",          "砍树 E",         4f, -6f),
             ("CageSpot",            "放笼箱 E",       8f, -6f),
@@ -61,8 +61,8 @@ namespace PBV.Systems
             // 第 7 排 y = -9：房屋入口 / 畜栏 / 制糖坊 / 盐坊
             ("HouseStation",        "房屋入口 E",   -12f, -9f),
             ("LivestockStation",    "畜栏 E",        -8f, -9f),
-            ("SugarStation",        "制糖坊 C/E",    -4f, -9f),
-            ("SaltStation",         "盐坊 C/E",       0f, -9f),
+            ("SugarStation",        "制糖坊 E",    -4f, -9f),
+            ("SaltStation",         "盐坊 E",       0f, -9f),
             // 第 8 排 y = -12：老农小摊（卖种子+堆肥）
             ("FarmVendorStation",   "老农小摊 E",   -12f, -12f),
         };
@@ -93,7 +93,16 @@ namespace PBV.Systems
         /// <summary>头顶名牌：世界空间 Canvas + 半透明底 + 亮字，与 NPC 名牌同一套做法</summary>
         public static void EnsureLabel(GameObject go, string text)
         {
-            if (go == null || go.transform.Find("StationLabel") != null) return;
+            if (go == null) return;
+
+            // 已存在则只刷新文字（幂等），避免重复创建 Canvas，也兼容旧场景里已建好的空名牌
+            var existing = go.transform.Find("StationLabel");
+            if (existing != null)
+            {
+                var oldText = existing.GetComponentInChildren<Text>(true);
+                if (oldText != null) oldText.text = text;
+                return;
+            }
 
             var tagGo = new GameObject("StationLabel");
             tagGo.transform.SetParent(go.transform, false);
@@ -129,6 +138,7 @@ namespace PBV.Systems
             t.horizontalOverflow = HorizontalWrapMode.Overflow;
             t.verticalOverflow = VerticalWrapMode.Overflow;
             t.raycastTarget = false;
+            t.text = text; // 关键：此前漏了赋值，导致名牌只有底板没有文字
         }
     }
 

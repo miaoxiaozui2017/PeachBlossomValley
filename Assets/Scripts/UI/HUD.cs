@@ -17,6 +17,7 @@ namespace PBV.UI
         public static HUD Instance { get; private set; }
 
         private Text _timeText;
+        private Text _termBonusText;   // 当前节气加成小字提示
         private Text _moneyText;
         private Text _pendingText;
         private Text _toolText;
@@ -39,6 +40,7 @@ namespace PBV.UI
         private string _lastQuestLine = "";
         private string _lastWorldLine = "";
         private string _lastToolLine = "";
+        private string _lastTermLine = "";
 
         private void Awake()
         {
@@ -127,6 +129,7 @@ namespace PBV.UI
             RefreshQuestLine();
             RefreshWorldLine();
             RefreshToolLine();
+            RefreshTermBonusText(); // 兜底：季节/天数变化后小字立即对齐
 
             if (_noticeTimer > 0f)
             {
@@ -249,12 +252,27 @@ namespace PBV.UI
 
         private void RefreshTimeText(string time, int day)
         {
+            // 节气加成小字：独立于时间文本刷新，避免 _timeText 为空时整段跳过
+            RefreshTermBonusText();
             if (_timeText == null) return;
             string season = SeasonSystem.Instance != null ? SeasonSystem.Instance.CurrentSeasonName : "";
             string weather = WeatherSystem.Instance != null ? $" {WeatherSystem.Instance.WeatherName}" : "";
             string festival = FestivalSystem.Instance != null && FestivalSystem.Instance.IsFestivalToday ? $" 【{FestivalSystem.Instance.FestivalName}】" : "";
             string term = SolarTermSystem.CurrentTerm;
             _timeText.text = string.IsNullOrEmpty(season) ? $"第 {day} 天   {time}{weather}{festival}" : $"{season}季·{term}·第 {day} 天   {time}{weather}{festival}";
+        }
+
+        /// <summary>常驻小字：当前节气 + 具体加成说明</summary>
+        private void RefreshTermBonusText()
+        {
+            if (_termBonusText == null) return;
+            string term = SolarTermSystem.CurrentTerm;
+            string line = string.IsNullOrEmpty(term)
+                ? ""
+                : $"节气 {term} · {SolarTermSystem.BonusText}";
+            if (line == _lastTermLine) return;
+            _lastTermLine = line;
+            _termBonusText.text = line;
         }
 
         private void BuildUI()
@@ -316,6 +334,12 @@ namespace PBV.UI
                 new Vector2(-20f, -38f), new Vector2(400f, 52f), 12, FontStyle.Normal, new Color(1f, 0.92f, 0.72f));
             _questText.alignment = TextAnchor.UpperRight;
             _questText.horizontalOverflow = HorizontalWrapMode.Wrap;
+
+            // 节气加成小字：常驻右上角任务栏下方，字号比主信息小
+            _termBonusText = CreateText(canvasGo.transform, "TermBonusText", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(1f, 1f),
+                new Vector2(-20f, -96f), new Vector2(480f, 18f), 12, FontStyle.Normal, new Color(0.75f, 0.88f, 0.95f));
+            _termBonusText.alignment = TextAnchor.MiddleRight;
+            RefreshTermBonusText();
 
             // 临时提示（顶部居中，深色底 + 亮字，默认隐藏）
             _noticeGo = new GameObject("Notice");

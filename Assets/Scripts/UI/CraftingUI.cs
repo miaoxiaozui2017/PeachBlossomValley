@@ -21,6 +21,11 @@ namespace PBV.UI
         private readonly Dictionary<string, Button> _buttons = new Dictionary<string, Button>();
         private static Font _font;
 
+        /// <summary>当前只看哪个建筑的配方；null = 全部配方总览（C 键）</summary>
+        private string _stationFilter;
+        private string _stationTitle = "全部制作配方";
+        private Text _titleText;
+
         private void Awake()
         {
             if (Instance == null) Instance = this;
@@ -47,12 +52,37 @@ namespace PBV.UI
             }
         }
 
+        public bool IsOpen => _isOpen;
+
+        /// <summary>C 键：全部配方总览（按建筑标注，方便查找去哪个台做）</summary>
         public void Toggle()
         {
-            _isOpen = !_isOpen;
-            _canvasGo.SetActive(_isOpen);
-            if (_isOpen) UIEventSystemBootstrap.RegisterTopPanel(Toggle); else UIEventSystemBootstrap.ClearTopPanel();
-            if (_isOpen) Refresh();
+            if (_isOpen) { Close(); return; }
+            OpenFor(null);
+        }
+
+        /// <summary>
+        /// 由具体制作台按 E 调用：只显示该建筑的配方，标题显示台名。
+        /// stationId 传 null 表示全部配方总览。
+        /// </summary>
+        public void OpenFor(string stationId)
+        {
+            _stationFilter = stationId;
+            _stationTitle = string.IsNullOrEmpty(stationId)
+                ? "全部制作配方（总览）"
+                : $"{CraftingSystem.StationName(stationId)} · 制作配方";
+            _isOpen = true;
+            _canvasGo.SetActive(true);
+            if (_titleText != null) _titleText.text = $"{_stationTitle}  (C/Esc 关闭)";
+            UIEventSystemBootstrap.RegisterTopPanel(Close);
+            Refresh();
+        }
+
+        public void Close()
+        {
+            _isOpen = false;
+            _canvasGo.SetActive(false);
+            UIEventSystemBootstrap.ClearTopPanel();
         }
 
         private void Refresh()
@@ -66,10 +96,30 @@ namespace PBV.UI
                 Destroy(_listContent.GetChild(i).gameObject);
             _buttons.Clear();
 
+            int shown = 0;
             foreach (var r in CraftingSystem.Instance.Recipes)
             {
+                if (!string.IsNullOrEmpty(_stationFilter) && r.stationId != _stationFilter) continue;
                 CreateRecipeRow(r);
+                shown++;
             }
+
+            if (shown == 0)
+                CreateEmptyRow();
+        }
+
+        /// <summary>该建筑暂无配方时的占位提示</summary>
+        private void CreateEmptyRow()
+        {
+            var go = new GameObject("EmptyHint");
+            go.transform.SetParent(_listContent, false);
+            go.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 56);
+            var t = go.AddComponent<Text>();
+            if (_font == null) _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            t.font = _font; t.fontSize = 15; t.alignment = TextAnchor.MiddleLeft;
+            t.color = new Color(0.75f, 0.7f, 0.62f);
+            t.text = "此台暂无制作配方 · 按 C 查看全部配方总览";
+            t.raycastTarget = false;
         }
 
         private void CreateRecipeRow(Recipe r)
@@ -114,7 +164,11 @@ namespace PBV.UI
                 mats += $"{(enough ? "" : "<color=#cc6666>")}{itemName} {have}/{r.inputCounts[i]}{(enough ? "" : "</color>")}  ";
             }
             string outName = r._output != null ? r._output.itemName : r.outputItemId;
-            infoText.text = $"<b>{r.name}</b>\n{mats}\n→ {outName} x{r.outputCount}";
+            // 总览模式下标注该配方归属哪个建筑，方便玩家知道去哪个台制作
+            string stationTag = string.IsNullOrEmpty(_stationFilter)
+                ? $"<color=#8ab4d8>[{CraftingSystem.StationName(r.stationId)}]</color> "
+                : "";
+            infoText.text = $"<b>{stationTag}{r.name}</b>\n{mats}\n→ {outName} x{r.outputCount}";
             infoText.raycastTarget = false;
 
             // 制作按钮
@@ -187,9 +241,9 @@ namespace PBV.UI
             vlg.childControlWidth = true;
             vlg.childForceExpandWidth = true;
 
-            // 标题
-            var title = CreateText(_root.transform, "Title", 22, FontStyle.Bold, new Color(1f, 0.9f, 0.6f), "造纸台 (C/Esc 关闭)");
-            var titleRt = title.rectTransform;
+            // 标题（动态：按当前制作台名显示，不再写死「造纸台」）
+            _titleText = CreateText(_root.transform, "Title", 22, FontStyle.Bold, new Color(1f, 0.9f, 0.6f), "全部制作配方 (C/Esc 关闭)");
+            var titleRt = _titleText.rectTransform;
             titleRt.sizeDelta = new Vector2(0, 28);
 
             // 滚动列表

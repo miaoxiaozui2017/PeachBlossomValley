@@ -38,7 +38,25 @@ namespace PBV.Systems
             if (!_unlocked[6]) TryUnlock(6, PlayerWallet.Instance != null && PlayerWallet.Instance.SongCoins >= 10000);
         }
 
-        private bool AnyTilled() { var fg = FindObjectOfType<PBV.Farming.FarmGrid>(); return fg != null && fg.GetAllPlots().Count > 0; }
+        /// <summary>
+        /// 是否真的锄过地：必须存在状态为「已耕/已浇水」的地块（或种过作物的地块）。
+        /// 注意 FarmGrid.GetOrCreatePlot 在左键点地、查询、播种等很多路径都会创建
+        /// 状态为 Empty 的地块记录，因此不能用 plots.Count > 0 判断，否则没锄地也会解锁。
+        /// </summary>
+        private bool AnyTilled()
+        {
+            var fg = FindObjectOfType<PBV.Farming.FarmGrid>();
+            if (fg == null) return false;
+            foreach (var plot in fg.GetAllPlots().Values)
+            {
+                if (plot == null) continue;
+                if (plot.status == PBV.Farming.TileStatus.Tilled ||
+                    plot.status == PBV.Farming.TileStatus.Watered ||
+                    plot.plantedCrop != null)
+                    return true;
+            }
+            return false;
+        }
         private bool HasItem(string id) { var inv = InventorySystem.Instance; if (inv == null) return false; for (int i = 0; i < inv.Capacity; i++) { var s = inv.GetSlot(i); if (s != null && !s.IsEmpty && s.item.id == id) return true; } return false; }
         private bool HasItemPrefix(string prefix) { var inv = InventorySystem.Instance; if (inv == null) return false; for (int i = 0; i < inv.Capacity; i++) { var s = inv.GetSlot(i); if (s != null && !s.IsEmpty && s.item.id != null && s.item.id.StartsWith(prefix)) return true; } return false; }
 

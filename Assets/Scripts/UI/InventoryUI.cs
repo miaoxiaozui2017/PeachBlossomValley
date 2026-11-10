@@ -32,6 +32,8 @@ namespace PBV.UI
         private GameObject _panel;
         private readonly Image[] _hotbarIcons = new Image[10];
         private readonly Text[] _hotbarCounts = new Text[10];
+        private readonly Image[] _hotbarBorders = new Image[10]; // 快捷栏选中高亮（此前 out _ 丢弃了）
+        private Text _selectedHintText; // 常驻：当前选中物品名 + 用法提示
         private readonly Image[] _slotIcons = new Image[MaxSlots];
         private readonly Text[] _slotCounts = new Text[MaxSlots];
         private readonly Image[] _slotBorders = new Image[MaxSlots];
@@ -45,6 +47,8 @@ namespace PBV.UI
         private Text _infoText;
         private int _lastCapacity = -1;
         private bool _subscribed;
+        private bool _toolEventsSubscribed;
+        private bool _syncingToolSelection; // 防止 选中槽位 ↔ 工具切换 互相递归
         private float _refreshTimer;
 
         private static Font _font;
@@ -66,15 +70,53 @@ namespace PBV.UI
                 RefreshMoney(PlayerWallet.Instance.SongCoins, PlayerWallet.Instance.RMB);
             }
             EnsureSubscribed();
+            // 开局对齐：实例 SelectedIndex 默认 -1，而静态 SelectedSlotIndex 默认 0，
+            // 两者不一致会导致「左键用的是第 0 格，快捷栏却没有任何高亮」。
+            SelectSlot(0);
             RefreshAll();
         }
 
         /// <summary>懒订阅：Instance 一就绪就补上，且只补一次</summary>
         private void EnsureSubscribed()
         {
-            if (_subscribed || InventorySystem.Instance == null) return;
-            InventorySystem.Instance.OnInventoryChanged += RefreshAll;
-            _subscribed = true;
+            if (!_subscribed && InventorySystem.Instance != null)
+            {
+                InventorySystem.Instance.OnInventoryChanged += RefreshAll;
+                _subscribed = true;
+            }
+            if (!_toolEventsSubscribed && PBV.Player.ToolManager.Instance != null)
+            {
+                PBV.Player.ToolManager.Instance.OnToolChanged += OnToolChangedExternally;
+                _toolEventsSubscribed = true;
+            }
+        }
+
+        /// <summary>
+        /// Q 键循环 / 读档等外部改动工具时，把选中槽位同步到该工具物品所在格，
+        /// 否则左键仍会按旧选中物品分派，Q 看起来「切了没用」。
+        /// </summary>
+        private void OnToolChangedExternally(PBV.Player.ToolType tool)
+        {
+            if (_syncingToolSelection) return;
+            var inv = InventorySystem.Instance;
+            if (inv == null) return;
+            string id = PBV.Player.ToolManager.ItemIdFromToolType(tool);
+            if (string.IsNullOrEmpty(id)) return;
+            for (int i = 0; i < inv.Capacity; i++)
+            {
+                var s = inv.GetSlot(i);
+                if (s != null && !s.IsEmpty && s.item != null && s.item.id == id)
+                {
+                    _syncingToolSelection = true;
+                    SelectedIndex = i;
+                    SelectedSlotIndex = i;
+                    UpdateSelectionHighlight();
+                    UpdateInfoBar();
+                    UpdateSelectedHint();
+                    _syncingToolSelection = false;
+                    return;
+                }
+            }
         }
 
         private void OnDestroy()
@@ -82,6 +124,10 @@ namespace PBV.UI
             if (_subscribed && InventorySystem.Instance != null)
             {
                 InventorySystem.Instance.OnInventoryChanged -= RefreshAll;
+            }
+            if (_toolEventsSubscribed && PBV.Player.ToolManager.Instance != null)
+            {
+                PBV.Player.ToolManager.Instance.OnToolChanged -= OnToolChangedExternally;
             }
             if (PlayerWallet.Instance != null)
             {
@@ -138,10 +184,55 @@ namespace PBV.UI
 
         private void SelectSlot(int index)
         {
+            if (index < 0) return;
             SelectedIndex = index;
             SelectedSlotIndex = index;
             UpdateSelectionHighlight();
             UpdateInfoBar();
+            SyncSelectedTool();
+            UpdateSelectedHint();
+        }
+
+        /// <summary>
+        /// 数字键/点击选中槽位时，若该格是工具物品则同步 ToolManager.CurrentTool，
+        /// 让砍树（TreeSpot 判 CurrentTool==Axe）、HUD 工具行、Q 循环状态与选中格一致。
+        /// </summary>
+        private void SyncSelectedTool()
+        {
+            var inv = InventorySystem.Instance;
+            if (inv == null || SelectedIndex < 0 || SelectedIndex >= inv.Capacity) return;
+            var slot = inv.GetSlot(SelectedIndex);
+            if (slot == null || slot.IsEmpty || slot.item == null || slot.item.id == null) return;
+            var tool = PBV.Player.ToolManager.ToolTypeFromItemId(slot.item.id);
+            if (tool.HasValue && PBV.Player.ToolManager.Instance != null &&
+                PBV.Player.ToolManager.Instance.CurrentTool != tool.Value)
+            {
+                _syncingToolSelection = true;
+                PBV.Player.ToolManager.Instance.SelectTool(tool.Value);
+                _syncingToolSelection = false;
+            }
+        }
+
+        /// <summary>常驻提示：当前选中物品名 + 该物品怎么用</summary>
+        private void UpdateSelectedHint()
+        {
+            if (_selectedHintText == null) return;
+            var inv = InventorySystem.Instance;
+            var slot = (inv != null && SelectedIndex >= 0 && SelectedIndex < inv.Capacity) ? inv.GetSlot(SelectedIndex) : null;
+            if (slot == null || slot.IsEmpty || slot.item == null)
+            {
+                _selectedHintText.text = "数字键 1-0 选中物品 · 左键使用 · F 食用";
+                return;
+            }
+            var item = slot.item;
+            string how;
+            if (PBV.Player.ToolManager.ToolTypeFromItemId(item.id).HasValue) how = "左键使用工具";
+            else if (PBV.Systems.FertilizerSystem.IsFertilizer(item)) how = "左键对空地施肥";
+            else if (item.type == ItemType.Seed) how = "左键对已耕地播种";
+            else if (item.type == ItemType.Consumable) how = "F 或左键食用";
+            else if (PBV.Systems.StoragePlacement.IsChestItem(item)) how = "左键进入放置模式";
+            else how = "材料 · 拿到对应工坊制作";
+            _selectedHintText.text = $"当前：{item.itemName} ×{slot.count}  ·  {how}";
         }
 
         private void UpdateSelectionHighlight()
@@ -151,6 +242,16 @@ namespace PBV.UI
                 if (_slotBorders[i] != null)
                 {
                     _slotBorders[i].color = (i == SelectedIndex) ? new Color(1f, 0.85f, 0.3f) : new Color(0, 0, 0, 0.4f);
+                }
+            }
+            // 常驻快捷栏也要高亮，否则按数字键看不出选中了哪一格
+            for (int i = 0; i < _hotbarBorders.Length; i++)
+            {
+                if (_hotbarBorders[i] != null)
+                {
+                    _hotbarBorders[i].color = (i == SelectedIndex)
+                        ? new Color(0.62f, 0.48f, 0.12f, 0.95f)
+                        : new Color(0f, 0f, 0f, 0.4f);
                 }
             }
         }
@@ -209,6 +310,7 @@ namespace PBV.UI
             }
 
             UpdateInfoBar();
+            UpdateSelectedHint();
         }
 
         private static void ApplySlotVisual(InventorySlot slot, Image icon, Text countText)
@@ -274,8 +376,28 @@ namespace PBV.UI
 
             for (int i = 0; i < _hotbarCount; i++)
             {
-                CreateSlot(hotbarGo.transform, i, 56f, out _hotbarIcons[i], out _hotbarCounts[i], out _);
+                CreateSlot(hotbarGo.transform, i, 56f, out _hotbarIcons[i], out _hotbarCounts[i], out _hotbarBorders[i]);
+                // 数字键角标：1-9、0，让玩家看清按哪个键调用哪一格
+                var keyLabel = CreateTextObj("KeyLabel", _hotbarBorders[i].transform,
+                    (i == 9 ? "0" : (i + 1).ToString()), 13, FontStyle.Bold, new Color(1f, 0.9f, 0.55f, 0.95f));
+                var kr = keyLabel.GetComponent<RectTransform>();
+                kr.anchorMin = new Vector2(0f, 1f); kr.anchorMax = new Vector2(0f, 1f);
+                kr.pivot = new Vector2(0f, 1f);
+                kr.anchoredPosition = new Vector2(3f, -1f);
+                kr.sizeDelta = new Vector2(20f, 18f);
+                keyLabel.alignment = TextAnchor.UpperLeft;
             }
+
+            // 快捷栏上方常驻一行小字：当前选中物品 + 用法（不随 Tab 面板隐藏）
+            _selectedHintText = CreateTextObj("SelectedHint", canvasTransform, string.Empty,
+                14, FontStyle.Bold, new Color(1f, 0.92f, 0.72f));
+            var hintRect = _selectedHintText.GetComponent<RectTransform>();
+            hintRect.anchorMin = new Vector2(0.5f, 0f); hintRect.anchorMax = new Vector2(0.5f, 0f);
+            hintRect.pivot = new Vector2(0.5f, 0f);
+            hintRect.anchoredPosition = new Vector2(0f, 76f);
+            hintRect.sizeDelta = new Vector2(720f, 20f);
+            _selectedHintText.alignment = TextAnchor.MiddleCenter;
+            UpdateSelectedHint();
         }
 
         private void BuildFullPanel(Transform canvasTransform)

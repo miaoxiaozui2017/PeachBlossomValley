@@ -12,6 +12,8 @@ namespace PBV.Systems
     {
         public string id;
         public string name;
+        /// <summary>归属建筑的 goName（如 "MillStation"）。制作台按此过滤，避免所有配方挤在一个面板。</summary>
+        public string stationId;
         public string[] inputItemIds;  // 材料物品 id
         public int[] inputCounts;      // 材料数量
         public string outputItemId;    // 产出物品 id
@@ -48,64 +50,105 @@ namespace PBV.Systems
             ResolveReferences();
         }
 
+        /// <summary>建筑 goName → 中文台名（CraftingStation 交互提示与 CraftingUI 标题共用）</summary>
+        public static string StationName(string goName)
+        {
+            switch (goName)
+            {
+                case "CraftingStation": return "造纸台";
+                case "DyeingStation": return "染坊";
+                case "PotteryStation": return "陶坊";
+                case "MedicineStation": return "药庐";
+                case "CarpentryStation": return "木工坊";
+                case "MillStation": return "磨坊";
+                case "SauceStation": return "酱园";
+                case "TeaStation": return "茶坊";
+                case "SugarStation": return "制糖坊";
+                case "SaltStation": return "盐坊";
+                default: return "制作台";
+            }
+        }
+
+        /// <summary>添加一个配方并标注归属建筑</summary>
+        private void Add(string stationId, string id, string name, string[] inputs, int[] counts, string output, int outCount)
+        {
+            _recipes.Add(new Recipe
+            {
+                id = id, name = name, stationId = stationId,
+                inputItemIds = inputs, inputCounts = counts,
+                outputItemId = output, outputCount = outCount
+            });
+        }
+
         private void DefineRecipes()
         {
-            // 造纸产业链
-            _recipes.Add(new Recipe { id = "r_bark_to_pulp", name = "树皮制浆", inputItemIds = new[] { "item_bark" }, inputCounts = new[] { 2 }, outputItemId = "item_pulp", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_straw_to_pulp", name = "稻草制浆", inputItemIds = new[] { "item_straw" }, inputCounts = new[] { 3 }, outputItemId = "item_pulp", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_pulp_to_paper", name = "抄纸", inputItemIds = new[] { "item_pulp" }, inputCounts = new[] { 2 }, outputItemId = "item_paper", outputCount = 3 });
-            _recipes.Add(new Recipe { id = "r_paper_to_xuan", name = "制宣纸", inputItemIds = new[] { "item_paper" }, inputCounts = new[] { 5 }, outputItemId = "item_xuanpaper", outputCount = 1 });
+            const string PAPER = "CraftingStation";
+            const string DYE = "DyeingStation";
+            const string POTTERY = "PotteryStation";
+            const string MEDICINE = "MedicineStation";
+            const string CARPENTRY = "CarpentryStation";
+            const string MILL = "MillStation";
+            const string SAUCE = "SauceStation";
+            const string TEA = "TeaStation";
+            const string SUGAR = "SugarStation";
+            const string SALT = "SaltStation";
 
-            // 第二条非遗产业链：草木扎染（蓝草 → 素色布 → 纹样布 → 成衣）
-            _recipes.Add(new Recipe { id = "r_dye_indigo", name = "蓝草染布", inputItemIds = new[] { "item_indigo" }, inputCounts = new[] { 2 }, outputItemId = "item_cloth_plain", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_dye_pattern", name = "扎出纹样", inputItemIds = new[] { "item_cloth_plain" }, inputCounts = new[] { 2 }, outputItemId = "item_cloth_pattern", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_dye_garment", name = "缝制成衣", inputItemIds = new[] { "item_cloth_pattern", "item_bark" }, inputCounts = new[] { 1, 1 }, outputItemId = "item_garment", outputCount = 1 });
+            // 造纸台：造纸产业链（树皮/稻草 → 纸浆 → 纸 → 宣纸）
+            Add(PAPER, "r_bark_to_pulp", "树皮制浆", new[] { "item_bark" }, new[] { 2 }, "item_pulp", 1);
+            Add(PAPER, "r_straw_to_pulp", "稻草制浆", new[] { "item_straw" }, new[] { 3 }, "item_pulp", 1);
+            Add(PAPER, "r_pulp_to_paper", "抄纸", new[] { "item_pulp" }, new[] { 2 }, "item_paper", 3);
+            Add(PAPER, "r_paper_to_xuan", "制宣纸", new[] { "item_paper" }, new[] { 5 }, "item_xuanpaper", 1);
 
-            // 第三条非遗产业链：陶瓷（陶土 → 陶坯 → 青瓷盏 / 青花瓷瓶 / 陶罐）
-            _recipes.Add(new Recipe { id = "r_clay_to_pot", name = "淘土制坯", inputItemIds = new[] { "item_clay" }, inputCounts = new[] { 2 }, outputItemId = "item_clay_pot", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_pot_to_jar", name = "拉坯成罐", inputItemIds = new[] { "item_clay_pot" }, inputCounts = new[] { 1 }, outputItemId = "item_pottery_jar", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_pot_to_celadon", name = "烧青瓷盏", inputItemIds = new[] { "item_clay_pot" }, inputCounts = new[] { 2 }, outputItemId = "item_pottery_bowl", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_pot_to_bluewhite", name = "烧青花瓷瓶", inputItemIds = new[] { "item_clay_pot" }, inputCounts = new[] { 3 }, outputItemId = "item_pottery_vase", outputCount = 1 });
+            // 染坊：草木扎染（蓝草 → 素色布 → 纹样布 → 成衣）
+            Add(DYE, "r_dye_indigo", "蓝草染布", new[] { "item_indigo" }, new[] { 2 }, "item_cloth_plain", 1);
+            Add(DYE, "r_dye_pattern", "扎出纹样", new[] { "item_cloth_plain" }, new[] { 2 }, "item_cloth_pattern", 1);
+            Add(DYE, "r_dye_garment", "缝制成衣", new[] { "item_cloth_pattern", "item_bark" }, new[] { 1, 1 }, "item_garment", 1);
 
-            // 第四条非遗产业链：药墨·药酒（药材 → 药墨 / 药酒 / 膏药）
-            _recipes.Add(new Recipe { id = "r_herb_to_ink", name = "和药制墨", inputItemIds = new[] { "item_herb" }, inputCounts = new[] { 3 }, outputItemId = "item_ink_medicine", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_herb_to_wine", name = "浸酿药酒", inputItemIds = new[] { "item_herb", "item_wild_fruit" }, inputCounts = new[] { 2, 2 }, outputItemId = "item_medicine_wine", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_herb_to_plaster", name = "熬制膏药", inputItemIds = new[] { "item_herb" }, inputCounts = new[] { 2 }, outputItemId = "item_plaster", outputCount = 2 });
+            // 陶坊：陶瓷（陶土 → 陶坯 → 青瓷盏 / 青花瓷瓶 / 陶罐）
+            Add(POTTERY, "r_clay_to_pot", "淘土制坯", new[] { "item_clay" }, new[] { 2 }, "item_clay_pot", 1);
+            Add(POTTERY, "r_pot_to_jar", "拉坯成罐", new[] { "item_clay_pot" }, new[] { 1 }, "item_pottery_jar", 1);
+            Add(POTTERY, "r_pot_to_celadon", "烧青瓷盏", new[] { "item_clay_pot" }, new[] { 2 }, "item_pottery_bowl", 1);
+            Add(POTTERY, "r_pot_to_bluewhite", "烧青花瓷瓶", new[] { "item_clay_pot" }, new[] { 3 }, "item_pottery_vase", 1);
 
-            // 制药·制毒（药婆药庐）：药材/姜/酒/毒草 → 各类药与毒
-            _recipes.Add(new Recipe { id = "r_brew_ricewine", name = "酿米酒", inputItemIds = new[] { "item_rice", "item_wild_fruit" }, inputCounts = new[] { 3, 1 }, outputItemId = "item_ricewine", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_med_cold", name = "煎风寒药", inputItemIds = new[] { "item_herb", "item_ginger" }, inputCounts = new[] { 2, 1 }, outputItemId = "item_med_cold", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_med_diarrhea", name = "配止泻药", inputItemIds = new[] { "item_herb", "item_wild_fruit" }, inputCounts = new[] { 2, 1 }, outputItemId = "item_med_diarrhea", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_med_trauma", name = "调跌打膏", inputItemIds = new[] { "item_herb", "item_clay" }, inputCounts = new[] { 2, 1 }, outputItemId = "item_med_trauma", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_hangover", name = "煮醒酒汤", inputItemIds = new[] { "item_ricewine", "item_herb" }, inputCounts = new[] { 1, 1 }, outputItemId = "item_hangover_soup", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_poison_bait", name = "拌毒饵", inputItemIds = new[] { "item_poison_herb", "item_wild_fruit" }, inputCounts = new[] { 1, 2 }, outputItemId = "item_poison_bait", outputCount = 2 });
-            _recipes.Add(new Recipe { id = "r_poison_powder", name = "磨迷药", inputItemIds = new[] { "item_poison_herb" }, inputCounts = new[] { 3 }, outputItemId = "item_poison_powder", outputCount = 1 });
+            // 药庐：药墨·药酒 + 制药·制毒（药材/姜/酒/毒草 → 各类药与毒）
+            Add(MEDICINE, "r_herb_to_ink", "和药制墨", new[] { "item_herb" }, new[] { 3 }, "item_ink_medicine", 1);
+            Add(MEDICINE, "r_herb_to_wine", "浸酿药酒", new[] { "item_herb", "item_wild_fruit" }, new[] { 2, 2 }, "item_medicine_wine", 1);
+            Add(MEDICINE, "r_herb_to_plaster", "熬制膏药", new[] { "item_herb" }, new[] { 2 }, "item_plaster", 2);
+            Add(MEDICINE, "r_brew_ricewine", "酿米酒", new[] { "item_rice", "item_wild_fruit" }, new[] { 3, 1 }, "item_ricewine", 1);
+            Add(MEDICINE, "r_med_cold", "煎风寒药", new[] { "item_herb", "item_ginger" }, new[] { 2, 1 }, "item_med_cold", 1);
+            Add(MEDICINE, "r_med_diarrhea", "配止泻药", new[] { "item_herb", "item_wild_fruit" }, new[] { 2, 1 }, "item_med_diarrhea", 1);
+            Add(MEDICINE, "r_med_trauma", "调跌打膏", new[] { "item_herb", "item_clay" }, new[] { 2, 1 }, "item_med_trauma", 1);
+            Add(MEDICINE, "r_hangover", "煮醒酒汤", new[] { "item_ricewine", "item_herb" }, new[] { 1, 1 }, "item_hangover_soup", 1);
+            Add(MEDICINE, "r_poison_bait", "拌毒饵", new[] { "item_poison_herb", "item_wild_fruit" }, new[] { 1, 2 }, "item_poison_bait", 2);
+            Add(MEDICINE, "r_poison_powder", "磨迷药", new[] { "item_poison_herb" }, new[] { 3 }, "item_poison_powder", 1);
 
-            // 住：木工坊（木材 → 木梁 → 木家具）
-            _recipes.Add(new Recipe { id = "r_wood_to_beam", name = "刨木成梁", inputItemIds = new[] { "item_wood" }, inputCounts = new[] { 3 }, outputItemId = "item_wood_beam", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_beam_to_furniture", name = "打制家具", inputItemIds = new[] { "item_wood_beam", "item_wood" }, inputCounts = new[] { 1, 2 }, outputItemId = "item_furniture", outputCount = 1 });
-            // 住：木工坊（制作储物箱 → 手动放置，36 格可改名改色）
-            _recipes.Add(new Recipe { id = "r_wood_to_chest", name = "打制储物箱", inputItemIds = new[] { "item_wood", "item_wood" }, inputCounts = new[] { 3, 3 }, outputItemId = "item_storage_chest", outputCount = 1 });
+            // 木工坊：木材 → 木梁 → 木家具 / 储物箱（储物箱制作后手动放置）
+            Add(CARPENTRY, "r_wood_to_beam", "刨木成梁", new[] { "item_wood" }, new[] { 3 }, "item_wood_beam", 1);
+            Add(CARPENTRY, "r_beam_to_furniture", "打制家具", new[] { "item_wood_beam", "item_wood" }, new[] { 1, 2 }, "item_furniture", 1);
+            Add(CARPENTRY, "r_wood_to_chest", "打制储物箱", new[] { "item_wood" }, new[] { 6 }, "item_storage_chest", 1);
 
-            // 食：磨坊（小麦→面粉、大豆→豆油、玉米→玉米油）
-            _recipes.Add(new Recipe { id = "r_wheat_to_flour", name = "磨小麦粉", inputItemIds = new[] { "item_wheat" }, inputCounts = new[] { 2 }, outputItemId = "item_flour", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_soy_to_oil", name = "榨大豆油", inputItemIds = new[] { "item_soybean" }, inputCounts = new[] { 3 }, outputItemId = "item_soyoil", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_corn_to_oil", name = "榨玉米油", inputItemIds = new[] { "item_corn" }, inputCounts = new[] { 3 }, outputItemId = "item_cornoil", outputCount = 1 });
+            // 磨坊：小麦→面粉、大豆→豆油、玉米→玉米油
+            Add(MILL, "r_wheat_to_flour", "磨小麦粉", new[] { "item_wheat" }, new[] { 2 }, "item_flour", 1);
+            Add(MILL, "r_soy_to_oil", "榨大豆油", new[] { "item_soybean" }, new[] { 3 }, "item_soyoil", 1);
+            Add(MILL, "r_corn_to_oil", "榨玉米油", new[] { "item_corn" }, new[] { 3 }, "item_cornoil", 1);
 
-            // 食：酱园（大豆→酱油、陈醋）
-            _recipes.Add(new Recipe { id = "r_soy_to_sauce", name = "酿酱油", inputItemIds = new[] { "item_soybean", "item_wheat" }, inputCounts = new[] { 2, 1 }, outputItemId = "item_soysauce", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_soy_to_vinegar", name = "酿陈醋", inputItemIds = new[] { "item_soybean", "item_rice" }, inputCounts = new[] { 2, 1 }, outputItemId = "item_vinegar", outputCount = 1 });
+            // 酱园：酱油、陈醋 + 酱菜（白菜/萝卜/黄瓜 用盐腌制）
+            Add(SAUCE, "r_soy_to_sauce", "酿酱油", new[] { "item_soybean", "item_wheat" }, new[] { 2, 1 }, "item_soysauce", 1);
+            Add(SAUCE, "r_soy_to_vinegar", "酿陈醋", new[] { "item_soybean", "item_rice" }, new[] { 2, 1 }, "item_vinegar", 1);
+            Add(SAUCE, "r_pickle_cabbage", "腌白菜酱菜", new[] { "item_cabbage", "item_salt" }, new[] { 2, 1 }, "item_pickle", 2);
+            Add(SAUCE, "r_pickle_radish", "腌萝卜酱菜", new[] { "item_radish", "item_salt" }, new[] { 2, 1 }, "item_pickle", 2);
+            Add(SAUCE, "r_pickle_cucumber", "酱黄瓜", new[] { "item_cucumber", "item_salt" }, new[] { 2, 1 }, "item_pickle", 2);
 
-            // 食：茶坊（茶叶→茶饼、沏茶饮）
-            _recipes.Add(new Recipe { id = "r_tea_to_cake", name = "压制茶饼", inputItemIds = new[] { "item_tea_leaf" }, inputCounts = new[] { 3 }, outputItemId = "item_tea_cake", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_tea_to_drink", name = "沏茶饮", inputItemIds = new[] { "item_tea_leaf", "item_mountain_tea" }, inputCounts = new[] { 1, 1 }, outputItemId = "item_tea_drink", outputCount = 2 });
+            // 茶坊：茶叶→茶饼、沏茶饮
+            Add(TEA, "r_tea_to_cake", "压制茶饼", new[] { "item_tea_leaf" }, new[] { 3 }, "item_tea_cake", 1);
+            Add(TEA, "r_tea_to_drink", "沏茶饮", new[] { "item_tea_leaf", "item_mountain_tea" }, new[] { 1, 1 }, "item_tea_drink", 2);
 
-            // 食：制糖坊（甘蔗/甜菜 → 糖）
-            _recipes.Add(new Recipe { id = "r_sugarcane_to_sugar", name = "甘蔗榨糖", inputItemIds = new[] { "item_sugarcane" }, inputCounts = new[] { 3 }, outputItemId = "item_sugar", outputCount = 1 });
-            _recipes.Add(new Recipe { id = "r_sugarbeet_to_sugar", name = "甜菜熬糖", inputItemIds = new[] { "item_sugarbeet" }, inputCounts = new[] { 3 }, outputItemId = "item_sugar", outputCount = 1 });
+            // 制糖坊（甘蔗/甜菜 → 糖）
+            Add(SUGAR, "r_sugarcane_to_sugar", "甘蔗榨糖", new[] { "item_sugarcane" }, new[] { 3 }, "item_sugar", 1);
+            Add(SUGAR, "r_sugarbeet_to_sugar", "甜菜熬糖", new[] { "item_sugarbeet" }, new[] { 3 }, "item_sugar", 1);
 
-            // 食：盐坊（盐石 → 盐）
-            _recipes.Add(new Recipe { id = "r_salt_ore_to_salt", name = "盐石煮盐", inputItemIds = new[] { "item_salt_ore" }, inputCounts = new[] { 2 }, outputItemId = "item_salt", outputCount = 2 });
+            // 盐坊（盐石 → 盐）
+            Add(SALT, "r_salt_ore_to_salt", "盐石煮盐", new[] { "item_salt_ore" }, new[] { 2 }, "item_salt", 2);
         }
 
         /// <summary>解析物品引用（Resources 查找）</summary>

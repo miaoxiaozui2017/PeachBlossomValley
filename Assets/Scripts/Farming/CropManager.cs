@@ -48,7 +48,8 @@ namespace PBV.Farming
             {
                 if (plot.plantedCrop != null && (plot.isWateredToday || rainy))
                 {
-                    plot.growthDays++;
+                    // 节气生长加成：立春/立夏/立秋 额外多长 1 天
+                    plot.growthDays += 1 + PBV.Systems.SolarTermSystem.GrowthBonus;
                     UpdateCropVisual(plot);
                 }
 
@@ -125,11 +126,12 @@ namespace PBV.Farming
         /// <summary>返回是否真的收获成功（背包满时失败，作物保留在地里）</summary>
         private bool Harvest(PlotData plot)
         {
-            if (plot.plantedCrop.harvestItem != null)
-            {
-                int yield = Random.Range(plot.plantedCrop.minYield, plot.plantedCrop.maxYield + 1);
-                if (PBV.Systems.SkillSystem.Instance != null) yield += PBV.Systems.SkillSystem.Instance.FarmingYieldBonus;
-                if (PBV.Systems.SolarTermSystem.HasHarvestBonus) yield += 1;
+                if (plot.plantedCrop.harvestItem != null)
+                {
+                    int yield = Random.Range(plot.plantedCrop.minYield, plot.plantedCrop.maxYield + 1);
+                    if (PBV.Systems.SkillSystem.Instance != null) yield += PBV.Systems.SkillSystem.Instance.FarmingYieldBonus;
+                    // 节气收获加成：芒种/秋分/寒露 产量 +1
+                    yield += PBV.Systems.SolarTermSystem.HarvestBonus;
                 if (PBV.Systems.BuffSystem.Instance != null) yield += PBV.Systems.BuffSystem.Instance.FarmingBonus;
                 // 施肥加成：堆肥+1，现代肥+6（产量×3）
                 yield += plot.fertilizedLevel;

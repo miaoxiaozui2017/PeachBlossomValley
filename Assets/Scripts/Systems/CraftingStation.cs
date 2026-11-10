@@ -5,33 +5,22 @@ using PBV.UI;
 namespace PBV.Systems
 {
     /// <summary>
-    /// 制作台：场景交互物体，E 键打开制作 UI。
+    /// 制作台：场景交互物体，E 键打开「本建筑专属」制作配方。
+    /// 每个建筑按自身 goName 过滤配方，避免所有配方挤在同一个面板里。
     /// 挂载要求：Collider2D (Trigger, Interact Layer)
     /// </summary>
     [RequireComponent(typeof(Collider2D))]
     public class CraftingStation : MonoBehaviour, IInteractable
     {
-        public string GetInteractPrompt() => $"{StationLabel()}：打开制作配方 (E)";
+        /// <summary>本建筑 id（用于 UI 过滤配方）</summary>
+        public string StationId => gameObject.name;
 
-        /// <summary>按物体名给出正确的台名，避免陶坊/药庐/木工坊都自称「造纸台」</summary>
-        private string StationLabel()
-        {
-            switch (gameObject.name)
-            {
-                case "PotteryStation": return "陶坊";
-                case "MedicineStation": return "药庐";
-                case "CarpentryStation": return "木工坊";
-                case "DyeingStation": return "染坊";
-                default: return "造纸台";
-            }
-        }
+        public string GetInteractPrompt() => $"{CraftingSystem.StationName(StationId)}：打开本台制作配方 (E)";
 
         public void OnInteract()
         {
-            if (CraftingUI.Instance != null)
-            {
-                CraftingUI.Instance.Toggle();
-            }
+            // 只显示本建筑配方；从别的台切换过来时重新过滤（面板栈由 UI 层统一管理）
+            CraftingUI.Instance?.OpenFor(StationId);
         }
     }
 }

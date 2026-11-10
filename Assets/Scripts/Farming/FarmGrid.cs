@@ -168,6 +168,9 @@ namespace PBV.Farming
                 int cost = toolFromItem.Value == PBV.Player.ToolType.Sickle
                     ? (PBV.Player.ToolManager.Instance != null ? PBV.Player.ToolManager.Instance.GetStaminaCost(PBV.Player.ToolType.Sickle) : 1)
                     : (PBV.Player.ToolManager.Instance != null ? PBV.Player.ToolManager.Instance.GetStaminaCost(toolFromItem.Value) : 1);
+                // 节气加成：雨水/谷雨 浇水不耗体力
+                if (toolFromItem.Value == PBV.Player.ToolType.WateringCan && PBV.Systems.SolarTermSystem.HasWaterBonus)
+                    cost = 0;
                 var stats = PBV.Player.PlayerStats.Instance;
                 if (stats != null && !stats.HasEnough(cost))
                 {
@@ -176,6 +179,20 @@ namespace PBV.Farming
                 }
                 bool ok = TryUseTool(toolFromItem.Value, targetPos, plot);
                 if (ok) stats?.TrySpend(cost);
+                return;
+            }
+
+            // 3.5) 选中食物/药品 → 左键直接食用（与 F 键一致，实现「全左键使用」）
+            if (selectedItem != null && selectedItem.type == PBV.Inventory.ItemType.Consumable)
+            {
+                PBV.Systems.CookingSystem.TryEatSelected();
+                return;
+            }
+
+            // 3.6) 选中了其他材料（矿石/木材等）→ 不误触发农事，给出用途提示
+            if (selectedItem != null)
+            {
+                PBV.UI.HUD.Instance?.ShowNotice($"{selectedItem.itemName} 不能对土地使用 · 拿到对应工坊按 E 制作");
                 return;
             }
 
@@ -191,6 +208,9 @@ namespace PBV.Farming
             int fallbackCost = directHarvest
                 ? (toolManager != null ? toolManager.GetStaminaCost(PBV.Player.ToolType.Sickle) : 1)
                 : (toolManager != null ? toolManager.CurrentStaminaCost : 0);
+            // 节气加成：雨水/谷雨 浇水不耗体力（Q 工具兜底路径同样生效）
+            if (!directHarvest && tool == PBV.Player.ToolType.WateringCan && PBV.Systems.SolarTermSystem.HasWaterBonus)
+                fallbackCost = 0;
 
             var fallbackStats = PBV.Player.PlayerStats.Instance;
             if (fallbackStats != null && !fallbackStats.HasEnough(fallbackCost))
