@@ -62,6 +62,10 @@ namespace PBV.UI
             // v0.3.0 内容扩展：补建 4 NPC / 2 钓点 / 染坊，并给商店上架蓝草
             if (UnityEngine.Object.FindObjectOfType<PBV.Systems.ContentExpansionBootstrap>() == null)
                 new GameObject("ContentExpansion (Auto)").AddComponent<PBV.Systems.ContentExpansionBootstrap>();
+            // 现代世界场景：02_Modern 存在则叠加加载（美术可单独在该场景工作）；
+            // 不存在则自动退回运行时补建现代店。必须早于 ShopWorld（执行顺序 -10000）。
+            if (UnityEngine.Object.FindObjectOfType<PBV.Systems.WorldSceneBootstrap>() == null)
+                new GameObject("WorldScene (Auto)").AddComponent<PBV.Systems.WorldSceneBootstrap>();
             // 古今商店隔离：补建现代杂货铺 / 古玩店，并按世界整店显隐
             if (UnityEngine.Object.FindObjectOfType<PBV.Systems.ShopWorldBootstrap>() == null)
                 new GameObject("ShopWorld (Auto)").AddComponent<PBV.Systems.ShopWorldBootstrap>();

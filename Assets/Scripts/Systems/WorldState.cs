@@ -66,6 +66,7 @@ namespace PBV.Systems
             }
 
             Current = world;
+            LastChangeWasRestore = false;             // 真穿越：允许做出生点传送
             OnWorldChanged?.Invoke(Current);          // 先切活动背包 / 显隐商店与场景内容
             TradeCarrySystem.Instance?.Settle(Current); // 再把 3 槽货物实物放进对岸背包
             QuestManager.Instance?.RecordTrade();
@@ -81,8 +82,12 @@ namespace PBV.Systems
         public void Restore(int world)
         {
             Current = (WorldType)Mathf.Clamp(world, 0, 1);
+            LastChangeWasRestore = true;              // 读档不应把玩家传送到出生点
             OnWorldChanged?.Invoke(Current);
         }
+
+        /// <summary>上一次世界变化是否来自读档（供 WorldSceneBootstrap 跳过出生点传送）</summary>
+        public bool LastChangeWasRestore { get; private set; }
 
         public string WorldName => Current == WorldType.Ancient ? "桃花谷" : "现代";
     }

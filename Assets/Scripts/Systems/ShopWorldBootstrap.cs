@@ -57,6 +57,10 @@ namespace PBV.Systems
 
         private static void ApplyVisibility(WorldType world)
         {
+            // ③ 现代场景根节点：若已叠加加载 02_Modern，则整根节点开关（美术单场景迭代用）
+            if (WorldSceneBootstrap.Instance != null)
+                WorldSceneBootstrap.Instance.SetModernVisible(world == WorldType.Modern);
+
             // ① 商店：整店显隐（ShopSystem 无存档依赖，沿用既有做法）
             foreach (var shop in Resources.FindObjectsOfTypeAll<ShopSystem>())
             {
@@ -134,7 +138,7 @@ namespace PBV.Systems
 
         private static void CreateModernShop(string goName, string label, Color blockColor, Color tagColor, bool antique)
         {
-            var go = GameObject.Find(goName);
+            var go = FindGo(goName);
             bool created = false;
             if (go == null)
             {
@@ -201,6 +205,19 @@ namespace PBV.Systems
             Add(shop, "item_pottery_vase", 320);
             Add(shop, "item_xuanpaper", 100);
             Add(shop, "item_ink_medicine", 120);
+        }
+
+        /// <summary>
+        /// 按名字找物体：先找激活对象，再兜底搜含未激活的对象。
+        /// 现代店已搬进 02_Modern 场景，若该场景根节点已被隐藏，GameObject.Find 会找不到。
+        /// </summary>
+        private static GameObject FindGo(string name)
+        {
+            var go = GameObject.Find(name);
+            if (go != null) return go;
+            foreach (var t in Resources.FindObjectsOfTypeAll<Transform>())
+                if (t != null && t.name == name) return t.gameObject;
+            return null;
         }
 
         private static void Add(ShopSystem shop, string id, int price, Currency currency = Currency.RMB)
