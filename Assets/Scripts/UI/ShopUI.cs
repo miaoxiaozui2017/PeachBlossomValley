@@ -1,32 +1,35 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using PBV.Economy;
 using PBV.Inventory;
 using PBV.Systems;
-using PBV.Player;
 
 namespace PBV.UI
 {
     /// <summary>
-    /// 商店 UI：商品列表 + 购买按钮 + 金钱显示 + 关闭。
-    /// 灰盒自建（无 Prefab 依赖），B 键快捷开关。
+    /// 商店 UI：上半「买」（折后价）、下半「卖」（当场结算）。
+    /// - 营业时间内才能交易；打烊后按钮禁用，引导去出货箱次日结算。
+    /// - 买价 / 卖价随商人好感浮动，状态栏常驻显示。
+    /// - B / Esc / E 关闭。
     /// </summary>
     public class ShopUI : MonoBehaviour
     {
         public static ShopUI Instance { get; private set; }
 
         [Header("Layout")]
-        [SerializeField] private float _rowHeight = 64f;
+        [SerializeField] private float _rowHeight = 60f;
 
-        private GameObject _root;
-        private GameObject _canvasGo;   // 整块 Canvas（含全屏 BG），关闭时一起隐藏，避免 BG 常驻吃点击
+        private GameObject _canvasGo;
         private GameObject _listContent;
         private Text _titleText;
         private Text _moneyText;
+        private Text _statusText;
         private ShopSystem _currentShop;
         private bool _isOpen;
+        private bool _lastCanTrade;
         private static Font _font;
+
+        private static Font Font => _font ?? (_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"));
 
         private void Awake()
         {
@@ -38,13 +41,15 @@ namespace PBV.UI
 
         private void Update()
         {
-            if (_isOpen && (Input.GetKeyDown(KeyCode.B) || Input.GetKeyDown(KeyCode.Escape)))
+            if (!_isOpen) return;
+            if (Input.GetKeyDown(KeyCode.B) || Input.GetKeyDown(KeyCode.Escape))
             {
                 CloseShop();
+                return;
             }
+            // 营业状态跨小时变化时立即刷新（打烊瞬间禁用按钮）
+            if (_currentShop != null && _currentShop.CanTrade != _lastCanTrade) Refresh();
         }
-
-        private static Font Font => _font ?? (_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"));
 
         public void OpenShop(ShopSystem shop)
         {
@@ -54,6 +59,9 @@ namespace PBV.UI
             UIEventSystemBootstrap.RegisterTopPanel(CloseShop);
             Refresh();
         }
+
+        /// <summary>面板开着时外部（如送礼涨好感）触发刷新</summary>
+        public void RefreshIfOpen() { if (_isOpen) Refresh(); }
 
         public void CloseShop()
         {
@@ -65,321 +73,295 @@ namespace PBV.UI
 
         private void Refresh()
         {
-            if (_currentShop == null) return;
+            if (_currentShop == null || _listContent == null) return;
+            var shop = _currentShop;
+            bool canTrade = shop.CanTrade;
+            _lastCanTrade = canTrade;
 
-            if (_titleText != null) _titleText.text = _currentShop.ShopName
-                + (WorldState.Instance != null && WorldState.Instance.Current == WorldType.Modern ? "（现代·人民币）" : "（桃花谷·宋币）");
+            bool modern = WorldState.Instance != null && WorldState.Instance.Current == WorldType.Modern;
+            if (_titleText != null) _titleText.text = shop.ShopName + (modern ? "（现代·¥）" : "（桃花谷·文）");
             var w = PlayerWallet.Instance;
             if (_moneyText != null && w != null) _moneyText.text = $"宋 {w.SongCoins}文   ¥{w.RMB}";
 
-            // 清空列表
+            int affection = shop.Affection;
+            string state = canTrade
+                ? $"<color=#8fd48f>营业中 {shop.OpenHour:00}:00-{shop.CloseHour:00}:00</color>"
+                : $"<color=#e58a8a>已打烊 · 请投出货箱，次日 06:00 结算</color>";
+            if (_statusText != null)
+                _statusText.text = $"{state}    {shop.MerchantName}[{shop.AffectionLevelName} {affection}]    " +
+                                   $"买 <b>{shop.BuyMultiplier * 10f:0.0}折</b> / 卖 <b>+{Mathf.RoundToInt((shop.SellMultiplier - 1f) * 100f)}%</b>（当场结算）";
+
             for (int i = _listContent.transform.childCount - 1; i >= 0; i--)
                 Destroy(_listContent.transform.GetChild(i).gameObject);
 
-            foreach (var entry in _currentShop.Items)
+            CreateSectionTitle("── 购买（好感越高越便宜） ──");
+            var items = shop.Items;
+            if (items != null)
+                foreach (var entry in items)
+                    if (entry != null && entry.item != null) CreateBuyRow(shop, entry, canTrade);
+
+            CreateSectionTitle("── 出售（当场结算 · 出货箱才享现代×2 / 节日×1.5） ──");
+            var inv = InventorySystem.Instance;
+            int sellable = 0;
+            if (inv != null)
             {
-                if (entry == null || entry.item == null) continue;
-                CreateRow(entry);
+                for (int i = 0; i < inv.Capacity; i++)
+                {
+                    var slot = inv.GetSlot(i);
+                    if (slot == null || slot.IsEmpty || !ShippingBinSystem.CanSell(slot.item)) continue;
+                    CreateSellRow(shop, slot.item, slot.count, canTrade);
+                    sellable++;
+                }
             }
+            if (sellable == 0) CreateEmptyRow("背包里暂无可卖物品（工具 / 种子 / 无售价材料不收）");
         }
 
-        private void CreateRow(ShopEntry entry)
+        private void CreateSectionTitle(string text)
         {
-            int price = entry.price;
+            var go = new GameObject("Section");
+            go.transform.SetParent(_listContent.transform, false);
+            go.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 26);
+            var t = go.AddComponent<Text>();
+            t.font = Font; t.fontSize = 14; t.fontStyle = FontStyle.Bold;
+            t.alignment = TextAnchor.MiddleLeft; t.color = new Color(0.85f, 0.78f, 0.55f);
+            t.text = text; t.raycastTarget = false;
+        }
 
-            var row = new GameObject($"Row_{entry.item.itemName}");
+        private void CreateEmptyRow(string text)
+        {
+            var go = new GameObject("Empty");
+            go.transform.SetParent(_listContent.transform, false);
+            go.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 34);
+            var t = go.AddComponent<Text>();
+            t.font = Font; t.fontSize = 13; t.alignment = TextAnchor.MiddleLeft;
+            t.color = new Color(0.65f, 0.62f, 0.58f); t.text = "    " + text; t.raycastTarget = false;
+        }
+
+        private GameObject MakeRow(string name, float height)
+        {
+            var row = new GameObject(name);
             row.transform.SetParent(_listContent.transform, false);
-            var rt = row.AddComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(0, _rowHeight);
-
-            var img = row.AddComponent<Image>();
-            img.color = new Color(0.18f, 0.16f, 0.12f, 0.95f);
-
+            row.AddComponent<RectTransform>().sizeDelta = new Vector2(0, height);
+            row.AddComponent<Image>().color = new Color(0.18f, 0.16f, 0.12f, 0.95f);
             var hlg = row.AddComponent<HorizontalLayoutGroup>();
             hlg.padding = new RectOffset(8, 8, 4, 4);
             hlg.spacing = 8;
             hlg.childAlignment = TextAnchor.MiddleLeft;
-            hlg.childControlWidth = false;
-            hlg.childControlHeight = false;
-            hlg.childForceExpandWidth = false;
-            hlg.childForceExpandHeight = false;
-
-            // 图标
-            var iconGo = new GameObject("Icon");
-            iconGo.transform.SetParent(row.transform, false);
-            var iconRt = iconGo.AddComponent<RectTransform>();
-            iconRt.sizeDelta = new Vector2(48, 48);
-            var iconImg = iconGo.AddComponent<Image>();
-            iconImg.color = new Color(0.4f, 0.35f, 0.25f, 1f);
-            if (entry.item.icon != null)
-            {
-                iconImg.sprite = entry.item.icon;
-                iconImg.preserveAspect = true;
-            }
-
-            // 名称+描述
-            var nameGo = new GameObject("Name");
-            nameGo.transform.SetParent(row.transform, false);
-            var nameRt = nameGo.AddComponent<RectTransform>();
-            nameRt.sizeDelta = new Vector2(260, _rowHeight - 8);
-            var nameText = nameGo.AddComponent<Text>();
-            nameText.font = Font;
-            nameText.fontSize = 16;
-            nameText.alignment = TextAnchor.MiddleLeft;
-            nameText.color = new Color(1f, 0.95f, 0.8f);
-            nameText.text = $"{entry.item.itemName}\n<size=11>{entry.item.description}</size>";
-            nameText.supportRichText = true;
-
-            // 价格
-            var priceGo = new GameObject("Price");
-            priceGo.transform.SetParent(row.transform, false);
-            var priceRt = priceGo.AddComponent<RectTransform>();
-            priceRt.sizeDelta = new Vector2(80, _rowHeight - 8);
-            var priceText = priceGo.AddComponent<Text>();
-            priceText.font = Font;
-            priceText.fontSize = 18;
-            priceText.alignment = TextAnchor.MiddleRight;
-            priceText.color = new Color(1f, 0.85f, 0.4f);
-            string sym = entry.currency == Currency.RMB ? "¥" : "";
-            string unit = entry.currency == Currency.RMB ? "" : " 文";
-            priceText.text = $"{sym}{price}{unit}";
-            priceText.supportRichText = true;
-
-            // 购买按钮
-            var btnGo = new GameObject("BuyBtn");
-            btnGo.transform.SetParent(row.transform, false);
-            var btnRt = btnGo.AddComponent<RectTransform>();
-            btnRt.sizeDelta = new Vector2(80, _rowHeight - 16);
-            var btnImg = btnGo.AddComponent<Image>();
-            btnImg.color = new Color(0.25f, 0.5f, 0.3f, 1f);
-            var btn = btnGo.AddComponent<Button>();
-            btn.targetGraphic = btnImg;
-            var btnTextGo = new GameObject("Text");
-            btnTextGo.transform.SetParent(btnGo.transform, false);
-            var btnTextRt = btnTextGo.AddComponent<RectTransform>();
-            btnTextRt.anchorMin = Vector2.zero; btnTextRt.anchorMax = Vector2.one;
-            btnTextRt.sizeDelta = Vector2.zero;
-            var btnText = btnTextGo.AddComponent<Text>();
-            btnText.font = Font;
-            btnText.fontSize = 16;
-            btnText.alignment = TextAnchor.MiddleCenter;
-            btnText.color = Color.white;
-            btnText.text = "购买";
-            btnText.raycastTarget = false;
-
-            ItemData item = entry.item;
-            btn.onClick.AddListener(() => TryBuy(item, price, entry.currency));
+            hlg.childControlWidth = false; hlg.childControlHeight = false;
+            hlg.childForceExpandWidth = false; hlg.childForceExpandHeight = false;
+            return row;
         }
 
-        private void TryBuy(ItemData item, int price, Currency currency)
+        private static Text MakeText(Transform parent, string name, string content, float width, int fontSize, Color color, TextAnchor align = TextAnchor.MiddleLeft)
         {
-            if (PlayerWallet.Instance == null || InventorySystem.Instance == null) return;
-            bool isRMB = currency == Currency.RMB;
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.AddComponent<RectTransform>().sizeDelta = new Vector2(width, 44);
+            var t = go.AddComponent<Text>();
+            t.font = Font; t.fontSize = fontSize; t.alignment = align; t.color = color;
+            t.text = content; t.supportRichText = true; t.raycastTarget = false;
+            return t;
+        }
+
+        private static Button MakeButton(Transform parent, string name, string label, float width, Color color, UnityEngine.Events.UnityAction onClick, bool enabled)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.AddComponent<RectTransform>().sizeDelta = new Vector2(width, 40);
+            var img = go.AddComponent<Image>();
+            img.color = enabled ? color : new Color(0.32f, 0.3f, 0.28f, 0.7f);
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = img;
+            btn.interactable = enabled;
+            btn.onClick.AddListener(onClick);
+            var tgo = new GameObject("Text");
+            tgo.transform.SetParent(go.transform, false);
+            var trt = tgo.AddComponent<RectTransform>();
+            trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one; trt.sizeDelta = Vector2.zero;
+            var t = tgo.AddComponent<Text>();
+            t.font = Font; t.fontSize = 15; t.alignment = TextAnchor.MiddleCenter;
+            t.color = enabled ? Color.white : new Color(0.6f, 0.6f, 0.6f);
+            t.text = label; t.raycastTarget = false;
+            return btn;
+        }
+
+        private void CreateBuyRow(ShopSystem shop, ShopEntry entry, bool canTrade)
+        {
+            var row = MakeRow($"Buy_{entry.item.itemName}", _rowHeight);
+            int price = shop.GetBuyPrice(entry);
+            int basePrice = entry.price;
+            string sym = entry.currency == Currency.RMB ? "¥" : "";
+            string unit = entry.currency == Currency.RMB ? "" : " 文";
+            string discount = price < basePrice ? $"\n<size=10><color=#8f8f7f>原价 {sym}{basePrice}</color></size>" : "";
+            MakeText(row.transform, "Name", $"{entry.item.itemName}\n<size=11>{entry.item.description}</size>", 250, 15, new Color(1f, 0.95f, 0.8f));
+            MakeText(row.transform, "Price", $"<b>{sym}{price}{unit}</b>{discount}", 92, 16, new Color(1f, 0.85f, 0.4f), TextAnchor.MiddleRight);
+            MakeButton(row.transform, "BuyBtn", "购买", 80, new Color(0.25f, 0.5f, 0.3f, 1f),
+                () => TryBuy(entry), canTrade);
+        }
+
+        private void CreateSellRow(ShopSystem shop, ItemData item, int count, bool canTrade)
+        {
+            var row = MakeRow($"Sell_{item.itemName}", _rowHeight);
+            bool modern = WorldState.Instance != null && WorldState.Instance.Current == WorldType.Modern;
+            string sym = modern ? "¥" : "";
+            int unit = shop.GetSellUnitPrice(item);
+            MakeText(row.transform, "Name", $"{item.itemName}  ×{count}", 232, 15, new Color(1f, 0.95f, 0.8f));
+            MakeText(row.transform, "Price", $"{sym}{unit} / 件", 100, 14, new Color(1f, 0.85f, 0.4f), TextAnchor.MiddleRight);
+            MakeButton(row.transform, "SellOne", "卖 1", 62, new Color(0.5f, 0.34f, 0.18f, 1f),
+                () => { shop.TrySell(item, 1); Refresh(); }, canTrade);
+            MakeButton(row.transform, "SellAll", "全卖", 62, new Color(0.55f, 0.28f, 0.2f, 1f),
+                () => { shop.TrySell(item, count); Refresh(); }, canTrade);
+        }
+
+        private void TryBuy(ShopEntry entry)
+        {
+            var shop = _currentShop;
+            if (shop == null || !shop.CanTrade)
+            {
+                HUD.Instance?.ShowNotice($"商店已打烊（营业 {shop?.OpenHour:00}:00-{shop?.CloseHour:00}:00）");
+                return;
+            }
             var wallet = PlayerWallet.Instance;
-            bool paid;
-            if (isRMB) paid = wallet.SpendRMB(price); else paid = wallet.SpendSong(price);
+            var inv = InventorySystem.Instance;
+            if (wallet == null || inv == null) return;
+
+            int price = shop.GetBuyPrice(entry);
+            bool isRMB = entry.currency == Currency.RMB;
+            bool paid = isRMB ? wallet.SpendRMB(price) : wallet.SpendSong(price);
             if (!paid)
             {
                 HUD.Instance?.ShowNotice(isRMB
-                    ? $"人民币不足：{item.itemName} 需要 ¥{price}"
-                    : $"宋币不足：{item.itemName} 需要 {price} 文");
-                Debug.Log("[Shop] 货币不足");
+                    ? $"人民币不足：{entry.item.itemName} 需要 ¥{price}"
+                    : $"宋币不足：{entry.item.itemName} 需要 {price} 文");
                 return;
             }
-            if (!InventorySystem.Instance.AddItem(item, 1))
+            if (!inv.AddItem(entry.item, 1))
             {
-                // 背包满，退款
                 if (isRMB) wallet.AddRMB(price); else wallet.AddSong(price);
                 HUD.Instance?.ShowNotice("背包已满，购买取消（已退款）");
-                Debug.Log("[Shop] 背包已满");
                 return;
             }
-            HUD.Instance?.ShowNotice(isRMB
-                ? $"购买 {item.itemName} ×1  -¥{price}"
-                : $"购买 {item.itemName} ×1  -{price} 文");
-            Debug.Log($"[Shop] 购买 {item.itemName} -{(isRMB ? "¥" : "")}{price}");
+            string sym = isRMB ? "¥" : "";
+            string unit = isRMB ? "" : " 文";
+            HUD.Instance?.ShowNotice($"购买 {entry.item.itemName} ×1  -{sym}{price}{unit}（{shop.MerchantName}好感 {shop.BuyMultiplier * 10f:0.0}折）");
             Refresh();
         }
 
-        /// <summary>
-        /// 商店回收：把背包里所有可售物品按基础价一次性卖出，当场到账。
-        /// 不乘现代×2 / 节日×1.5，所以出货箱仍是高价渠道，急用钱才来商店。
-        /// </summary>
-        private void SellAllFromBag()
+        private void TrySellAll()
         {
-            var inv = InventorySystem.Instance;
-            var wallet = PlayerWallet.Instance;
-            if (inv == null || wallet == null) return;
-
-            var toSell = new List<KeyValuePair<ItemData, int>>();
-            float eventMult = 1f + (RandomEventSystem.Instance != null ? RandomEventSystem.Instance.ShopBonus : 0f);
-            int total = 0;
-            int count = 0;
-            for (int i = 0; i < inv.Capacity; i++)
-            {
-                var slot = inv.GetSlot(i);
-                if (slot == null || slot.IsEmpty) continue;
-                if (!ShippingBinSystem.CanSell(slot.item)) continue;
-                toSell.Add(new KeyValuePair<ItemData, int>(slot.item, slot.count));
-                total += Mathf.RoundToInt(slot.item.sellPrice * slot.count * eventMult);
-                count += slot.count;
-            }
-
-            if (count == 0)
-            {
-                HUD.Instance?.ShowNotice("背包里没有可回收物品 · 工具 / 种子 / 无售价材料不回收");
-                return;
-            }
-
-            foreach (var kv in toSell) inv.RemoveItem(kv.Key, kv.Value);
-            bool modern = WorldState.Instance != null && WorldState.Instance.Current == WorldType.Modern;
-            if (modern) wallet.AddRMB(total); else wallet.AddSong(total);
-            string sym = modern ? "¥" : "";
-            HUD.Instance?.ShowNotice($"回收 {count} 件 → 即时到账 {sym}{total}（出货箱才享现代×2 / 节日×1.5）");
-            Debug.Log($"[Shop] 回收 {count} 件 +{sym}{total}");
+            if (_currentShop == null) return;
+            _currentShop.TrySellAll(out _, out _);
             Refresh();
         }
 
         private void BuildUI()
         {
             _canvasGo = new GameObject("ShopCanvas");
-            var canvasGo = _canvasGo;
-            canvasGo.transform.SetParent(transform, false);
-            var canvas = canvasGo.AddComponent<Canvas>();
+            _canvasGo.transform.SetParent(transform, false);
+            var canvas = _canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 30;
-            canvasGo.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            ((CanvasScaler)canvasGo.GetComponent<CanvasScaler>()).referenceResolution = new Vector2(1920, 1080);
-            canvasGo.AddComponent<GraphicRaycaster>();
+            var scaler = _canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+            _canvasGo.AddComponent<GraphicRaycaster>();
 
-            // 半透明背景
             var bg = new GameObject("BG");
-            bg.transform.SetParent(canvasGo.transform, false);
+            bg.transform.SetParent(_canvasGo.transform, false);
             var bgRt = bg.AddComponent<RectTransform>();
-            bgRt.anchorMin = Vector2.zero; bgRt.anchorMax = Vector2.one;
-            bgRt.sizeDelta = Vector2.zero;
-            var bgImg = bg.AddComponent<Image>();
-            bgImg.color = new Color(0f, 0f, 0f, 0.5f);
-            var bgBtn = bg.AddComponent<Button>();
-            bgBtn.onClick.AddListener(CloseShop);
+            bgRt.anchorMin = Vector2.zero; bgRt.anchorMax = Vector2.one; bgRt.sizeDelta = Vector2.zero;
+            bg.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.5f);
+            bg.AddComponent<Button>().onClick.AddListener(CloseShop);
 
-            // 面板
-            _root = new GameObject("Panel");
-            _root.transform.SetParent(canvasGo.transform, false);
-            var panelRt = _root.AddComponent<RectTransform>();
-            panelRt.anchorMin = new Vector2(0.5f, 0.5f);
-            panelRt.anchorMax = new Vector2(0.5f, 0.5f);
-            panelRt.sizeDelta = new Vector2(560, 520);
-            panelRt.anchoredPosition = Vector2.zero;
-            var panelImg = _root.AddComponent<Image>();
-            panelImg.color = new Color(0.12f, 0.1f, 0.08f, 0.96f);
+            var panel = new GameObject("Panel");
+            panel.transform.SetParent(_canvasGo.transform, false);
+            var panelRt = panel.AddComponent<RectTransform>();
+            panelRt.anchorMin = new Vector2(0.5f, 0.5f); panelRt.anchorMax = new Vector2(0.5f, 0.5f);
+            panelRt.sizeDelta = new Vector2(620, 560); panelRt.anchoredPosition = Vector2.zero;
+            panel.AddComponent<Image>().color = new Color(0.12f, 0.1f, 0.08f, 0.96f);
 
-            var vlg = _root.AddComponent<VerticalLayoutGroup>();
+            var vlg = panel.AddComponent<VerticalLayoutGroup>();
             vlg.padding = new RectOffset(12, 12, 12, 12);
-            vlg.spacing = 8;
-            vlg.childControlWidth = true;
-            vlg.childControlHeight = false;
-            vlg.childForceExpandWidth = true;
-            vlg.childForceExpandHeight = false;
+            vlg.spacing = 6;
+            vlg.childControlWidth = true; vlg.childControlHeight = false;
+            vlg.childForceExpandWidth = true; vlg.childForceExpandHeight = false;
 
-            // 标题栏（标题 + 金钱 + 关闭提示）
-            var headerGo = new GameObject("Header");
-            headerGo.transform.SetParent(_root.transform, false);
-            var headerRt = headerGo.AddComponent<RectTransform>();
-            headerRt.sizeDelta = new Vector2(0, 40);
-            var headerImg = headerGo.AddComponent<Image>();
-            headerImg.color = new Color(0.2f, 0.17f, 0.13f, 1f);
-            var hlg = headerGo.AddComponent<HorizontalLayoutGroup>();
+            // 标题栏
+            var header = new GameObject("Header");
+            header.transform.SetParent(panel.transform, false);
+            header.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 40);
+            header.AddComponent<Image>().color = new Color(0.2f, 0.17f, 0.13f, 1f);
+            var hlg = header.AddComponent<HorizontalLayoutGroup>();
             hlg.padding = new RectOffset(8, 8, 0, 0);
-            hlg.childControlWidth = true;
-            hlg.childForceExpandWidth = true;
+            hlg.childControlWidth = true; hlg.childForceExpandWidth = true;
+            _titleText = CreateText(header.transform, "Title", 22, FontStyle.Bold, new Color(1f, 0.9f, 0.6f), "杂货铺");
+            _titleText.rectTransform.sizeDelta = new Vector2(0, 40);
+            _moneyText = CreateText(header.transform, "Money", 20, FontStyle.Bold, new Color(1f, 0.85f, 0.4f), "¥ 0");
+            _moneyText.rectTransform.sizeDelta = new Vector2(200, 40);
+            _moneyText.alignment = TextAnchor.MiddleRight;
 
-            _titleText = CreateText(headerGo.transform, "Title", 22, FontStyle.Bold, new Color(1f, 0.9f, 0.6f), "杂货铺");
-            var titleRt = _titleText.rectTransform;
-            titleRt.sizeDelta = new Vector2(0, 40);
-            var fitter = headerGo.AddComponent<ContentSizeFitter>();
+            // 状态栏：营业时间 / 好感 / 买折扣 / 卖溢价
+            _statusText = CreateText(panel.transform, "Status", 13, FontStyle.Normal, new Color(0.9f, 0.88f, 0.8f), "");
+            _statusText.rectTransform.sizeDelta = new Vector2(0, 22);
+            _statusText.supportRichText = true;
 
-            _moneyText = CreateText(headerGo.transform, "Money", 20, FontStyle.Bold, new Color(1f, 0.85f, 0.4f), "¥ 0");
-            var moneyRt = _moneyText.rectTransform;
-            moneyRt.sizeDelta = new Vector2(120, 40);
+            var hint = CreateText(panel.transform, "Hint", 12, FontStyle.Normal, new Color(0.7f, 0.65f, 0.55f),
+                "买卖当场结算 · G 给掌柜送礼涨好感 · B / E / Esc 关闭");
+            hint.rectTransform.sizeDelta = new Vector2(0, 16);
 
-            // 提示行
-            var hint = CreateText(_root.transform, "Hint", 12, FontStyle.Normal, new Color(0.7f, 0.65f, 0.55f), "点击购买 · E/Esc/B 关闭");
-            var hintRt = hint.rectTransform;
-            hintRt.sizeDelta = new Vector2(0, 16);
-
-            // 回收按钮：按基础售价即时到账，与出货箱的「次日结算 + 倍率」形成互补
+            // 一键全部卖出
             var sellGo = new GameObject("SellAllBtn");
-            sellGo.transform.SetParent(_root.transform, false);
-            sellGo.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 36);
-            var sellImg = sellGo.AddComponent<Image>();
-            sellImg.color = new Color(0.45f, 0.3f, 0.18f, 1f);
+            sellGo.transform.SetParent(panel.transform, false);
+            sellGo.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 34);
+            sellGo.AddComponent<Image>().color = new Color(0.45f, 0.3f, 0.18f, 1f);
             var sellBtn = sellGo.AddComponent<Button>();
-            sellBtn.targetGraphic = sellImg;
-            var sellTxtGo = new GameObject("Text");
-            sellTxtGo.transform.SetParent(sellGo.transform, false);
-            var sellTxtRt = sellTxtGo.AddComponent<RectTransform>();
-            sellTxtRt.anchorMin = Vector2.zero; sellTxtRt.anchorMax = Vector2.one; sellTxtRt.sizeDelta = Vector2.zero;
-            var sellTxt = sellTxtGo.AddComponent<Text>();
-            sellTxt.font = Font;
-            sellTxt.fontSize = 15;
-            sellTxt.alignment = TextAnchor.MiddleCenter;
-            sellTxt.color = Color.white;
-            sellTxt.text = "回收背包物品（基础价 · 当天即时到账）";
-            sellTxt.raycastTarget = false;
-            sellBtn.onClick.AddListener(SellAllFromBag);
+            sellBtn.onClick.AddListener(TrySellAll);
+            var stgo = new GameObject("Text");
+            stgo.transform.SetParent(sellGo.transform, false);
+            var strt = stgo.AddComponent<RectTransform>();
+            strt.anchorMin = Vector2.zero; strt.anchorMax = Vector2.one; strt.sizeDelta = Vector2.zero;
+            var st = stgo.AddComponent<Text>();
+            st.font = Font; st.fontSize = 15; st.alignment = TextAnchor.MiddleCenter;
+            st.color = Color.white; st.text = "一键全部卖出（当场结算）"; st.raycastTarget = false;
 
-            // 列表容器（带滚动）
+            // 列表容器
             var scrollGo = new GameObject("Scroll");
-            scrollGo.transform.SetParent(_root.transform, false);
-            var scrollRt = scrollGo.AddComponent<RectTransform>();
-            scrollRt.sizeDelta = new Vector2(0, 420);
-            var scrollImg = scrollGo.AddComponent<Image>();
-            scrollImg.color = new Color(0.08f, 0.07f, 0.05f, 0.5f);
-            var scrollRect = scrollGo.AddComponent<ScrollRect>();
-            scrollRect.horizontal = false;
-            scrollRect.vertical = true;
+            scrollGo.transform.SetParent(panel.transform, false);
+            scrollGo.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 400);
+            scrollGo.AddComponent<Image>().color = new Color(0.08f, 0.07f, 0.05f, 0.5f);
+            var sr = scrollGo.AddComponent<ScrollRect>();
+            sr.horizontal = false; sr.vertical = true;
 
-            var viewportGo = new GameObject("Viewport");
-            viewportGo.transform.SetParent(scrollGo.transform, false);
-            var viewportRt = viewportGo.AddComponent<RectTransform>();
-            viewportRt.anchorMin = Vector2.zero; viewportRt.anchorMax = Vector2.one;
-            viewportRt.sizeDelta = Vector2.zero;
-            var vpMask = viewportGo.AddComponent<RectMask2D>();
-            scrollRect.viewport = viewportRt;
+            var vp = new GameObject("Viewport");
+            vp.transform.SetParent(scrollGo.transform, false);
+            var vpRt = vp.AddComponent<RectTransform>();
+            vpRt.anchorMin = Vector2.zero; vpRt.anchorMax = Vector2.one; vpRt.sizeDelta = Vector2.zero;
+            vp.AddComponent<RectMask2D>();
+            sr.viewport = vpRt;
 
             _listContent = new GameObject("Content");
-            _listContent.transform.SetParent(viewportGo.transform, false);
-            var contentRt = _listContent.AddComponent<RectTransform>();
-            contentRt.anchorMin = new Vector2(0, 1);
-            contentRt.anchorMax = new Vector2(1, 1);
-            contentRt.sizeDelta = new Vector2(0, 0);
-            contentRt.pivot = new Vector2(0.5f, 1f);
-            var vlg2 = _listContent.AddComponent<VerticalLayoutGroup>();
-            vlg2.padding = new RectOffset(4, 4, 4, 4);
-            vlg2.spacing = 4;
-            vlg2.childControlWidth = true;
-            vlg2.childForceExpandWidth = true;
-            vlg2.childForceExpandHeight = false;
+            _listContent.transform.SetParent(vp.transform, false);
+            var crt = _listContent.AddComponent<RectTransform>();
+            crt.anchorMin = new Vector2(0, 1); crt.anchorMax = new Vector2(1, 1);
+            crt.pivot = new Vector2(0.5f, 1f); crt.sizeDelta = Vector2.zero;
+            var cvlg = _listContent.AddComponent<VerticalLayoutGroup>();
+            cvlg.padding = new RectOffset(4, 4, 4, 4); cvlg.spacing = 4;
+            cvlg.childControlWidth = true; cvlg.childForceExpandWidth = true;
+            cvlg.childControlHeight = false; cvlg.childForceExpandHeight = false;
             var cf = _listContent.AddComponent<ContentSizeFitter>();
             cf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            scrollRect.content = contentRt;
+            sr.content = crt;
         }
 
         private static Text CreateText(Transform parent, string name, int fontSize, FontStyle style, Color color, string content)
         {
             var go = new GameObject(name);
             go.transform.SetParent(parent, false);
-            var rt = go.AddComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(0, 20);
+            go.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 20);
             var t = go.AddComponent<Text>();
-            t.font = Font;
-            t.fontSize = fontSize;
-            t.fontStyle = style;
-            t.alignment = TextAnchor.MiddleLeft;
-            t.color = color;
-            t.text = content;
-            t.raycastTarget = false;
+            t.font = Font; t.fontSize = fontSize; t.fontStyle = style;
+            t.alignment = TextAnchor.MiddleLeft; t.color = color;
+            t.text = content; t.raycastTarget = false;
             return t;
         }
     }

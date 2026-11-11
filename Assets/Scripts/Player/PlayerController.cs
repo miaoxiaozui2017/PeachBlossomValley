@@ -90,13 +90,15 @@ namespace PBV.Player
             TryInteract();
         }
 
-        /// <summary>G 键送礼：向附近 NPC 送当前选中槽位物品</summary>
+        /// <summary>
+        /// G 键送礼：向附近 NPC 或商店掌柜送当前选中槽位物品。
+        /// 商店是「NPC 融合进建筑」（无独立 NPCController），所以单独分流到 ShopSystem，
+        /// 好感涨上去才能买到更便宜、卖得更贵。
+        /// </summary>
         private void OnGiftInput()
         {
-            if (CurrentNearby is PBV.NPC.NPCController npc)
-            {
-                npc.Gift();
-            }
+            if (CurrentNearby is PBV.NPC.NPCController npc) npc.Gift();
+            else if (CurrentNearby is PBV.Economy.ShopSystem shop) shop.GiftToMerchant();
         }
 
         private void FixedUpdate()

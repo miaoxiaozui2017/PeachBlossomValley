@@ -42,11 +42,13 @@ namespace PBV.Systems
         {
             if (_isPaused) return;
 
-            // 调试：N 键跳到次日（测试作物生长/结算用）
+            // 调试：N 跳次日；Shift+N 只把时间推到 20:00（不换日、不结算），
+            // 用来快速验证「商店打烊 → 只能投出货箱 → 次日结算」这条循环。
             var kb = UnityEngine.InputSystem.Keyboard.current;
             if (kb != null && kb.nKey.wasPressedThisFrame)
             {
-                ForceNextDay();
+                if (kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed) SkipToHour(20);
+                else ForceNextDay();
                 return;
             }
 
@@ -113,6 +115,17 @@ namespace PBV.Systems
         {
             LastAdvanceWasSleep = fromBed;
             StartNewDay();
+        }
+
+        /// <summary>测试用：只把钟点推到指定小时，不换日、不触发结算（Shift+N → 20:00 打烊）</summary>
+        public void SkipToHour(int hour)
+        {
+            _currentHour = Mathf.Clamp(hour, 0, 23);
+            _currentMinute = 0;
+            LastAdvanceWasSleep = false;
+            OnTimeChanged?.Invoke(_currentHour, _currentMinute);
+            UpdateLighting();
+            Debug.Log($"[TimeManager] 时间跳到 {GetTimeString()}（第 {_currentDay} 天，未换日）");
         }
 
         /// <summary>当前天数（存档用）</summary>
