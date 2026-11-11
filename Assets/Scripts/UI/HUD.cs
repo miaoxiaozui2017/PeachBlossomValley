@@ -174,10 +174,10 @@ namespace PBV.UI
         {
             var ws = WorldState.Instance;
             string line = ws == null
-                ? "【桃花谷】出货 ×1"
+                ? "【桃花谷】"
                 : ws.Current == WorldType.Ancient
-                    ? "【桃花谷】出货 ×1  ·  传送门 E 前往现代"
-                    : "【现代】出货 ×2  ·  按 T 回桃花谷";
+                    ? "【桃花谷】农田与全部建筑  ·  传送门 E / X 去现代（50 文）"
+                    : "【现代】只留 2 家店 + 驿站  ·  按 T 回谷（¥5）· X 兑换";
             if (line == _lastWorldLine) return;
             _lastWorldLine = line;
             if (_worldText == null) return;

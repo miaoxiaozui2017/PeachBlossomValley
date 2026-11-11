@@ -228,15 +228,13 @@ namespace PBV.Save
                         data.livestock.Add(new LivestockDTO { type = l.type, count = l.count, fedDays = l.fedDays });
                 }
 
-                // 背包（只存非空槽位，含索引）
+                // 背包：桃花谷 / 现代两套分别存档（只存非空槽位，含索引）
                 if (InventorySystem.Instance != null)
                 {
-                    for (int i = 0; i < InventorySystem.Instance.Capacity; i++)
-                    {
-                        var slot = InventorySystem.Instance.GetSlot(i);
-                        if (slot == null || slot.IsEmpty) continue;
-                        data.inventory.Add(new SlotDTO { index = i, itemId = GetItemId(slot.item), count = slot.count });
-                    }
+                    foreach (var e in InventorySystem.Instance.ExportWorld(PBV.Systems.WorldType.Ancient))
+                        data.inventory.Add(new SlotDTO { index = e.index, itemId = GetItemId(e.item), count = e.count });
+                    foreach (var e in InventorySystem.Instance.ExportWorld(PBV.Systems.WorldType.Modern))
+                        data.modernInventory.Add(new SlotDTO { index = e.index, itemId = GetItemId(e.item), count = e.count });
                 }
 
                 // 储物箱（新版：多个可放置箱子）
@@ -353,20 +351,11 @@ namespace PBV.Save
                     PlayerWallet.Instance.SetRMB(data.rmb);
                 }
 
-                // 背包
+                // 背包：两套分别导入（旧档没有 modernInventory 时现代背包为空）
                 if (InventorySystem.Instance != null)
                 {
-                    InventorySystem.Instance.ClearAll();
-                    foreach (var slotDto in data.inventory)
-                    {
-                        var item = FindItem(slotDto.itemId);
-                        if (item == null)
-                        {
-                            Debug.LogWarning($"[Save] 跳过未知物品: {slotDto.itemId}");
-                            continue;
-                        }
-                        InventorySystem.Instance.SetSlot(slotDto.index, item, slotDto.count);
-                    }
+                    ImportWorldBag(PBV.Systems.WorldType.Ancient, data.inventory);
+                    ImportWorldBag(PBV.Systems.WorldType.Modern, data.modernInventory);
                 }
 
                 // 储物箱（新版多实例；兼容旧档 storage 单箱迁移）
@@ -421,6 +410,24 @@ namespace PBV.Save
         }
 
         private static string GetItemId(ItemData item) => string.IsNullOrEmpty(item.id) ? item.itemName : item.id;
+
+        /// <summary>导入指定世界的背包（字段为 null 视为空背包，兼容旧档）</summary>
+        private void ImportWorldBag(PBV.Systems.WorldType world, System.Collections.Generic.List<SlotDTO> dtoList)
+        {
+            var list = new System.Collections.Generic.List<(int index, ItemData item, int count)>();
+            if (dtoList == null) { InventorySystem.Instance.ImportWorld(world, list); return; }
+            foreach (var d in dtoList)
+            {
+                var item = FindItem(d.itemId);
+                if (item == null)
+                {
+                    Debug.LogWarning($"[Save] 跳过未知物品: {d.itemId}");
+                    continue;
+                }
+                list.Add((d.index, item, d.count));
+            }
+            InventorySystem.Instance.ImportWorld(world, list);
+        }
 
         private ItemData FindItem(string itemId)
         {

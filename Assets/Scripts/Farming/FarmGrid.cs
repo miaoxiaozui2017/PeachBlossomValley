@@ -116,6 +116,10 @@ namespace PBV.Farming
 
         private void OnUseTool()
         {
+            // 农田只在桃花谷：现代隐藏了地块，左键不应还能锄地/播种/收获
+            if (PBV.Systems.WorldState.Instance != null &&
+                PBV.Systems.WorldState.Instance.Current == PBV.Systems.WorldType.Modern) return;
+
             Vector3Int targetPos = InputHandler.Instance.SelectedGridPosition;
 
             // 左键统一分派：优先识别「选中快捷栏格子」里的物品

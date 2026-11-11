@@ -312,7 +312,12 @@ namespace PBV.UI
             int rows = Mathf.CeilToInt((float)capacity / Columns);
             if (_gridRect != null) _gridRect.sizeDelta = new Vector2(0, rows * 70f + 8f);
             if (_panelRect != null) _panelRect.sizeDelta = new Vector2(488f, rows * 70f + 130f);
-            if (_titleText != null) _titleText.text = $"背包 {capacity}/{MaxSlots} 格 (Tab 开关)";
+            if (_titleText != null)
+            {
+                // 两界背包独立，标题标注当前是哪一边，避免把谷内物品当成带到了现代
+                string world = InventorySystem.Instance != null && InventorySystem.Instance.IsModern ? "现代" : "桃花谷";
+                _titleText.text = $"{world}背包 {capacity}/{MaxSlots} 格 (Tab 开关 · 只有 R 槽能跨境)";
+            }
 
             for (int i = 0; i < _slotIcons.Length; i++)
             {

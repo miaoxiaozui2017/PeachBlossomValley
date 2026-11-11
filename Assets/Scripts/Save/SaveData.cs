@@ -40,7 +40,8 @@ namespace PBV.Save
         public int outfit;              // 衣柜当前服装索引
         public string[] tradeSlots;     // 穿梭贸易 3 个携带槽位（物品 id）
 
-        public List<SlotDTO> inventory = new List<SlotDTO>();
+        public List<SlotDTO> inventory = new List<SlotDTO>(); // 桃花谷背包（旧档兼容）
+        public List<SlotDTO> modernInventory = new List<SlotDTO>(); // 现代背包（两界独立）
         public List<SlotDTO> storage = new List<SlotDTO>(); // 旧版：房屋扩建解锁的单一储物箱（迁移用）
         public List<StorageChestDTO> chests = new List<StorageChestDTO>(); // 新版：可放置的多个储物箱
         public List<PlotDTO> plots = new List<PlotDTO>(); // 稀疏存储：只保存改变过的地块

@@ -232,8 +232,8 @@ namespace PBV.Systems
     public enum EraTag { Common, AncientCraft, Relic, Contraband }
 
     /// <summary>
-    /// 穿梭贸易「三出三进」：最多携带 3 件物品，穿越时按目标时代结算。
-    /// 古代珍品/文物带到现代溢价，违禁品罚款；普通物品按跨时代基础价。
+    /// 穿梭带货「三出三进」：两界背包独立，只有这 3 个槽位能跨境。
+    /// 穿越时货物**实物**进对岸背包，不再自动结算成钱；EraTag 仅作物品分类标注。
     /// </summary>
     public class TradeCarrySystem : MonoBehaviour
     {
@@ -294,6 +294,10 @@ namespace PBV.Systems
             return true;
         }
 
+        /// <summary>
+        /// 参考价（仅用于 UI 展示物品大致价值，不再结算成钱）。
+        /// 穿梭贸易已改为「实物带货」：货物到对岸进背包，玩家自己决定用掉或卖给当地商店。
+        /// </summary>
         public int Estimate(int slot, WorldType to)
         {
             var item = Get(slot);
@@ -302,31 +306,40 @@ namespace PBV.Systems
                          TagOf(item) == EraTag.AncientCraft ? 3f :
                          TagOf(item) == EraTag.Contraband ? 0.5f : 1.5f;
             if (to == WorldType.Modern) mult *= 2f;
-            float buff = BuffSystem.Instance != null ? BuffSystem.Instance.TradeBonus : 0f;
-            return Mathf.RoundToInt(item.sellPrice * mult * (1f + buff));
+            return Mathf.RoundToInt(item.sellPrice * mult);
         }
 
-        /// <summary>穿越到新世界时结算全部槽位</summary>
+        /// <summary>
+        /// 穿越到新世界时把 3 槽货物**实物**放进对岸背包。
+        /// 调用时序由 WorldState.SetWorld 保证：OnWorldChanged 已先把活动背包切到对岸。
+        /// 背包放不下的货物留在槽里（下次穿越再带），不丢物品。
+        /// </summary>
         public int Settle(WorldType to)
         {
-            int total = 0, count = 0;
+            var inv = PBV.Inventory.InventorySystem.Instance;
+            int delivered = 0;
             for (int i = 0; i < Slots; i++)
             {
-                if (_items[i] == null) continue;
-                int v = Estimate(i, to);
-                total += v; count++;
-                _items[i] = null;
+                var item = _items[i];
+                if (item == null) continue;
+                if (inv != null && inv.AddItem(item, 1))
+                {
+                    _items[i] = null;
+                    delivered++;
+                }
+                else
+                {
+                    PBV.UI.HUD.Instance?.ShowNotice($"{item.itemName} 放不进对岸背包，留在槽位 {i + 1}", 4f);
+                }
             }
-            if (count > 0 && PlayerWallet.Instance != null)
+            if (delivered > 0)
             {
-                bool toModern = to == WorldType.Modern;
-                if (toModern) PlayerWallet.Instance.AddRMB(total); else PlayerWallet.Instance.AddSong(total);
-                string sym = toModern ? "¥" : "";
-                string unit = toModern ? "" : "文";
-                PBV.UI.HUD.Instance?.ShowNotice($"跨时空贸易结算 {count} 件 → +{sym}{total}{unit}（{(toModern ? "现代" : "桃花谷")}）", 4f);
-                ReputationSystem.Instance?.Add(count * 3);
+                PBV.UI.HUD.Instance?.ShowNotice(
+                    $"带入{(to == WorldType.Modern ? "现代" : "桃花谷")} {delivered} 件货物 → 已进当地背包", 4f);
+                ReputationSystem.Instance?.Add(delivered * 3);
+                Debug.Log($"[TradeCarry] 实物落地 {delivered} 件到 {(to == WorldType.Modern ? "现代" : "桃花谷")} 背包");
             }
-            return total;
+            return delivered;
         }
 
         public string[] Export()
@@ -412,13 +425,14 @@ namespace PBV.Systems
             var carry = TradeCarrySystem.Instance;
             var ws = WorldState.Instance;
             WorldType to = ws != null && ws.Current == WorldType.Ancient ? WorldType.Modern : WorldType.Ancient;
+            string dest = to == WorldType.Modern ? "现代" : "桃花谷";
             for (int i = 0; i < _slotTexts.Length; i++)
             {
                 if (_slotTexts[i] == null || carry == null) continue;
                 var item = carry.Get(i);
                 _slotTexts[i].text = item == null
                     ? $"槽位 {i + 1}：空（点击装入选中物品）"
-                    : $"槽位 {i + 1}：{item.itemName} [{TradeCarrySystem.TagName(carry.TagOf(item))}]  预估 ¥{carry.Estimate(i, to)}";
+                    : $"槽位 {i + 1}：{item.itemName} [{TradeCarrySystem.TagName(carry.TagOf(item))}]  穿越后带入{dest}背包";
             }
         }
 
@@ -473,8 +487,8 @@ namespace PBV.Systems
         {
             GameObject panel;
             _tradeCanvas = MakeCanvas("V04TradeCanvas", out panel);
-            MakeText(panel.transform, "穿梭贸易 · 三出三进 (R/Esc 关闭)", 20, FontStyle.Bold, new Color(0.85f, 0.75f, 1f), 28);
-            MakeText(panel.transform, "先在背包选中物品(1-0)，点槽位装入；到传送门按 E 穿越时自动结算。\n文物×5 / 古代珍品×3 / 违禁品×0.5 / 普通×1.5，去现代再×2。",
+            MakeText(panel.transform, "穿梭带货 · 每程最多三样 (R/Esc 关闭)", 20, FontStyle.Bold, new Color(0.85f, 0.75f, 1f), 28);
+            MakeText(panel.transform, "两边背包互不通用：只有装入槽位的 3 件能跨境，穿越后实物进对岸背包。\n出谷通行费 50 文 / 回谷 ¥5；货币按 X 打开驿站随时兑换。",
                 14, FontStyle.Normal, new Color(0.8f, 0.78f, 0.72f), 60);
             for (int i = 0; i < TradeCarrySystem.Slots; i++)
             {

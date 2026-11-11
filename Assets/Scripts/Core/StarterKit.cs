@@ -42,7 +42,9 @@ namespace PBV.Core
             }
 
             bool loadedFromSave = SaveManager.Instance != null && SaveManager.Instance.LoadedFromSave;
-            bool inventoryEmpty = IsInventoryEmpty(inventory);
+            // 两界背包都要检查，否则「谷内有货、人在现代」会被误判成异常存档重复发物资
+            bool inventoryEmpty = inventory.ExportWorld(PBV.Systems.WorldType.Ancient).Count == 0
+                               && inventory.ExportWorld(PBV.Systems.WorldType.Modern).Count == 0;
             int money = PlayerWallet.Instance != null ? (PlayerWallet.Instance.SongCoins + PlayerWallet.Instance.RMB) : 0;
 
             // 读档且状态正常（有东西或有钱）-> 不发
@@ -75,19 +77,11 @@ namespace PBV.Core
 
                 if (int.TryParse(parts[1], out int count))
                 {
-                    inventory.AddItem(item, count);
+                    // 开局物资永远属于桃花谷，即便读档时人身在现代
+                    inventory.AddItemToValley(item, count);
                 }
             }
         }
 
-        private static bool IsInventoryEmpty(InventorySystem inventory)
-        {
-            for (int i = 0; i < inventory.Capacity; i++)
-            {
-                var slot = inventory.GetSlot(i);
-                if (slot != null && !slot.IsEmpty) return false;
-            }
-            return true;
-        }
     }
 }

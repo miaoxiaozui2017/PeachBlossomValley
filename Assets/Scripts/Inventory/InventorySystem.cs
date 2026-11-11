@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using PBV.Systems;
 
 namespace PBV.Inventory
 {
@@ -25,78 +26,115 @@ namespace PBV.Inventory
         }
     }
 
+    /// <summary>
+    /// 背包系统：**桃花谷 / 现代各自独立一套背包**。
+    /// 切世界时只切换「当前活动槽位数组」，对外 API 不变（所以农事/工坊/商店等几十处调用点无需改动）。
+    /// 跨境唯一通道是穿梭贸易 3 槽（TradeCarrySystem），普通背包物品不会跟着穿越。
+    /// 扩容对两套背包同时生效（容量是账号级进度，属共用层）。
+    /// </summary>
     public class InventorySystem : MonoBehaviour
     {
         public static InventorySystem Instance { get; private set; }
 
         [Header("Settings")]
         [SerializeField] private int _capacity = 24;
-        
-        // Runtime Data
-        private InventorySlot[] _slots;
-        
-        // Events
-        public UnityAction OnInventoryChanged; // UI Update
+
+        private InventorySlot[] _valleySlots;   // 桃花谷背包
+        private InventorySlot[] _modernSlots;   // 现代背包
+        private InventorySlot[] _slots;         // 当前活动引用
+
+        public UnityAction OnInventoryChanged;
+
+        /// <summary>当前所处世界（供 UI 标注）</summary>
+        public bool IsModern => WorldState.Instance != null && WorldState.Instance.Current == WorldType.Modern;
 
         private void Awake()
         {
             if (Instance == null) Instance = this;
-            else Destroy(gameObject);
+            else { Destroy(gameObject); return; }
 
-            InitializeSlots();
+            _valleySlots = MakeSlots(_capacity);
+            _modernSlots = MakeSlots(_capacity);
+            _slots = _valleySlots;
         }
 
-        private void InitializeSlots()
+        private void Start()
         {
-            _slots = new InventorySlot[_capacity];
-            for (int i = 0; i < _capacity; i++)
+            if (WorldState.Instance != null)
             {
-                _slots[i] = new InventorySlot();
+                WorldState.Instance.OnWorldChanged += OnWorldChanged;
+                ApplyWorld(WorldState.Instance.Current, false);
             }
         }
 
-        public bool AddItem(ItemData item, int amount = 1)
+        private void OnDestroy()
+        {
+            if (WorldState.Instance != null)
+                WorldState.Instance.OnWorldChanged -= OnWorldChanged;
+        }
+
+        private void OnWorldChanged(WorldType world) => ApplyWorld(world, true);
+
+        private void ApplyWorld(WorldType world, bool notify)
+        {
+            _slots = world == WorldType.Modern ? _modernSlots : _valleySlots;
+            // 选中槽位可能指向另一套背包里不存在的格子，越界保护由 GetSlot 处理
+            if (notify)
+            {
+                OnInventoryChanged?.Invoke();
+                Debug.Log($"[Inventory] 切换到{(world == WorldType.Modern ? "现代" : "桃花谷")}背包");
+            }
+        }
+
+        private static InventorySlot[] MakeSlots(int capacity)
+        {
+            var arr = new InventorySlot[capacity];
+            for (int i = 0; i < capacity; i++) arr[i] = new InventorySlot();
+            return arr;
+        }
+
+        public bool AddItem(ItemData item, int amount = 1) => AddItemCore(_slots, item, amount);
+
+        /// <summary>明确发到桃花谷背包（StarterKit 用，避免读档在现代时把开局物资发错地方）</summary>
+        public bool AddItemToValley(ItemData item, int amount = 1) => AddItemCore(_valleySlots, item, amount, IsModern);
+
+        private bool AddItemCore(InventorySlot[] slots, ItemData item, int amount, bool suppressNotify = false)
         {
             if (item == null || amount <= 0) return false;
 
-            // 1. Check existing stackable slots
             for (int i = 0; i < _capacity; i++)
             {
-                if (!_slots[i].IsEmpty && _slots[i].item == item)
+                if (!slots[i].IsEmpty && slots[i].item == item)
                 {
-                    if (_slots[i].count + amount <= item.maxStack)
+                    if (slots[i].count + amount <= item.maxStack)
                     {
-                        _slots[i].count += amount;
-                        OnInventoryChanged?.Invoke();
-                        Debug.Log($"Added {amount} x {item.itemName} to existing stack.");
+                        slots[i].count += amount;
+                        if (!suppressNotify) OnInventoryChanged?.Invoke();
                         return true;
                     }
                     else
                     {
-                        // Fill this stack and continue with remaining
-                        int spaceLeft = item.maxStack - _slots[i].count;
-                        _slots[i].count = item.maxStack;
+                        int spaceLeft = item.maxStack - slots[i].count;
+                        slots[i].count = item.maxStack;
                         amount -= spaceLeft;
                     }
                 }
             }
 
-            // 2. Check empty slots
             if (amount > 0)
             {
                 for (int i = 0; i < _capacity; i++)
                 {
-                    if (_slots[i].IsEmpty)
+                    if (slots[i].IsEmpty)
                     {
-                        _slots[i].item = item;
-                        _slots[i].count = amount; // Assuming amount < maxStack for simplicity now
-                        OnInventoryChanged?.Invoke();
-                        Debug.Log($"Added {amount} x {item.itemName} to new slot.");
+                        slots[i].item = item;
+                        slots[i].count = amount;
+                        if (!suppressNotify) OnInventoryChanged?.Invoke();
                         return true;
                     }
                 }
             }
-            
+
             Debug.LogWarning("Inventory Full!");
             return false;
         }
@@ -107,9 +145,6 @@ namespace PBV.Inventory
             return _slots[index];
         }
 
-        /// <summary>
-        /// 从背包移除指定物品（消耗种子/收获使用）
-        /// </summary>
         public bool RemoveItem(ItemData item, int amount = 1)
         {
             if (item == null || amount <= 0) return false;
@@ -122,7 +157,6 @@ namespace PBV.Inventory
                     int take = Mathf.Min(_slots[i].count, remaining);
                     _slots[i].count -= take;
                     remaining -= take;
-
                     if (_slots[i].count <= 0) _slots[i].Clear();
                 }
             }
@@ -137,55 +171,44 @@ namespace PBV.Inventory
             return true;
         }
 
-        /// <summary>
-        /// 统计背包中指定物品数量
-        /// </summary>
         public int CountItem(ItemData item)
         {
             if (item == null) return 0;
             int total = 0;
             for (int i = 0; i < _capacity; i++)
-            {
-                if (!_slots[i].IsEmpty && _slots[i].item == item)
-                {
-                    total += _slots[i].count;
-                }
-            }
+                if (!_slots[i].IsEmpty && _slots[i].item == item) total += _slots[i].count;
             return total;
         }
 
-        /// <summary>
-        /// 查找背包中第一个种子类物品的槽位（用于播种）
-        /// </summary>
         public InventorySlot FindSeedSlot()
         {
             for (int i = 0; i < _capacity; i++)
-            {
                 if (!_slots[i].IsEmpty && _slots[i].item.type == ItemType.Seed && _slots[i].item.cropToPlant != null)
-                {
                     return _slots[i];
-                }
-            }
             return null;
         }
 
         public int Capacity => _capacity;
 
-        /// <summary>扩容背包（建造系统用）</summary>
+        /// <summary>扩容：两套背包同步扩，容量属共用层</summary>
         public void ExpandCapacity(int newCapacity)
         {
             if (newCapacity <= _capacity) return;
-            var newSlots = new InventorySlot[newCapacity];
-            for (int i = 0; i < _slots.Length; i++) newSlots[i] = _slots[i];
-            for (int i = _slots.Length; i < newCapacity; i++) newSlots[i] = new InventorySlot();
-            _slots = newSlots;
+            _valleySlots = Expand(_valleySlots, newCapacity);
+            _modernSlots = Expand(_modernSlots, newCapacity);
+            _slots = IsModern ? _modernSlots : _valleySlots;
             _capacity = newCapacity;
             OnInventoryChanged?.Invoke();
         }
 
-        /// <summary>
-        /// 存档恢复专用：按索引写入槽位（不触发堆叠合并）
-        /// </summary>
+        private static InventorySlot[] Expand(InventorySlot[] old, int newCapacity)
+        {
+            var arr = new InventorySlot[newCapacity];
+            for (int i = 0; i < old.Length; i++) arr[i] = old[i];
+            for (int i = old.Length; i < newCapacity; i++) arr[i] = new InventorySlot();
+            return arr;
+        }
+
         public void SetSlot(int index, ItemData item, int count)
         {
             if (index < 0 || index >= _capacity) return;
@@ -194,22 +217,37 @@ namespace PBV.Inventory
             OnInventoryChanged?.Invoke();
         }
 
-        /// <summary>
-        /// 清空背包（读档前调用）
-        /// </summary>
+        /// <summary>清空当前世界背包</summary>
         public void ClearAll()
         {
-            for (int i = 0; i < _capacity; i++)
-            {
-                _slots[i].Clear();
-            }
+            for (int i = 0; i < _capacity; i++) _slots[i].Clear();
             OnInventoryChanged?.Invoke();
         }
 
-        // For Debug
-        public void AddTestItem(ItemData item)
+        // ===== 存档：两套背包分别导出/导入 =====
+
+        /// <summary>导出指定世界的背包（只导出非空槽位）</summary>
+        public List<(int index, ItemData item, int count)> ExportWorld(WorldType world)
         {
-            AddItem(item, 1);
+            var list = new List<(int, ItemData, int)>();
+            var src = world == WorldType.Modern ? _modernSlots : _valleySlots;
+            for (int i = 0; i < _capacity; i++)
+                if (!src[i].IsEmpty) list.Add((i, src[i].item, src[i].count));
+            return list;
         }
+
+        /// <summary>导入指定世界的背包（先清空该套）</summary>
+        public void ImportWorld(WorldType world, IEnumerable<(int index, ItemData item, int count)> entries)
+        {
+            var dst = world == WorldType.Modern ? _modernSlots : _valleySlots;
+            for (int i = 0; i < _capacity; i++) dst[i].Clear();
+            if (entries == null) return;
+            foreach (var e in entries)
+                if (e.index >= 0 && e.index < _capacity && e.item != null)
+                { dst[e.index].item = e.item; dst[e.index].count = e.count; }
+            if ((world == WorldType.Modern) == IsModern) OnInventoryChanged?.Invoke();
+        }
+
+        public void AddTestItem(ItemData item) => AddItem(item, 1);
     }
 }

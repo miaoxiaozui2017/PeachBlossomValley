@@ -5,10 +5,11 @@ using PBV.Inventory;
 namespace PBV.Systems
 {
     /// <summary>
-    /// 古今商店隔离（运行时补建，无需重建场景）：
-    /// - 桃花谷：保留现有 3 家（杂货铺 / 酒楼 / 老农小摊），暖色美术、宋币货架。
-    /// - 现代：只有 2 家（现代杂货铺 / 古玩店），冷色与金铜色美术、人民币货架。
-    /// - 切换世界时整店隐藏，两边的店与货架互不通用。
+    /// 古今世界内容隔离（运行时补建，无需重建场景）：
+    /// - 桃花谷：3 家店（杂货铺/酒楼/老农小摊）+ 全部农田、工坊、NPC、出货箱。
+    /// - 现代：只有 2 家店（现代杂货铺/古玩店）+ 传送门驿站；其余谷内内容隐藏。
+    /// - 商店整店显隐；谷内内容点用「禁渲染+禁碰撞」隐藏，保留逻辑组件订阅。
+    /// - 时间季节、成就存档、货币两边通用（完整独立时钟代价过高）。
     /// </summary>
     public class ShopWorldBootstrap : MonoBehaviour
     {
@@ -56,15 +57,70 @@ namespace PBV.Systems
 
         private static void ApplyVisibility(WorldType world)
         {
-            // FindObjectsOfTypeAll 含未激活对象，隐藏的现代店也能被重新显示
+            // ① 商店：整店显隐（ShopSystem 无存档依赖，沿用既有做法）
             foreach (var shop in Resources.FindObjectsOfTypeAll<ShopSystem>())
             {
                 if (shop == null) continue;
                 bool show = (world == WorldType.Modern) == (shop.World == ShopWorld.Modern);
                 if (shop.gameObject.activeSelf != show) shop.gameObject.SetActive(show);
             }
-            // 若某世界一家店都没有，给出诊断日志（避免静默「一家店都不见」）
-            Debug.Log($"[ShopWorld] 世界={(world == WorldType.Modern ? "现代" : "桃花谷")}，已按归属显隐商店");
+            // ② 谷内内容点：禁渲染 + 禁碰撞，但**不 SetActive(false)**。
+            //    ShippingBinSystem / FarmGrid / NPCController 等被 SaveManager、HUD、
+            //    跨日结算用 FindObjectOfType 查找并订阅事件，整物体隐藏会让它们失效。
+            bool valleyVisible = world == WorldType.Ancient;
+            ApplyContentVisibility(valleyVisible);
+        }
+
+        /// <summary>
+        /// 现代只保留 现代杂货铺 / 古玩店 / 传送门（驿站）；其余谷内交互点与农田视觉全部隐藏。
+        /// 出货箱 ShippingBin 也在列表里 → 现代没有出货箱。
+        /// </summary>
+        private static readonly string[] ValleyOnlyObjects =
+        {
+            "ShippingBin", "CraftingStation", "CookingStation", "FishingSpot", "MineEntrance",
+            "ToolUpgradeStation", "Bed", "BuildStation", "PetAdoptionSpot",
+            "NPC_LaoNong", "NPC_YaoPo", "NPC_ShuSheng",
+            "DyeingStation", "FishingSpot_River", "FishingSpot_Lake",
+            "NPC_RanFang", "NPC_TieJiangNiang", "NPC_DaoShi", "NPC_TaoGong", "NPC_BaoBao",
+            "TavernStation", "JewelryStation", "PotteryStation", "MedicineStation", "CarpentryStation",
+            "ForageSpot_Wild", "ForageSpot_Forest", "MountainEntrance", "TrapSpot", "Wardrobe",
+            "MillStation", "SauceStation", "TeaStation", "TreeSpot_A", "TreeSpot_B",
+            "CageSpot", "CompostStation", "HouseStation", "LivestockStation",
+            "SugarStation", "SaltStation", "FarmVendorStation",
+            "Grid", "SelectionIndicator"
+        };
+
+        private static readonly System.Collections.Generic.Dictionary<string, GameObject> _contentCache =
+            new System.Collections.Generic.Dictionary<string, GameObject>();
+        private static int _rescanAttempts;
+
+        private static void ApplyContentVisibility(bool visible)
+        {
+            // 缓存引用，避免每帧全量比对；补漏扫描最多几次（列表里可能含场景不存在的名字）
+            bool missing = false;
+            foreach (var name in ValleyOnlyObjects)
+                if (!_contentCache.ContainsKey(name)) { missing = true; break; }
+
+            if (missing && _rescanAttempts < 4)
+            {
+                _rescanAttempts++;
+                foreach (var t in Resources.FindObjectsOfTypeAll<Transform>())
+                {
+                    if (t == null) continue;
+                    foreach (var name in ValleyOnlyObjects)
+                        if (t.name == name && !_contentCache.ContainsKey(name))
+                            _contentCache[name] = t.gameObject;
+                }
+            }
+
+            foreach (var kv in _contentCache)
+            {
+                var go = kv.Value;
+                if (go == null) continue;
+                foreach (var r in go.GetComponentsInChildren<Renderer>(true)) r.enabled = visible;
+                foreach (var c in go.GetComponentsInChildren<Collider2D>(true)) c.enabled = visible;
+                foreach (var canvas in go.GetComponentsInChildren<Canvas>(true)) canvas.enabled = visible;
+            }
         }
 
         /// <summary>补建现代两家店；幂等，场景里已存在则只补货架</summary>

@@ -66,11 +66,8 @@ namespace PBV.Economy
             int totalValue = 0;
             int totalItems = 0;
 
-            // 价格倍率在"投入的这一刻"锁定：穿越到现代后投入即享 ×2，
-            // 不必等到次日 06:00 还得恰好人在现代，规则更直观。
-            bool isModern = WorldState.Instance != null && WorldState.Instance.Current == WorldType.Modern;
-            PendingIsRMB = isModern; // 待结算币种也一并锁定
-            float worldMult = WorldState.Instance != null ? WorldState.Instance.SellMultiplier : 1f;
+            // 出货箱只在桃花谷，结算币种固定为宋币；倍率在投入这一刻锁定。
+            PendingIsRMB = false;
             float festMult = FestivalSystem.Instance != null ? FestivalSystem.Instance.PriceMultiplier : 1f;
             float repMult = ReputationSystem.Instance != null ? ReputationSystem.Instance.SellMultiplier : 1f;
             float buffMult = 1f + (BuffSystem.Instance != null ? BuffSystem.Instance.TradeBonus : 0f);
@@ -82,7 +79,7 @@ namespace PBV.Economy
                 if (slot == null || slot.IsEmpty) continue;
                 if (!IsSellable(slot.item)) continue;
 
-                totalValue += Mathf.RoundToInt(slot.item.sellPrice * slot.count * worldMult * festMult * repMult * buffMult);
+                totalValue += Mathf.RoundToInt(slot.item.sellPrice * slot.count * festMult * repMult * buffMult);
                 totalItems += slot.count;
             }
 
@@ -106,11 +103,9 @@ namespace PBV.Economy
             OnPendingChanged?.Invoke(PendingValue);
             PBV.Systems.QuestManager.Instance?.RecordShip(totalItems);
             string bonus = "";
-            if (worldMult > 1f) bonus += "现代×2 ";
             if (festMult > 1f) bonus += "节日×1.5 ";
-            string sym = PendingIsRMB ? "¥" : "";
-            int display = PendingIsRMB ? Mathf.RoundToInt(totalValue / (float)PBV.Systems.ExchangeSystem.SONG_PER_RMB) : totalValue;
-            PBV.UI.HUD.Instance?.ShowNotice($"出货 {totalItems} 件 → 待结算 {sym}{display}（{bonus}次日 06:00 入账）");
+            if (repMult > 1f) bonus += "声望加成 ";
+            PBV.UI.HUD.Instance?.ShowNotice($"出货 {totalItems} 件 → 待结算 {totalValue} 文（{bonus}次日 06:00 入账）");
             Debug.Log($"[ShippingBin] 投入 {totalItems} 件物品，价值 {totalValue}（待结算总额 {PendingValue}，次日06:00入账）");
         }
 

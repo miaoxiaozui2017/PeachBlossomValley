@@ -5,7 +5,7 @@ using PBV.Systems;
 namespace PBV.UI
 {
     /// <summary>
-    /// 时空驿站（传送门面板）：E 打开，提供「穿梭古代⇄现代」与「宋币⇄人民币兑换」。
+    /// 时空驿站（传送门面板）：E 或 X 打开，提供「穿梭古代⇄现代」与「宋币⇄人民币随时兑换」。
     /// 汇率见 ExchangeSystem（50 文 = ¥1）。
     /// </summary>
     public class PortalUI : MonoBehaviour
@@ -32,7 +32,9 @@ namespace PBV.UI
 
         private void Update()
         {
-            if (_isOpen && (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Escape)))
+            // X：随时随地打开时空驿站，只为「两边随时兑换货币」；穿梭仍需确认按钮
+            if (!_isOpen && Input.GetKeyDown(KeyCode.X)) { Open(); return; }
+            if (_isOpen && (Input.GetKeyDown(KeyCode.X) || Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Escape)))
                 Close();
         }
 
@@ -68,9 +70,23 @@ namespace PBV.UI
 
         private void Travel()
         {
-            if (WorldState.Instance == null) return;
+            var ws = WorldState.Instance;
+            if (ws == null) return;
+            // 先校验通行费，不够就保持面板打开，避免「面板关了但没穿越」的错觉
+            var w = PlayerWallet.Instance;
+            bool leavingValley = ws.Current == WorldType.Ancient;
+            int fee = leavingValley ? WorldState.VALLEY_FEE : WorldState.MODERN_FEE;
+            if (w != null)
+            {
+                int have = leavingValley ? w.SongCoins : w.RMB;
+                if (have < fee)
+                {
+                    HUD.Instance?.ShowNotice($"通行费不足：需要 {(leavingValley ? fee + " 文" : "¥" + fee)} · 可先在下方兑换货币");
+                    return;
+                }
+            }
             Close();
-            WorldState.Instance.Toggle();
+            ws.Toggle();
         }
 
         private void ExchangeSongToRMB()
@@ -156,7 +172,8 @@ namespace PBV.UI
             AddButton(panel.transform, "宋币 → 人民币（按汇率全兑）", new Color(0.3f, 0.5f, 0.6f, 1f), ExchangeSongToRMB);
             AddButton(panel.transform, "人民币 → 宋币（按汇率全兑）", new Color(0.6f, 0.4f, 0.3f, 1f), ExchangeRMBToSong);
 
-            _hintText = CreateText(panel.transform, "Hint", 12, FontStyle.Normal, new Color(0.7f, 0.65f, 0.6f), "E / Esc 关闭 · 兑换无损耗");
+            _hintText = CreateText(panel.transform, "Hint", 12, FontStyle.Normal, new Color(0.7f, 0.65f, 0.6f),
+                "X 随时打开 · E / X / Esc 关闭 · 兑换无损耗 · 穿梭需通行费");
             _hintText.alignment = TextAnchor.MiddleCenter;
         }
 
