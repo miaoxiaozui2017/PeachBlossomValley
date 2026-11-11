@@ -18,7 +18,7 @@ MonoBehaviour:
   icon: {fileID: 0}
   type: 2
   maxStack: 99
-  sellPrice: 0
+  sellPrice: 35
   cropToPlant: {fileID: 0}
   affectionValue: 3
   staminaRestore: 60

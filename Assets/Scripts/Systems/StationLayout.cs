@@ -21,6 +21,9 @@ namespace PBV.Systems
             ("FishingSpot",        "溪钓点 E",     4f, 9f),
             ("MineEntrance",       "矿洞 M/E",      8f, 9f),
             ("ToolUpgradeStation", "铁匠铺 U/E",   12f, 9f),
+            // 现代专属：与桃花谷店铺互斥显隐，所以可占第 1 排右端最显眼的位置
+            ("ModernShop",          "现代杂货铺 ¥ E", 16f, 9f),
+            ("AntiqueShop",         "古玩店 ¥ E",    20f, 9f),
             // 第 2 排 y = 6：生活 / 养成 / 老 NPC
             ("Bed",                "床 E",        -12f, 6f),
             ("BuildStation",       "建造台 B/E",   -8f, 6f),
@@ -91,16 +94,19 @@ namespace PBV.Systems
         }
 
         /// <summary>头顶名牌：世界空间 Canvas + 半透明底 + 亮字，与 NPC 名牌同一套做法</summary>
-        public static void EnsureLabel(GameObject go, string text)
+        public static void EnsureLabel(GameObject go, string text) => EnsureLabel(go, text, new Color(1f, 0.93f, 0.68f));
+
+        /// <summary>可指定文字颜色：现代店用冷蓝、古玩店用金铜，与桃花谷暖黄区分</summary>
+        public static void EnsureLabel(GameObject go, string text, Color textColor)
         {
             if (go == null) return;
 
-            // 已存在则只刷新文字（幂等），避免重复创建 Canvas，也兼容旧场景里已建好的空名牌
+            // 已存在则只刷新文字与颜色（幂等），避免重复创建 Canvas，也兼容旧场景里已建好的空名牌
             var existing = go.transform.Find("StationLabel");
             if (existing != null)
             {
                 var oldText = existing.GetComponentInChildren<Text>(true);
-                if (oldText != null) oldText.text = text;
+                if (oldText != null) { oldText.text = text; oldText.color = textColor; }
                 return;
             }
 
@@ -133,7 +139,7 @@ namespace PBV.Systems
             t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             t.fontSize = 22;
             t.fontStyle = FontStyle.Bold;
-            t.color = new Color(1f, 0.93f, 0.68f);
+            t.color = textColor;
             t.alignment = TextAnchor.MiddleCenter;
             t.horizontalOverflow = HorizontalWrapMode.Overflow;
             t.verticalOverflow = VerticalWrapMode.Overflow;

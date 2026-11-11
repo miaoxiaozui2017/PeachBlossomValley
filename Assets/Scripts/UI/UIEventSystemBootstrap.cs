@@ -62,6 +62,9 @@ namespace PBV.UI
             // v0.3.0 内容扩展：补建 4 NPC / 2 钓点 / 染坊，并给商店上架蓝草
             if (UnityEngine.Object.FindObjectOfType<PBV.Systems.ContentExpansionBootstrap>() == null)
                 new GameObject("ContentExpansion (Auto)").AddComponent<PBV.Systems.ContentExpansionBootstrap>();
+            // 古今商店隔离：补建现代杂货铺 / 古玩店，并按世界整店显隐
+            if (UnityEngine.Object.FindObjectOfType<PBV.Systems.ShopWorldBootstrap>() == null)
+                new GameObject("ShopWorld (Auto)").AddComponent<PBV.Systems.ShopWorldBootstrap>();
             // v0.4.0：声望 / Buff / 节气事件 / 餐厅订单 / 穿梭贸易 与 O、R 两个面板
             if (UnityEngine.Object.FindObjectOfType<PBV.Systems.V04Bootstrap>() == null)
                 new GameObject("V04Bootstrap (Auto)").AddComponent<PBV.Systems.V04Bootstrap>();

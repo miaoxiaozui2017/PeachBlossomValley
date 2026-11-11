@@ -275,7 +275,19 @@ namespace PBV.UI
                 return;
             }
 
-            _infoText.text = $"{slot.item.itemName}  x{slot.count}\n{slot.item.description}";
+            // 价格常驻：每个物品都直接定过 sellPrice，选中就能看到值多少钱
+            var shop = PBV.UI.ShopUI.CurrentShop;
+            string price;
+            if (shop != null)
+            {
+                int unit = shop.GetSellUnitPrice(slot.item);
+                price = $"基础售价 {slot.item.sellPrice}  ·  卖给{shop.ShopName} {shop.CurrencySymbol}{unit}{shop.CurrencyUnit}/件（含好感）";
+            }
+            else
+            {
+                price = $"基础售价 {slot.item.sellPrice} 文/件  ·  拿到商店或出货箱卖";
+            }
+            _infoText.text = $"{slot.item.itemName}  x{slot.count}\n{slot.item.description}\n{price}";
         }
 
         private void RefreshMoney(int song, int rmb)

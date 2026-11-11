@@ -7,10 +7,10 @@ using PBV.Systems;
 namespace PBV.UI
 {
     /// <summary>
-    /// 商店 UI：上半「买」（折后价）、下半「卖」（当场结算）。
-    /// - 营业时间内才能交易；打烊后按钮禁用，引导去出货箱次日结算。
-    /// - 买价 / 卖价随商人好感浮动，状态栏常驻显示。
-    /// - B / Esc / E 关闭。
+    /// 商店 UI：**只列本店可买的东西**（货架）。
+    /// 卖货不占面板：按 Tab 打开背包 → 鼠标选中格子 → 背包信息栏显示价格
+    /// → 回本面板点「卖选中 / 全部卖出」，当场结算。
+    /// 状态栏显示营业时间、好感等级、买折扣、卖溢价；打烊时交易被拒。
     /// </summary>
     public class ShopUI : MonoBehaviour
     {
@@ -24,10 +24,14 @@ namespace PBV.UI
         private Text _titleText;
         private Text _moneyText;
         private Text _statusText;
+        private Text _selectedText;
         private ShopSystem _currentShop;
         private bool _isOpen;
         private bool _lastCanTrade;
         private static Font _font;
+
+        /// <summary>当前正在交易的商店（供背包信息栏读取实收价）</summary>
+        public static ShopSystem CurrentShop { get; private set; }
 
         private static Font Font => _font ?? (_font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"));
 
@@ -47,26 +51,27 @@ namespace PBV.UI
                 CloseShop();
                 return;
             }
-            // 营业状态跨小时变化时立即刷新（打烊瞬间禁用按钮）
             if (_currentShop != null && _currentShop.CanTrade != _lastCanTrade) Refresh();
+            RefreshSelected();
         }
 
         public void OpenShop(ShopSystem shop)
         {
             _currentShop = shop;
+            CurrentShop = shop;
             _isOpen = true;
             _canvasGo.SetActive(true);
             UIEventSystemBootstrap.RegisterTopPanel(CloseShop);
             Refresh();
         }
 
-        /// <summary>面板开着时外部（如送礼涨好感）触发刷新</summary>
         public void RefreshIfOpen() { if (_isOpen) Refresh(); }
 
         public void CloseShop()
         {
             _isOpen = false;
             _currentShop = null;
+            CurrentShop = null;
             _canvasGo.SetActive(false);
             UIEventSystemBootstrap.ClearTopPanel();
         }
@@ -78,42 +83,46 @@ namespace PBV.UI
             bool canTrade = shop.CanTrade;
             _lastCanTrade = canTrade;
 
-            bool modern = WorldState.Instance != null && WorldState.Instance.Current == WorldType.Modern;
-            if (_titleText != null) _titleText.text = shop.ShopName + (modern ? "（现代·¥）" : "（桃花谷·文）");
+            if (_titleText != null) _titleText.text = shop.ShopName + (shop.IsRMBShop ? "（现代 · ¥）" : "（桃花谷 · 文）");
             var w = PlayerWallet.Instance;
             if (_moneyText != null && w != null) _moneyText.text = $"宋 {w.SongCoins}文   ¥{w.RMB}";
 
-            int affection = shop.Affection;
             string state = canTrade
                 ? $"<color=#8fd48f>营业中 {shop.OpenHour:00}:00-{shop.CloseHour:00}:00</color>"
                 : $"<color=#e58a8a>已打烊 · 请投出货箱，次日 06:00 结算</color>";
             if (_statusText != null)
-                _statusText.text = $"{state}    {shop.MerchantName}[{shop.AffectionLevelName} {affection}]    " +
+                _statusText.text = $"{state}    {shop.MerchantName}[{shop.AffectionLevelName} {shop.Affection}]    " +
                                    $"买 <b>{shop.BuyMultiplier * 10f:0.0}折</b> / 卖 <b>+{Mathf.RoundToInt((shop.SellMultiplier - 1f) * 100f)}%</b>（当场结算）";
 
             for (int i = _listContent.transform.childCount - 1; i >= 0; i--)
                 Destroy(_listContent.transform.GetChild(i).gameObject);
 
-            CreateSectionTitle("── 购买（好感越高越便宜） ──");
+            CreateSectionTitle("── 本店货架（可买的东西） ──");
             var items = shop.Items;
+            int count = 0;
             if (items != null)
                 foreach (var entry in items)
-                    if (entry != null && entry.item != null) CreateBuyRow(shop, entry, canTrade);
+                    if (entry != null && entry.item != null) { CreateBuyRow(shop, entry, canTrade); count++; }
+            if (count == 0) CreateEmptyRow("本店暂无商品");
+            RefreshSelected();
+        }
 
-            CreateSectionTitle("── 出售（当场结算 · 出货箱才享现代×2 / 节日×1.5） ──");
+        /// <summary>显示背包当前选中格与实收价</summary>
+        private void RefreshSelected()
+        {
+            if (_selectedText == null || _currentShop == null) return;
             var inv = InventorySystem.Instance;
-            int sellable = 0;
-            if (inv != null)
+            int idx = InventoryUI.SelectedSlotIndex;
+            var slot = inv != null && idx >= 0 && idx < inv.Capacity ? inv.GetSlot(idx) : null;
+            if (slot == null || slot.IsEmpty || slot.item == null)
             {
-                for (int i = 0; i < inv.Capacity; i++)
-                {
-                    var slot = inv.GetSlot(i);
-                    if (slot == null || slot.IsEmpty || !ShippingBinSystem.CanSell(slot.item)) continue;
-                    CreateSellRow(shop, slot.item, slot.count, canTrade);
-                    sellable++;
-                }
+                _selectedText.text = "按 <b>Tab</b> 打开背包，鼠标点格子选中要卖的物品";
+                return;
             }
-            if (sellable == 0) CreateEmptyRow("背包里暂无可卖物品（工具 / 种子 / 无售价材料不收）");
+            int unit = _currentShop.GetSellUnitPrice(slot.item);
+            _selectedText.text = $"背包选中：<b>{slot.item.itemName} ×{slot.count}</b>    " +
+                                 $"卖价 <b>{_currentShop.CurrencySymbol}{unit}{_currentShop.CurrencyUnit}/件</b>    " +
+                                 $"（基础 {slot.item.sellPrice} × 好感溢价）";
         }
 
         private void CreateSectionTitle(string text)
@@ -189,28 +198,13 @@ namespace PBV.UI
         {
             var row = MakeRow($"Buy_{entry.item.itemName}", _rowHeight);
             int price = shop.GetBuyPrice(entry);
-            int basePrice = entry.price;
             string sym = entry.currency == Currency.RMB ? "¥" : "";
             string unit = entry.currency == Currency.RMB ? "" : " 文";
-            string discount = price < basePrice ? $"\n<size=10><color=#8f8f7f>原价 {sym}{basePrice}</color></size>" : "";
-            MakeText(row.transform, "Name", $"{entry.item.itemName}\n<size=11>{entry.item.description}</size>", 250, 15, new Color(1f, 0.95f, 0.8f));
-            MakeText(row.transform, "Price", $"<b>{sym}{price}{unit}</b>{discount}", 92, 16, new Color(1f, 0.85f, 0.4f), TextAnchor.MiddleRight);
-            MakeButton(row.transform, "BuyBtn", "购买", 80, new Color(0.25f, 0.5f, 0.3f, 1f),
+            string discount = price < entry.price ? $"\n<size=10><color=#8f8f7f>原价 {sym}{entry.price}</color></size>" : "";
+            MakeText(row.transform, "Name", $"{entry.item.itemName}\n<size=11>{entry.item.description}</size>", 280, 15, new Color(1f, 0.95f, 0.8f));
+            MakeText(row.transform, "Price", $"<b>{sym}{price}{unit}</b>{discount}", 100, 16, new Color(1f, 0.85f, 0.4f), TextAnchor.MiddleRight);
+            MakeButton(row.transform, "BuyBtn", "购买", 90, new Color(0.25f, 0.5f, 0.3f, 1f),
                 () => TryBuy(entry), canTrade);
-        }
-
-        private void CreateSellRow(ShopSystem shop, ItemData item, int count, bool canTrade)
-        {
-            var row = MakeRow($"Sell_{item.itemName}", _rowHeight);
-            bool modern = WorldState.Instance != null && WorldState.Instance.Current == WorldType.Modern;
-            string sym = modern ? "¥" : "";
-            int unit = shop.GetSellUnitPrice(item);
-            MakeText(row.transform, "Name", $"{item.itemName}  ×{count}", 232, 15, new Color(1f, 0.95f, 0.8f));
-            MakeText(row.transform, "Price", $"{sym}{unit} / 件", 100, 14, new Color(1f, 0.85f, 0.4f), TextAnchor.MiddleRight);
-            MakeButton(row.transform, "SellOne", "卖 1", 62, new Color(0.5f, 0.34f, 0.18f, 1f),
-                () => { shop.TrySell(item, 1); Refresh(); }, canTrade);
-            MakeButton(row.transform, "SellAll", "全卖", 62, new Color(0.55f, 0.28f, 0.2f, 1f),
-                () => { shop.TrySell(item, count); Refresh(); }, canTrade);
         }
 
         private void TryBuy(ShopEntry entry)
@@ -218,7 +212,7 @@ namespace PBV.UI
             var shop = _currentShop;
             if (shop == null || !shop.CanTrade)
             {
-                HUD.Instance?.ShowNotice($"商店已打烊（营业 {shop?.OpenHour:00}:00-{shop?.CloseHour:00}:00）");
+                HUD.Instance?.ShowNotice($"商店不可交易（营业 {shop?.OpenHour:00}:00-{shop?.CloseHour:00}:00）");
                 return;
             }
             var wallet = PlayerWallet.Instance;
@@ -241,9 +235,25 @@ namespace PBV.UI
                 HUD.Instance?.ShowNotice("背包已满，购买取消（已退款）");
                 return;
             }
-            string sym = isRMB ? "¥" : "";
-            string unit = isRMB ? "" : " 文";
-            HUD.Instance?.ShowNotice($"购买 {entry.item.itemName} ×1  -{sym}{price}{unit}（{shop.MerchantName}好感 {shop.BuyMultiplier * 10f:0.0}折）");
+            HUD.Instance?.ShowNotice($"购买 {entry.item.itemName} ×1  -{(isRMB ? "¥" : "")}{price}{(isRMB ? "" : " 文")}（{shop.MerchantName}好感 {shop.BuyMultiplier * 10f:0.0}折）");
+            Refresh();
+        }
+
+        /// <summary>卖背包当前选中格的物品：与 Tab 背包联动</summary>
+        private void SellSelected(bool all)
+        {
+            var shop = _currentShop;
+            if (shop == null) return;
+            var inv = InventorySystem.Instance;
+            if (inv == null) return;
+            int idx = InventoryUI.SelectedSlotIndex;
+            var slot = idx >= 0 && idx < inv.Capacity ? inv.GetSlot(idx) : null;
+            if (slot == null || slot.IsEmpty || slot.item == null)
+            {
+                HUD.Instance?.ShowNotice("请按 Tab 打开背包，鼠标点格子选中要卖的物品");
+                return;
+            }
+            shop.TrySell(slot.item, all ? slot.count : 1);
             Refresh();
         }
 
@@ -260,7 +270,8 @@ namespace PBV.UI
             _canvasGo.transform.SetParent(transform, false);
             var canvas = _canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 30;
+            // 低于背包 Canvas(15)：商店 BG 不再压暗背包面板，两个面板可同时看清、分别点击
+            canvas.sortingOrder = 14;
             var scaler = _canvasGo.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920, 1080);
@@ -270,14 +281,18 @@ namespace PBV.UI
             bg.transform.SetParent(_canvasGo.transform, false);
             var bgRt = bg.AddComponent<RectTransform>();
             bgRt.anchorMin = Vector2.zero; bgRt.anchorMax = Vector2.one; bgRt.sizeDelta = Vector2.zero;
-            bg.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.5f);
-            bg.AddComponent<Button>().onClick.AddListener(CloseShop);
+            var bgImg = bg.AddComponent<Image>();
+            bgImg.color = new Color(0f, 0f, 0f, 0.5f);
+            // 关键：全屏遮罩不吃点击。商店面板与 Tab 背包面板要同时能点，
+            // 否则背包格子被本 Canvas 的 BG 抢走射线，选中不了物品。
+            bgImg.raycastTarget = false;
 
             var panel = new GameObject("Panel");
             panel.transform.SetParent(_canvasGo.transform, false);
             var panelRt = panel.AddComponent<RectTransform>();
             panelRt.anchorMin = new Vector2(0.5f, 0.5f); panelRt.anchorMax = new Vector2(0.5f, 0.5f);
-            panelRt.sizeDelta = new Vector2(620, 560); panelRt.anchoredPosition = Vector2.zero;
+            // 面板偏左，给右侧的 Tab 背包面板留位置，两个面板不叠
+            panelRt.sizeDelta = new Vector2(620, 560); panelRt.anchoredPosition = new Vector2(-360f, 0f);
             panel.AddComponent<Image>().color = new Color(0.12f, 0.1f, 0.08f, 0.96f);
 
             var vlg = panel.AddComponent<VerticalLayoutGroup>();
@@ -286,7 +301,6 @@ namespace PBV.UI
             vlg.childControlWidth = true; vlg.childControlHeight = false;
             vlg.childForceExpandWidth = true; vlg.childForceExpandHeight = false;
 
-            // 标题栏
             var header = new GameObject("Header");
             header.transform.SetParent(panel.transform, false);
             header.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 40);
@@ -300,34 +314,33 @@ namespace PBV.UI
             _moneyText.rectTransform.sizeDelta = new Vector2(200, 40);
             _moneyText.alignment = TextAnchor.MiddleRight;
 
-            // 状态栏：营业时间 / 好感 / 买折扣 / 卖溢价
             _statusText = CreateText(panel.transform, "Status", 13, FontStyle.Normal, new Color(0.9f, 0.88f, 0.8f), "");
             _statusText.rectTransform.sizeDelta = new Vector2(0, 22);
-            _statusText.supportRichText = true;
 
             var hint = CreateText(panel.transform, "Hint", 12, FontStyle.Normal, new Color(0.7f, 0.65f, 0.55f),
-                "买卖当场结算 · G 给掌柜送礼涨好感 · B / E / Esc 关闭");
+                "只列可买的东西 · 卖货按 Tab 打开背包选中物品 · G 送礼涨好感 · B / E / Esc 关闭");
             hint.rectTransform.sizeDelta = new Vector2(0, 16);
 
-            // 一键全部卖出
-            var sellGo = new GameObject("SellAllBtn");
-            sellGo.transform.SetParent(panel.transform, false);
-            sellGo.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 34);
-            sellGo.AddComponent<Image>().color = new Color(0.45f, 0.3f, 0.18f, 1f);
-            var sellBtn = sellGo.AddComponent<Button>();
-            sellBtn.onClick.AddListener(TrySellAll);
-            var stgo = new GameObject("Text");
-            stgo.transform.SetParent(sellGo.transform, false);
-            var strt = stgo.AddComponent<RectTransform>();
-            strt.anchorMin = Vector2.zero; strt.anchorMax = Vector2.one; strt.sizeDelta = Vector2.zero;
-            var st = stgo.AddComponent<Text>();
-            st.font = Font; st.fontSize = 15; st.alignment = TextAnchor.MiddleCenter;
-            st.color = Color.white; st.text = "一键全部卖出（当场结算）"; st.raycastTarget = false;
+            _selectedText = CreateText(panel.transform, "Selected", 13, FontStyle.Normal, new Color(0.85f, 0.92f, 0.8f), "");
+            _selectedText.rectTransform.sizeDelta = new Vector2(0, 20);
 
-            // 列表容器
+            var btnBar = new GameObject("SellBar");
+            btnBar.transform.SetParent(panel.transform, false);
+            btnBar.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 36);
+            var barLayout = btnBar.AddComponent<HorizontalLayoutGroup>();
+            barLayout.spacing = 8;
+            barLayout.childControlWidth = true; barLayout.childForceExpandWidth = true;
+            barLayout.childControlHeight = false; barLayout.childForceExpandHeight = false;
+            MakeButton(btnBar.transform, "SellOne", "卖选中 ×1", 120, new Color(0.5f, 0.34f, 0.18f, 1f),
+                () => SellSelected(false), true);
+            MakeButton(btnBar.transform, "SellStack", "卖选中整叠", 120, new Color(0.55f, 0.3f, 0.2f, 1f),
+                () => SellSelected(true), true);
+            MakeButton(btnBar.transform, "SellAll", "全部卖出", 120, new Color(0.45f, 0.28f, 0.18f, 1f),
+                TrySellAll, true);
+
             var scrollGo = new GameObject("Scroll");
             scrollGo.transform.SetParent(panel.transform, false);
-            scrollGo.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 400);
+            scrollGo.AddComponent<RectTransform>().sizeDelta = new Vector2(0, 370);
             scrollGo.AddComponent<Image>().color = new Color(0.08f, 0.07f, 0.05f, 0.5f);
             var sr = scrollGo.AddComponent<ScrollRect>();
             sr.horizontal = false; sr.vertical = true;
@@ -361,7 +374,7 @@ namespace PBV.UI
             var t = go.AddComponent<Text>();
             t.font = Font; t.fontSize = fontSize; t.fontStyle = style;
             t.alignment = TextAnchor.MiddleLeft; t.color = color;
-            t.text = content; t.raycastTarget = false;
+            t.text = content; t.raycastTarget = false; t.supportRichText = true;
             return t;
         }
     }

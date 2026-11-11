@@ -96,7 +96,11 @@ namespace PBV.Systems
             }
 
             // 扎染产业链的入口原料：蓝草进杂货铺（重建场景时 SceneBuilder 也会加）
-            var shop = FindObjectOfType<ShopSystem>();
+            // 必须按物体名定位桃花谷杂货铺：现代店由 ShopWorldBootstrap 另行创建，
+            // 且读档直接进现代时该店已被隐藏，GameObject.Find / FindObjectOfType 都找不到它。
+            ShopSystem shop = null;
+            foreach (var s in Resources.FindObjectsOfTypeAll<ShopSystem>())
+                if (s != null && s.gameObject.name == "NPC_ShopKeeper") { shop = s; break; }
             var indigo = FindItem("item_indigo");
             if (shop != null && indigo != null) shop.AddShopEntry(indigo, 24);
             // 陶瓷 / 药墨产业的入口原料：陶土、药材同样在杂货铺买到（也可去野地采集）
@@ -132,30 +136,19 @@ namespace PBV.Systems
             var seedSugarbeet = FindItem("seed_sugarbeet");
             if (shop != null && seedSugarbeet != null) shop.AddShopEntry(seedSugarbeet, 16);
 
-            // 现代货架：人民币计价的现代资源（活力饮料/能量胶/增产营养剂），去现代后可在杂货铺购买
+            // 工具现在也能卖，桃花谷杂货铺必须能买回来（否则卖光工具会卡死）
             if (shop != null)
             {
-                var drink = FindItem("item_mod_drink");
-                var gel = FindItem("item_mod_gel");
-                var boost = FindItem("item_mod_boost");
-                if (drink != null) shop.AddModernEntry(drink, 5);
-                if (gel != null) shop.AddModernEntry(gel, 12);
-                if (boost != null) shop.AddModernEntry(boost, 8);
-
-                // 现代复合肥：用人民币购买的高效肥料（施肥产量 ×3，高风险高收益）
-                var fertModern = FindItem("item_fertilizer_modern");
-                if (fertModern != null) shop.AddModernEntry(fertModern, 15);
-
-                // 黑科技图纸：用挣来的人民币购买，按 F 研究获得强力增益（持续3天）
-                var bpFarm = FindItem("item_blueprint_farm");
-                var bpMine = FindItem("item_blueprint_mine");
-                var bpTrade = FindItem("item_blueprint_trade");
-                if (bpFarm != null) shop.AddModernEntry(bpFarm, 30);
-                if (bpMine != null) shop.AddModernEntry(bpMine, 35);
-                if (bpTrade != null) shop.AddModernEntry(bpTrade, 40);
+                AddTool(shop, "item_tool_hoe");
+                AddTool(shop, "item_tool_wateringcan");
+                AddTool(shop, "item_tool_sickle");
+                AddTool(shop, "item_tool_axe");
             }
 
-            Debug.Log($"[ContentExpansion] 补建 {created} 个交互点（共 {ContentExpansionData.Extra.Length} 个扩展点），蓝草与现代货架已上架");
+            // 现代货架已迁到「现代杂货铺 / 古玩店」两家独立店铺（见 ShopWorldBootstrap），
+            // 古今商店互不通用，桃花谷杂货铺不再持有人民币商品。
+
+            Debug.Log($"[ContentExpansion] 补建 {created} 个交互点（共 {ContentExpansionData.Extra.Length} 个扩展点）");
         }
 
         private static void CreateStation(string goName, string kind, string displayName, string[] lines, Color color, int arg)
@@ -249,6 +242,13 @@ namespace PBV.Systems
             foreach (var item in Resources.LoadAll<ItemData>("Data"))
                 if (item != null && item.id == id) return item;
             return null;
+        }
+
+        /// <summary>工具上架（宋币 90 文，卖价 60 文，防套利）</summary>
+        private static void AddTool(ShopSystem shop, string id)
+        {
+            var item = FindItem(id);
+            if (item != null) shop.AddShopEntry(item, 90);
         }
     }
 }

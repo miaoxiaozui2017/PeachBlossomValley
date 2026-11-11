@@ -14,10 +14,6 @@ namespace PBV.Economy
     [RequireComponent(typeof(Collider2D))]
     public class ShippingBinSystem : MonoBehaviour, IInteractable
     {
-        [Header("Settings")]
-        [Tooltip("是否连种子一起出售（默认不出售种子和工具）")]
-        [SerializeField] private bool _sellSeeds = false;
-
         /// <summary>已投入未结算的总价值</summary>
         public int PendingValue { get; private set; }
 
@@ -119,24 +115,12 @@ namespace PBV.Economy
         }
 
         /// <summary>
-        /// 统一出售规则（出货箱与商店回收共用）：
-        /// 可卖 = 售价>0 的作物/鱼/矿石/纸品/料理；
-        /// 不可卖 = 工具、种子、售价为 0 的材料。
+        /// 统一出售规则：**背包里一切物品可售卖**（工具/种子/材料同样能卖）。
+        /// 每个 ItemData 资产都已直接给定 sellPrice，所以只需判非空与有价即可。
         /// </summary>
-        public static bool CanSell(ItemData item)
-        {
-            if (item == null || item.sellPrice <= 0) return false;
-            if (item.type == ItemType.Tool) return false;
-            if (item.type == ItemType.Seed) return false;
-            return true;
-        }
+        public static bool CanSell(ItemData item) => item != null && item.sellPrice > 0;
 
-        private bool IsSellable(ItemData item)
-        {
-            if (item == null) return false;
-            if (item.type == ItemType.Seed) return _sellSeeds && item.sellPrice > 0;
-            return CanSell(item);
-        }
+        private bool IsSellable(ItemData item) => CanSell(item);
 
         /// <summary>
         /// 每日 06:00 结算

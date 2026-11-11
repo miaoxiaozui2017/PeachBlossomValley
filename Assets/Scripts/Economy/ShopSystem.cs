@@ -6,30 +6,36 @@ using PBV.Systems;
 
 namespace PBV.Economy
 {
+    /// <summary>商店归属世界：古今不通用，切世界时整店显隐</summary>
+    public enum ShopWorld { Ancient, Modern }
+
     /// <summary>商店商品条目</summary>
     [Serializable]
     public class ShopEntry
     {
         public ItemData item;
         public int price;
-        [Tooltip("货币：Song=宋币（文） / RMB=人民币（¥）。桃花谷货架用宋币，现代货架用人民币")]
+        [Tooltip("货币：Song=宋币（文） / RMB=人民币（¥）。桃花谷店铺用宋币，现代店铺用人民币")]
         public Currency currency = Currency.Song;
         [Tooltip("-1 = 无限库存")]
         public int stock = -1;
     }
 
     /// <summary>
-    /// 商店系统：买卖当场结算，有营业时间，价格随「商人好感度」浮动。
-    /// - 营业时间默认 06:00-18:00（与 NPC 作息一致）；打烊后不能交易，卖货只能投出货箱、次日 06:00 结算。
+    /// 商店系统：只列「本店可买的东西」，买卖当场结算，有营业时间，价格随商人好感浮动。
+    /// - 古今不通用：ShopWorld 决定这家店属于桃花谷还是现代，切世界时整店隐藏。
+    /// - 卖货不放在商店面板：面板只列货架；玩家按 Tab 打开背包选中物品，
+    ///   在背包信息栏看价格，点商店面板「卖选中」完成交易（见 ShopUI / InventoryUI）。
+    /// - 背包里一切物品可售卖（每个 ItemData 都直接给过 sellPrice）。
+    /// - 营业 06:00-18:00；打烊后不能交易，卖货只能投出货箱、次日 06:00 结算。
     /// - 好感越高：买越便宜（挚友 8 折）、卖越贵（挚友 +30%）。
-    /// - 商人不是独立 NPC（融合在建筑里），G 送礼直接送给建筑，好感按 MerchantName 存进好感系统。
-    /// - 商店不乘现代 ×2 / 节日 ×1.5，出货箱仍是高价渠道，两条渠道互补。
     /// </summary>
     [RequireComponent(typeof(Collider2D))]
     public class ShopSystem : MonoBehaviour, IInteractable
     {
         [Header("Shop Info")]
         [SerializeField] private string _shopName = "杂货铺";
+        [SerializeField] private ShopWorld _world = ShopWorld.Ancient;
 
         [Header("营业时间（含起始、不含结束）")]
         [SerializeField] private int _openHour = 6;
@@ -38,31 +44,38 @@ namespace PBV.Economy
         [Header("商人名称（留空则按建筑自动推断）")]
         [SerializeField] private string _merchantNameOverride = "";
 
-        [Header("商品列表（桃花谷货架 · 宋币）")]
+        [Header("本店货架（只列可买的东西）")]
         [SerializeField] private ShopEntry[] _items;
 
-        [Header("现代货架（人民币 · 仅在现代世界显示）")]
-        [SerializeField] private ShopEntry[] _modernItems;
-
-        // 好感度对价格的影响上限：挚友 买 8 折 / 卖 +30%
         private const float MaxBuyDiscount = 0.20f;
         private const float MaxSellPremium = 0.30f;
 
+        /// <summary>
+        /// 运行时新建的店（尤其现代店）自我对齐世界：若不属于当前世界就立刻隐藏。
+        /// 显示的职责归 ShopWorldBootstrap，这里只负责「补建时序晚于 bootstrap」时不漏隐藏。
+        /// </summary>
+        private void Start()
+        {
+            if (!IsAvailable) gameObject.SetActive(false);
+        }
+
         public string ShopName => _shopName;
+        public ShopWorld World => _world;
         public int OpenHour => _openHour;
         public int CloseHour => _closeHour;
 
-        /// <summary>根据当前世界返回对应货架：现代世界显示人民币商品，否则宋币商品</summary>
-        public ShopEntry[] Items
-        {
-            get
-            {
-                bool modern = WorldState.Instance != null && WorldState.Instance.Current == WorldType.Modern;
-                return modern ? (_modernItems ?? _items) : _items;
-            }
-        }
+        /// <summary>本店是否属于当前世界</summary>
+        public bool IsAvailable => WorldState.Instance == null ||
+            ((WorldState.Instance.Current == WorldType.Modern) == (_world == ShopWorld.Modern));
 
-        /// <summary>商人名字：与好感系统共用 key，杂货铺=商人 / 酒楼=饱饱 / 老农小摊=老农</summary>
+        /// <summary>本店收付币种：现代店 ¥，桃花谷店 文</summary>
+        public bool IsRMBShop => _world == ShopWorld.Modern;
+        public Currency ShopCurrency => IsRMBShop ? Currency.RMB : Currency.Song;
+
+        /// <summary>货架：每店独立，不再按世界切换（古今不通用）</summary>
+        public ShopEntry[] Items => _items;
+
+        /// <summary>商人名字：与好感系统共用 key</summary>
         public string MerchantName
         {
             get
@@ -72,21 +85,24 @@ namespace PBV.Economy
                 {
                     case "TavernStation": return "饱饱（酒楼大厨）";
                     case "FarmVendorStation": return "老农";
+                    case "ModernShop": return "现代店员";
+                    case "AntiqueShop": return "古玩店老板";
                     default: return "商人";
                 }
             }
         }
 
-        /// <summary>当前是否营业（TimeManager 从 06:00 起算，24:00 换日）</summary>
         public bool IsOpenNow
         {
             get
             {
                 var tm = TimeManager.Instance;
-                if (tm == null) return true; // 时间系统未就绪时不拦交易
+                if (tm == null) return true;
                 return tm.CurrentHour >= _openHour && tm.CurrentHour < _closeHour;
             }
         }
+
+        public bool CanTrade => IsOpenNow && IsAvailable;
 
         public int Affection => RelationshipSystem.Instance != null
             ? RelationshipSystem.Instance.GetAffection(MerchantName) : 0;
@@ -95,11 +111,7 @@ namespace PBV.Economy
             ? RelationshipSystem.Instance.GetLevel(MerchantName) : AffectionLevel.Stranger;
 
         public string AffectionLevelName => RelationshipSystem.LevelToName(AffectionLevel);
-
-        /// <summary>买价系数：好感 0 → 1.00，好感 100 → 0.80</summary>
         public float BuyMultiplier => 1f - MaxBuyDiscount * (Affection / 100f);
-
-        /// <summary>卖价系数：好感 0 → 1.00，好感 100 → 1.30</summary>
         public float SellMultiplier => 1f + MaxSellPremium * (Affection / 100f);
 
         public int GetBuyPrice(ShopEntry entry)
@@ -108,7 +120,7 @@ namespace PBV.Economy
             return Mathf.Max(1, Mathf.RoundToInt(entry.price * BuyMultiplier));
         }
 
-        /// <summary>商店单个物品的回收价（含好感溢价 + 今日事件「货商过境」+20%）</summary>
+        /// <summary>单个物品的回收价（含好感溢价 + 今日事件「货商过境」+20%）</summary>
         public int GetSellUnitPrice(ItemData item)
         {
             if (item == null) return 0;
@@ -116,8 +128,11 @@ namespace PBV.Economy
             return Mathf.Max(1, Mathf.RoundToInt(item.sellPrice * SellMultiplier * eventMult));
         }
 
-        /// <summary>运行时追加桃花谷商品（内容扩展用，幂等）</summary>
-        public void AddShopEntry(ItemData item, int price)
+        public string CurrencySymbol => IsRMBShop ? "¥" : "";
+        public string CurrencyUnit => IsRMBShop ? "" : " 文";
+
+        /// <summary>运行时追加商品（幂等）</summary>
+        public void AddShopEntry(ItemData item, int price, Currency currency = Currency.Song)
         {
             if (item == null) return;
             if (_items != null)
@@ -125,34 +140,21 @@ namespace PBV.Economy
                     if (e != null && e.item == item) return;
             var list = new System.Collections.Generic.List<ShopEntry>();
             if (_items != null) list.AddRange(_items);
-            list.Add(new ShopEntry { item = item, price = price, stock = -1 });
+            list.Add(new ShopEntry { item = item, price = price, currency = currency, stock = -1 });
             _items = list.ToArray();
         }
 
-        /// <summary>运行时追加现代货架商品（人民币，幂等）</summary>
-        public void AddModernEntry(ItemData item, int price)
-        {
-            if (item == null) return;
-            if (_modernItems != null)
-                foreach (var e in _modernItems)
-                    if (e != null && e.item == item) return;
-            var list = new System.Collections.Generic.List<ShopEntry>();
-            if (_modernItems != null) list.AddRange(_modernItems);
-            list.Add(new ShopEntry { item = item, price = price, currency = Currency.RMB, stock = -1 });
-            _modernItems = list.ToArray();
-        }
+        /// <summary>兼容旧调用：人民币货架条目</summary>
+        public void AddModernEntry(ItemData item, int price) => AddShopEntry(item, price, Currency.RMB);
 
-        /// <summary>营业中才能交易（供 UI 判断按钮是否可用）</summary>
-        public bool CanTrade => IsOpenNow;
-
-        /// <summary>卖出指定数量，当场结算（不乘现代×2 / 节日×1.5，那是出货箱的倍率）</summary>
+        /// <summary>卖出指定数量，当场结算</summary>
         public bool TrySell(ItemData item, int count)
         {
             if (!CheckOpen()) return false;
             if (item == null || count <= 0) return false;
             if (!ShippingBinSystem.CanSell(item))
             {
-                PBV.UI.HUD.Instance?.ShowNotice($"{item.itemName} 不收 · 工具 / 种子 / 无售价材料不能卖");
+                PBV.UI.HUD.Instance?.ShowNotice($"{item.itemName} 不可售卖");
                 return false;
             }
             var inv = InventorySystem.Instance;
@@ -163,21 +165,16 @@ namespace PBV.Economy
             int n = Mathf.Min(count, have);
             if (n <= 0) return false;
 
-            int unit = GetSellUnitPrice(item);
-            int total = unit * n;
+            int total = GetSellUnitPrice(item) * n;
             inv.RemoveItem(item, n);
-
-            bool modern = WorldState.Instance != null && WorldState.Instance.Current == WorldType.Modern;
-            if (modern) wallet.AddRMB(total); else wallet.AddSong(total);
-            string sym = modern ? "¥" : "";
-            string unitStr = modern ? "" : " 文";
+            if (IsRMBShop) wallet.AddRMB(total); else wallet.AddSong(total);
             PBV.UI.HUD.Instance?.ShowNotice(
-                $"卖出 {item.itemName} ×{n} → 当场到账 {sym}{total}{unitStr}（含{MerchantName}好感 +{Mathf.RoundToInt((SellMultiplier - 1f) * 100f)}%）");
-            Debug.Log($"[Shop] 卖 {item.itemName} x{n} +{sym}{total}");
+                $"卖给{_shopName}：{item.itemName} ×{n} → 当场到账 {CurrencySymbol}{total}{CurrencyUnit}（好感 +{Mathf.RoundToInt((SellMultiplier - 1f) * 100f)}%）");
+            Debug.Log($"[Shop] 卖 {item.itemName} x{n} +{CurrencySymbol}{total}");
             return true;
         }
 
-        /// <summary>一键卖出背包里全部可售物品，当场结算并只弹一条汇总提示</summary>
+        /// <summary>一键卖出背包里全部物品，当场结算并只弹一条汇总提示</summary>
         public bool TrySellAll(out int totalCount, out int totalMoney)
         {
             totalCount = 0; totalMoney = 0;
@@ -197,24 +194,21 @@ namespace PBV.Economy
             }
             if (totalCount == 0)
             {
-                PBV.UI.HUD.Instance?.ShowNotice("背包里没有可卖物品 · 工具 / 种子 / 无售价材料不收");
+                PBV.UI.HUD.Instance?.ShowNotice("背包是空的");
                 return false;
             }
 
             foreach (var kv in toSell) inv.RemoveItem(kv.Key, kv.Value);
-            bool modern = WorldState.Instance != null && WorldState.Instance.Current == WorldType.Modern;
-            if (modern) wallet.AddRMB(totalMoney); else wallet.AddSong(totalMoney);
-            string sym = modern ? "¥" : "";
-            string unit = modern ? "" : " 文";
-            PBV.UI.HUD.Instance?.ShowNotice(
-                $"全部卖出 {totalCount} 件 → 当场到账 {sym}{totalMoney}{unit}（含好感 +{Mathf.RoundToInt((SellMultiplier - 1f) * 100f)}%）");
-            Debug.Log($"[Shop] 全部卖出 {totalCount} 件 +{sym}{totalMoney}");
+            if (IsRMBShop) wallet.AddRMB(totalMoney); else wallet.AddSong(totalMoney);
+            PBV.UI.HUD.Instance?.ShowNotice($"全部卖出 {totalCount} 件 → 当场到账 {CurrencySymbol}{totalMoney}{CurrencyUnit}");
+            Debug.Log($"[Shop] 全部卖出 {totalCount} 件 +{CurrencySymbol}{totalMoney}");
             return true;
         }
 
-        /// <summary>G 键送礼给商人（商人融合在建筑里，没有独立 NPCController）</summary>
+        /// <summary>G 键送礼给掌柜（商人融合在建筑里，没有独立 NPCController）</summary>
         public void GiftToMerchant()
         {
+            if (!IsAvailable) return;
             var inv = InventorySystem.Instance;
             if (inv == null || RelationshipSystem.Instance == null) return;
             int idx = PBV.UI.InventoryUI.SelectedSlotIndex;
@@ -232,11 +226,16 @@ namespace PBV.Economy
             }
             RelationshipSystem.Instance.TryGift(MerchantName, item);
             inv.RemoveItem(item, 1);
-            PBV.UI.ShopUI.Instance?.RefreshIfOpen(); // 面板开着就立刻刷新折扣
+            PBV.UI.ShopUI.Instance?.RefreshIfOpen();
         }
 
         private bool CheckOpen()
         {
+            if (!IsAvailable)
+            {
+                PBV.UI.HUD.Instance?.ShowNotice("这家店不在当前世界");
+                return false;
+            }
             if (IsOpenNow) return true;
             PBV.UI.HUD.Instance?.ShowNotice(
                 $"{_shopName}已打烊（营业 {_openHour:00}:00-{_closeHour:00}:00）· 请把货投进出货箱，次日 06:00 结算");
@@ -254,7 +253,7 @@ namespace PBV.Economy
 
         public void OnInteract()
         {
-            // 打烊也允许开面板：显示营业时间与好感，买卖按钮统一禁用，避免玩家不知道为什么不能交易
+            if (!IsAvailable) return;
             if (!IsOpenNow)
                 PBV.UI.HUD.Instance?.ShowNotice(
                     $"{_shopName}已打烊（{_openHour:00}:00-{_closeHour:00}:00）· 买卖停用，请把货投进出货箱，次日 06:00 结算");

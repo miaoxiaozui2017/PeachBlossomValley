@@ -17,7 +17,7 @@ MonoBehaviour:/n  m_ObjectHideFlags: 0
   icon: {fileID: 0}
   type: 1
   maxStack: 1
-  sellPrice: 0
+  sellPrice: 60
   cropToPlant: {fileID: 0}
   affectionValue: 0
   staminaRestore: 0
